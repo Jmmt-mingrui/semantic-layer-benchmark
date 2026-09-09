@@ -6,6 +6,8 @@ __pycache__/
 
 data/tpcds/sf1/generated/*
 !data/tpcds/sf1/generated/.gitkeep
+data/tpcds/sf1/*.duckdb
+data/tpcds/sf1/*.duckdb.wal
 
 runs/*
 !runs/.gitkeep
