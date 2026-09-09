@@ -118,7 +118,8 @@ SF1 数据目录已加入 `.gitignore`，因为数据可以重复生成，而且
 - [x] 99 个带来源信息的 canonical questions
 - [x] 103 个带出处的 PostgreSQL 参考 SQL
 - [x] 24 张业务表的 Skill、OKF、MetricFlow 和 Ossie 表语义
-- [ ] DuckDB 表结构、加载流程及可复现 SF1 manifest
+- [x] DuckDB 表结构、确定性加载器和可插拔只读连接适配器
+- [ ] 包含表校验和与行数的 SF1 manifest
 - [x] 从问题集反向整理的候选统一指标定义
 - [ ] 已审核且补齐维度、粒度和 Join 的统一语义契约
 - [ ] 所有被测系统的原生语义模型
