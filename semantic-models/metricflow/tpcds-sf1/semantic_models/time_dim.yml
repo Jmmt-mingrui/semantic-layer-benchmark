@@ -1,0 +1,69 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: time_dim
+  description: 'Time-of-day attributes including hour, minute, second, AM/PM, shift, and meal period. Grain: One row per time-of-day
+    surrogate key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: time_dim
+  entities:
+  - name: time_dim
+    type: primary
+    expr: t_time_sk
+  dimensions:
+  - name: t_time_id
+    expr: t_time_id
+    type: categorical
+    datatype: string
+    description: Business identifier for time.
+  - name: t_time
+    expr: t_time
+    type: categorical
+    datatype: integer
+    description: Time.
+  - name: t_hour
+    expr: t_hour
+    type: categorical
+    datatype: integer
+    description: Hour.
+  - name: t_minute
+    expr: t_minute
+    type: categorical
+    datatype: integer
+    description: Minute.
+  - name: t_second
+    expr: t_second
+    type: categorical
+    datatype: integer
+    description: Second.
+  - name: t_am_pm
+    expr: t_am_pm
+    type: categorical
+    datatype: string
+    description: Am pm.
+  - name: t_shift
+    expr: t_shift
+    type: categorical
+    datatype: string
+    description: Shift.
+  - name: t_sub_shift
+    expr: t_sub_shift
+    type: categorical
+    datatype: string
+    description: Sub shift.
+  - name: t_meal_time
+    expr: t_meal_time
+    type: categorical
+    datatype: string
+    description: Meal time.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per time-of-day surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

@@ -1,0 +1,56 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: inventory
+  description: 'Daily on-hand inventory snapshots by item and warehouse. Grain: One snapshot row per date, item, and warehouse.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: inventory
+  entities:
+  - name: inventory_snapshot
+    type: primary
+    expr: concat_ws('|', cast(inv_date_sk as text), cast(inv_item_sk as text), cast(inv_warehouse_sk as text))
+  - name: date_dim
+    type: foreign
+    expr: inv_date_sk
+    role: inventory snapshot date
+  - name: item
+    type: foreign
+    expr: inv_item_sk
+    role: stocked item
+  - name: warehouse
+    type: foreign
+    expr: inv_warehouse_sk
+    role: stocking warehouse
+  dimensions:
+  - name: inv_date
+    expr: to_date(cast(inv_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the inventory snapshot date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: inventory
+      benchmark_grain: One snapshot row per date, item, and warehouse.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: inv_date
+  measures:
+  - name: inv_quantity_on_hand
+    expr: inv_quantity_on_hand
+    agg: sum
+    create_metric: false
+    description: Units available in this inventory snapshot.
+    config:
+      meta:
+        additivity: semi_additive
+    non_additive_dimension:
+      name: inv_date
+      window_choice: max

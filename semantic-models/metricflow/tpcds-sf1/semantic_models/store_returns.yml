@@ -1,0 +1,151 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: store_returns
+  description: 'Returned store line items with customer context, reason, refund disposition, and net loss. Grain: One returned
+    store line item per item and ticket number.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: store_returns
+  entities:
+  - name: store_return_line
+    type: primary
+    expr: concat_ws('|', cast(sr_item_sk as text), cast(sr_ticket_number as text))
+  - name: date_dim
+    type: foreign
+    expr: sr_returned_date_sk
+    role: return date
+  - name: time_dim
+    type: foreign
+    expr: sr_return_time_sk
+    role: return time
+  - name: item
+    type: foreign
+    expr: sr_item_sk
+    role: returned item
+  - name: customer
+    type: foreign
+    expr: sr_customer_sk
+    role: returning customer
+  - name: customer_demographics
+    type: foreign
+    expr: sr_cdemo_sk
+    role: customer demographics at return
+  - name: household_demographics
+    type: foreign
+    expr: sr_hdemo_sk
+    role: household demographics at return
+  - name: customer_address
+    type: foreign
+    expr: sr_addr_sk
+    role: customer address at return
+  - name: store
+    type: foreign
+    expr: sr_store_sk
+    role: return store
+  - name: reason
+    type: foreign
+    expr: sr_reason_sk
+    role: return reason
+  - name: store_sale_line
+    type: foreign
+    expr: concat_ws('|', cast(sr_item_sk as text), cast(sr_ticket_number as text))
+    role: matching store sale line
+  dimensions:
+  - name: sr_refunded_cash
+    expr: sr_refunded_cash
+    type: categorical
+    datatype: decimal
+    description: Return value refunded as cash.
+  - name: sr_returned_date
+    expr: to_date(cast(sr_returned_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the return date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: store
+      benchmark_grain: One returned store line item per item and ticket number.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: sr_returned_date
+  measures:
+  - name: sr_return_quantity
+    expr: sr_return_quantity
+    agg: sum
+    create_metric: false
+    description: Number of units returned on the line.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_return_amt
+    expr: sr_return_amt
+    agg: sum
+    create_metric: false
+    description: Returned merchandise amount.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_return_tax
+    expr: sr_return_tax
+    agg: sum
+    create_metric: false
+    description: Tax amount associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_return_amt_inc_tax
+    expr: sr_return_amt_inc_tax
+    agg: sum
+    create_metric: false
+    description: Return amount including tax.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_fee
+    expr: sr_fee
+    agg: sum
+    create_metric: false
+    description: Return fee charged for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_return_ship_cost
+    expr: sr_return_ship_cost
+    agg: sum
+    create_metric: false
+    description: Shipping cost associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_reversed_charge
+    expr: sr_reversed_charge
+    agg: sum
+    create_metric: false
+    description: Return value credited by reversing a charge.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_store_credit
+    expr: sr_store_credit
+    agg: sum
+    create_metric: false
+    description: Return value issued as store credit.
+    config:
+      meta:
+        additivity: additive
+  - name: sr_net_loss
+    expr: sr_net_loss
+    agg: sum
+    create_metric: false
+    description: Net loss attributed to the returned line.
+    config:
+      meta:
+        additivity: additive

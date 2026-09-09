@@ -1,0 +1,515 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+metric:
+  name: total_cr_return_quantity
+  type: simple
+  type_params:
+    measure:
+      name: cr_return_quantity
+  description: Number of units returned on the line.
+---
+metric:
+  name: total_cr_return_amount
+  type: simple
+  type_params:
+    measure:
+      name: cr_return_amount
+  description: Returned merchandise amount.
+---
+metric:
+  name: total_cr_return_tax
+  type: simple
+  type_params:
+    measure:
+      name: cr_return_tax
+  description: Tax amount associated with the return.
+---
+metric:
+  name: total_cr_return_amt_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: cr_return_amt_inc_tax
+  description: Return amount including tax.
+---
+metric:
+  name: total_cr_fee
+  type: simple
+  type_params:
+    measure:
+      name: cr_fee
+  description: Return fee charged for the line.
+---
+metric:
+  name: total_cr_return_ship_cost
+  type: simple
+  type_params:
+    measure:
+      name: cr_return_ship_cost
+  description: Shipping cost associated with the return.
+---
+metric:
+  name: total_cr_reversed_charge
+  type: simple
+  type_params:
+    measure:
+      name: cr_reversed_charge
+  description: Return value credited by reversing a charge.
+---
+metric:
+  name: total_cr_store_credit
+  type: simple
+  type_params:
+    measure:
+      name: cr_store_credit
+  description: Return value issued as store credit.
+---
+metric:
+  name: total_cr_net_loss
+  type: simple
+  type_params:
+    measure:
+      name: cr_net_loss
+  description: Net loss attributed to the returned line.
+---
+metric:
+  name: total_cs_quantity
+  type: simple
+  type_params:
+    measure:
+      name: cs_quantity
+  description: Number of units sold on the line.
+---
+metric:
+  name: total_cs_ext_discount_amt
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_discount_amt
+  description: Extended discount amount for the line.
+---
+metric:
+  name: total_cs_ext_sales_price
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_sales_price
+  description: Extended sales amount for the line.
+---
+metric:
+  name: total_cs_ext_wholesale_cost
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_wholesale_cost
+  description: Extended wholesale cost for the line.
+---
+metric:
+  name: total_cs_ext_list_price
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_list_price
+  description: Extended list-price amount for the line.
+---
+metric:
+  name: total_cs_ext_tax
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_tax
+  description: Extended tax amount for the line.
+---
+metric:
+  name: total_cs_coupon_amt
+  type: simple
+  type_params:
+    measure:
+      name: cs_coupon_amt
+  description: Coupon discount amount applied to the line.
+---
+metric:
+  name: total_cs_ext_ship_cost
+  type: simple
+  type_params:
+    measure:
+      name: cs_ext_ship_cost
+  description: Extended shipping cost for the line.
+---
+metric:
+  name: total_cs_net_paid
+  type: simple
+  type_params:
+    measure:
+      name: cs_net_paid
+  description: Net amount paid before channel-specific tax or shipping additions.
+---
+metric:
+  name: total_cs_net_paid_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: cs_net_paid_inc_tax
+  description: Net amount paid including tax.
+---
+metric:
+  name: total_cs_net_paid_inc_ship
+  type: simple
+  type_params:
+    measure:
+      name: cs_net_paid_inc_ship
+  description: Net amount paid including shipping.
+---
+metric:
+  name: total_cs_net_paid_inc_ship_tax
+  type: simple
+  type_params:
+    measure:
+      name: cs_net_paid_inc_ship_tax
+  description: Net amount paid including shipping and tax.
+---
+metric:
+  name: total_cs_net_profit
+  type: simple
+  type_params:
+    measure:
+      name: cs_net_profit
+  description: Net profit attributed to the line.
+---
+metric:
+  name: total_inv_quantity_on_hand
+  type: simple
+  type_params:
+    measure:
+      name: inv_quantity_on_hand
+  description: Units available in this inventory snapshot.
+---
+metric:
+  name: total_sr_return_quantity
+  type: simple
+  type_params:
+    measure:
+      name: sr_return_quantity
+  description: Number of units returned on the line.
+---
+metric:
+  name: total_sr_return_amt
+  type: simple
+  type_params:
+    measure:
+      name: sr_return_amt
+  description: Returned merchandise amount.
+---
+metric:
+  name: total_sr_return_tax
+  type: simple
+  type_params:
+    measure:
+      name: sr_return_tax
+  description: Tax amount associated with the return.
+---
+metric:
+  name: total_sr_return_amt_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: sr_return_amt_inc_tax
+  description: Return amount including tax.
+---
+metric:
+  name: total_sr_fee
+  type: simple
+  type_params:
+    measure:
+      name: sr_fee
+  description: Return fee charged for the line.
+---
+metric:
+  name: total_sr_return_ship_cost
+  type: simple
+  type_params:
+    measure:
+      name: sr_return_ship_cost
+  description: Shipping cost associated with the return.
+---
+metric:
+  name: total_sr_reversed_charge
+  type: simple
+  type_params:
+    measure:
+      name: sr_reversed_charge
+  description: Return value credited by reversing a charge.
+---
+metric:
+  name: total_sr_store_credit
+  type: simple
+  type_params:
+    measure:
+      name: sr_store_credit
+  description: Return value issued as store credit.
+---
+metric:
+  name: total_sr_net_loss
+  type: simple
+  type_params:
+    measure:
+      name: sr_net_loss
+  description: Net loss attributed to the returned line.
+---
+metric:
+  name: total_ss_quantity
+  type: simple
+  type_params:
+    measure:
+      name: ss_quantity
+  description: Number of units sold on the line.
+---
+metric:
+  name: total_ss_ext_discount_amt
+  type: simple
+  type_params:
+    measure:
+      name: ss_ext_discount_amt
+  description: Extended discount amount for the line.
+---
+metric:
+  name: total_ss_ext_sales_price
+  type: simple
+  type_params:
+    measure:
+      name: ss_ext_sales_price
+  description: Extended sales amount for the line.
+---
+metric:
+  name: total_ss_ext_wholesale_cost
+  type: simple
+  type_params:
+    measure:
+      name: ss_ext_wholesale_cost
+  description: Extended wholesale cost for the line.
+---
+metric:
+  name: total_ss_ext_list_price
+  type: simple
+  type_params:
+    measure:
+      name: ss_ext_list_price
+  description: Extended list-price amount for the line.
+---
+metric:
+  name: total_ss_ext_tax
+  type: simple
+  type_params:
+    measure:
+      name: ss_ext_tax
+  description: Extended tax amount for the line.
+---
+metric:
+  name: total_ss_coupon_amt
+  type: simple
+  type_params:
+    measure:
+      name: ss_coupon_amt
+  description: Coupon discount amount applied to the line.
+---
+metric:
+  name: total_ss_net_paid
+  type: simple
+  type_params:
+    measure:
+      name: ss_net_paid
+  description: Net amount paid before channel-specific tax or shipping additions.
+---
+metric:
+  name: total_ss_net_paid_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: ss_net_paid_inc_tax
+  description: Net amount paid including tax.
+---
+metric:
+  name: total_ss_net_profit
+  type: simple
+  type_params:
+    measure:
+      name: ss_net_profit
+  description: Net profit attributed to the line.
+---
+metric:
+  name: total_wr_return_quantity
+  type: simple
+  type_params:
+    measure:
+      name: wr_return_quantity
+  description: Number of units returned on the line.
+---
+metric:
+  name: total_wr_return_amt
+  type: simple
+  type_params:
+    measure:
+      name: wr_return_amt
+  description: Returned merchandise amount.
+---
+metric:
+  name: total_wr_return_tax
+  type: simple
+  type_params:
+    measure:
+      name: wr_return_tax
+  description: Tax amount associated with the return.
+---
+metric:
+  name: total_wr_return_amt_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: wr_return_amt_inc_tax
+  description: Return amount including tax.
+---
+metric:
+  name: total_wr_fee
+  type: simple
+  type_params:
+    measure:
+      name: wr_fee
+  description: Return fee charged for the line.
+---
+metric:
+  name: total_wr_return_ship_cost
+  type: simple
+  type_params:
+    measure:
+      name: wr_return_ship_cost
+  description: Shipping cost associated with the return.
+---
+metric:
+  name: total_wr_reversed_charge
+  type: simple
+  type_params:
+    measure:
+      name: wr_reversed_charge
+  description: Return value credited by reversing a charge.
+---
+metric:
+  name: total_wr_account_credit
+  type: simple
+  type_params:
+    measure:
+      name: wr_account_credit
+  description: Return value issued as account credit.
+---
+metric:
+  name: total_wr_net_loss
+  type: simple
+  type_params:
+    measure:
+      name: wr_net_loss
+  description: Net loss attributed to the returned line.
+---
+metric:
+  name: total_ws_quantity
+  type: simple
+  type_params:
+    measure:
+      name: ws_quantity
+  description: Number of units sold on the line.
+---
+metric:
+  name: total_ws_ext_discount_amt
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_discount_amt
+  description: Extended discount amount for the line.
+---
+metric:
+  name: total_ws_ext_sales_price
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_sales_price
+  description: Extended sales amount for the line.
+---
+metric:
+  name: total_ws_ext_wholesale_cost
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_wholesale_cost
+  description: Extended wholesale cost for the line.
+---
+metric:
+  name: total_ws_ext_list_price
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_list_price
+  description: Extended list-price amount for the line.
+---
+metric:
+  name: total_ws_ext_tax
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_tax
+  description: Extended tax amount for the line.
+---
+metric:
+  name: total_ws_coupon_amt
+  type: simple
+  type_params:
+    measure:
+      name: ws_coupon_amt
+  description: Coupon discount amount applied to the line.
+---
+metric:
+  name: total_ws_ext_ship_cost
+  type: simple
+  type_params:
+    measure:
+      name: ws_ext_ship_cost
+  description: Extended shipping cost for the line.
+---
+metric:
+  name: total_ws_net_paid
+  type: simple
+  type_params:
+    measure:
+      name: ws_net_paid
+  description: Net amount paid before channel-specific tax or shipping additions.
+---
+metric:
+  name: total_ws_net_paid_inc_tax
+  type: simple
+  type_params:
+    measure:
+      name: ws_net_paid_inc_tax
+  description: Net amount paid including tax.
+---
+metric:
+  name: total_ws_net_paid_inc_ship
+  type: simple
+  type_params:
+    measure:
+      name: ws_net_paid_inc_ship
+  description: Net amount paid including shipping.
+---
+metric:
+  name: total_ws_net_paid_inc_ship_tax
+  type: simple
+  type_params:
+    measure:
+      name: ws_net_paid_inc_ship_tax
+  description: Net amount paid including shipping and tax.
+---
+metric:
+  name: total_ws_net_profit
+  type: simple
+  type_params:
+    measure:
+      name: ws_net_profit
+  description: Net profit attributed to the line.

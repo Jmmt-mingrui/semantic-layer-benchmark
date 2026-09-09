@@ -1,0 +1,125 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: promotion
+  description: 'Promotion identity, active dates, cost, target, channels, purpose, and discount state. Grain: One row per
+    promotion surrogate key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: promotion
+  entities:
+  - name: promotion
+    type: primary
+    expr: p_promo_sk
+  - name: promotion_promotion_start_date
+    type: foreign
+    expr: p_start_date_sk
+    role: promotion start date
+  - name: promotion_promotion_end_date
+    type: foreign
+    expr: p_end_date_sk
+    role: promotion end date
+  - name: item
+    type: foreign
+    expr: p_item_sk
+    role: promoted item
+  dimensions:
+  - name: p_promo_id
+    expr: p_promo_id
+    type: categorical
+    datatype: string
+    description: Business identifier for promotion.
+  - name: p_cost
+    expr: p_cost
+    type: categorical
+    datatype: decimal
+    description: Cost.
+  - name: p_response_target
+    expr: p_response_target
+    type: categorical
+    datatype: integer
+    description: Response target.
+  - name: p_promo_name
+    expr: p_promo_name
+    type: categorical
+    datatype: string
+    description: Promotion name.
+  - name: p_channel_dmail
+    expr: p_channel_dmail
+    type: categorical
+    datatype: string
+    description: Flag indicating channel direct mail.
+  - name: p_channel_email
+    expr: p_channel_email
+    type: categorical
+    datatype: string
+    description: Flag indicating channel email.
+  - name: p_channel_catalog
+    expr: p_channel_catalog
+    type: categorical
+    datatype: string
+    description: Flag indicating channel catalog.
+  - name: p_channel_tv
+    expr: p_channel_tv
+    type: categorical
+    datatype: string
+    description: Flag indicating channel tv.
+  - name: p_channel_radio
+    expr: p_channel_radio
+    type: categorical
+    datatype: string
+    description: Flag indicating channel radio.
+  - name: p_channel_press
+    expr: p_channel_press
+    type: categorical
+    datatype: string
+    description: Flag indicating channel press.
+  - name: p_channel_event
+    expr: p_channel_event
+    type: categorical
+    datatype: string
+    description: Flag indicating channel event.
+  - name: p_channel_demo
+    expr: p_channel_demo
+    type: categorical
+    datatype: string
+    description: Flag indicating channel demo.
+  - name: p_channel_details
+    expr: p_channel_details
+    type: categorical
+    datatype: string
+    description: Flag indicating channel details.
+  - name: p_purpose
+    expr: p_purpose
+    type: categorical
+    datatype: string
+    description: Purpose.
+  - name: p_discount_active
+    expr: p_discount_active
+    type: categorical
+    datatype: string
+    description: Flag indicating discount active.
+  - name: p_start_date
+    expr: to_date(cast(p_start_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the promotion start date role.
+  - name: p_end_date
+    expr: to_date(cast(p_end_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the promotion end date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per promotion surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

@@ -11,12 +11,12 @@ This directory contains the common semantic contract and each benchmark target's
 | Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | Table semantics implemented | Agent instructions plus progressively loaded table references |
 | OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | Table semantics implemented | Portable Markdown knowledge bundle with YAML metadata |
 | Canonical | [`canonical/`](canonical/) | Planned | System-neutral semantic and metric contract |
-| MetricFlow | [`metricflow/`](metricflow/) | Planned | MetricFlow-native semantic model |
+| MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | Table semantics implemented | Standalone MetricFlow YAML models and base metrics |
 | Cube | [`cube/`](cube/) | Planned | Cube-native data model |
-| Ossie | [`ossie/`](ossie/) | Planned | Ossie-native semantic representation |
+| Ossie | [`ossie/tpcds-sf1/`](ossie/tpcds-sf1/) | Table semantics implemented | Apache Ossie `0.2.0.dev0` YAML exchange document |
 | DDL-only | [`ddl-only/`](ddl-only/) | Planned | Control baseline without enriched semantics |
 
-Skill and OKF currently cover the same 24 business tables, 425 physical columns, and 106 explicit relationships. `dbgen_version` is excluded because it records generator metadata rather than retail business data.
+Skill, OKF, MetricFlow, and Ossie currently describe the same 24 business tables and 425 physical columns. MetricFlow and Ossie additionally define 64 additive base aggregations; Ossie carries all 106 relationships as explicit objects, while MetricFlow encodes the same join paths through shared entities. `dbgen_version` is excluded because it records generator metadata rather than retail business data.
 
 ## Shared table contract
 
@@ -29,7 +29,7 @@ Every implemented table definition includes:
 - composite sale-to-return joins for store, catalog, and web line items;
 - additive, non-additive, and semi-additive measure guidance.
 
-The two representations encode this contract differently. Skill packages behavioral instructions and keeps detailed tables under `references/` for progressive loading. OKF uses a v0.2 bundle whose table concepts carry YAML frontmatter and Markdown bodies. OKF is evaluated here as a knowledge representation, not assumed to be an executable SQL semantic engine.
+The representations encode this contract differently. Skill packages behavioral instructions and keeps detailed tables under `references/` for progressive loading. OKF uses a v0.2 bundle whose table concepts carry YAML frontmatter and Markdown bodies. MetricFlow represents joins as shared entities and uses local PostgreSQL date expressions for fact aggregation time. Ossie expresses datasets, fields, relationships, and aggregate expressions in a vendor-neutral document. In the official Ossie shape, the top-level `semantic_model` is the complete-model container and its `datasets` array holds logical fact and dimension tables; the one-file layout used here is a canonical packaging choice, not a one-table limitation. See the [official Core Metadata Specification](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md#semantic-model) and [official TPC-DS example](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/examples/tpcds_semantic_model.yaml). OKF is evaluated here as a knowledge representation, not assumed to be an executable SQL semantic engine.
 
 ## Source chain
 
@@ -38,6 +38,8 @@ The definitions are derived from these pinned sources:
 1. **Logical model and benchmark terminology:** [TPC-DS v4.0.0 specification](https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf).
 2. **Physical PostgreSQL tables, columns, types, nullability, and primary keys:** [pinned PostgreSQL DDL at commit `63ee712`](https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql).
 3. **OKF packaging rules:** [Open Knowledge Format v0.2 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
+4. **MetricFlow authoring and validation:** [pinned MetricFlow source](https://github.com/dbt-labs/metricflow/tree/8750c1dfe79c9d92e37fc9b8542d544e29f8852e).
+5. **Ossie authoring and validation:** [pinned Apache Ossie source](https://github.com/apache/ossie/tree/c109cf5b0a06970a97599e8f7c2a72859822a3a4).
 
 This project is TPC-DS-derived and is not an audited TPC benchmark implementation. The repository does not vendor the TPC toolkit or generated SF1 data.
 
@@ -53,5 +55,4 @@ This project is TPC-DS-derived and is not an audited TPC benchmark implementatio
 
 ## Current boundary
 
-This version defines **table semantics only**. It does not yet define the canonical metric inventory, metric formulas, question-to-metric mappings, system-specific metric syntax, or executable adapters. Those artifacts should be added after the 99 questions are analyzed into a shared metric contract.
-
+This version defines **table semantics and base additive inputs only**. It does not yet define the canonical business-metric inventory, derived formulas, question-to-metric mappings, or executable adapters. Those artifacts should be added after the 99 questions are analyzed into a shared metric contract.

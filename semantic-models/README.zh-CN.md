@@ -11,12 +11,12 @@
 | Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | 已实现表语义 | Agent 指令及按需加载的表参考文档 |
 | OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | 已实现表语义 | 带 YAML 元数据的可移植 Markdown 知识包 |
 | Canonical | [`canonical/`](canonical/) | 计划中 | 与具体系统无关的语义和指标契约 |
-| MetricFlow | [`metricflow/`](metricflow/) | 计划中 | MetricFlow 原生语义模型 |
+| MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | 已实现表语义 | Standalone MetricFlow YAML 模型和基础 Metric |
 | Cube | [`cube/`](cube/) | 计划中 | Cube 原生数据模型 |
-| Ossie | [`ossie/`](ossie/) | 计划中 | Ossie 原生语义表示 |
+| Ossie | [`ossie/tpcds-sf1/`](ossie/tpcds-sf1/) | 已实现表语义 | Apache Ossie `0.2.0.dev0` YAML 交换文档 |
 | DDL-only | [`ddl-only/`](ddl-only/) | 计划中 | 不包含增强语义的对照基线 |
 
-Skill 和 OKF 当前覆盖相同的 24 张业务表、425 个物理字段和 106 条显式关系。`dbgen_version` 只记录数据生成器元数据，不属于零售业务表，因此被排除。
+Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 个物理字段。MetricFlow 和 Ossie 还定义了 64 个可加基础聚合；Ossie 将 106 条关系表示成显式对象，MetricFlow 则通过共享 Entity 表达相同的 Join 路径。`dbgen_version` 只记录数据生成器元数据，不属于零售业务表，因此被排除。
 
 ## 统一表级契约
 
@@ -29,7 +29,7 @@ Skill 和 OKF 当前覆盖相同的 24 张业务表、425 个物理字段和 106
 - 门店、目录和网站渠道中销售明细与退货明细的复合键关系；
 - 可加、不可加和半可加度量的使用规则。
 
-两种表示对同一契约采用不同编码方式。Skill 把行为约束放在 `SKILL.md` 中，并把详细表定义放到 `references/` 下按需加载。OKF 使用 v0.2 知识包，每张表由 YAML frontmatter 和 Markdown 正文组成。本项目把 OKF 作为知识表示来评测，不预设它是可以直接生成 SQL 的语义引擎。
+各表示对同一契约采用不同编码方式。Skill 把行为约束放在 `SKILL.md` 中，并把详细表定义放到 `references/` 下按需加载。OKF 使用 v0.2 知识包，每张表由 YAML frontmatter 和 Markdown 正文组成。MetricFlow 使用共享 Entity 表示 Join，并通过本地 PostgreSQL 日期表达式提供事实表聚合时间。Ossie 在一个厂商中立文档中表达 Dataset、Field、Relationship 和聚合表达式。按照 Ossie 官方结构，顶层 `semantic_model` 是完整模型容器，下面的 `datasets` 数组才承载逻辑事实表和维表；这里采用一个文件是标准输入的组织选择，不是“只有一张表”。参见 [官方 Core Metadata Specification](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md#semantic-model) 和 [官方 TPC-DS 示例](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/examples/tpcds_semantic_model.yaml)。本项目把 OKF 作为知识表示来评测，不预设它是可以直接生成 SQL 的语义引擎。
 
 ## 来源链
 
@@ -38,6 +38,8 @@ Skill 和 OKF 当前覆盖相同的 24 张业务表、425 个物理字段和 106
 1. **逻辑模型与基准术语：** [TPC-DS v4.0.0 官方规范](https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf)。
 2. **PostgreSQL 物理表、字段、类型、可空性和主键：** [固定在 commit `63ee712` 的 PostgreSQL DDL](https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql)。
 3. **OKF 打包规则：** [Open Knowledge Format v0.2 规范](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)。
+4. **MetricFlow 编写与校验：** [固定版本的 MetricFlow 源码](https://github.com/dbt-labs/metricflow/tree/8750c1dfe79c9d92e37fc9b8542d544e29f8852e)。
+5. **Ossie 编写与校验：** [固定版本的 Apache Ossie 源码](https://github.com/apache/ossie/tree/c109cf5b0a06970a97599e8f7c2a72859822a3a4)。
 
 本项目属于 TPC-DS 派生工作负载，不是经过审计的正式 TPC 基准实现。仓库不会直接包含 TPC 工具包或生成的 SF1 数据。
 
@@ -53,5 +55,4 @@ Skill 和 OKF 当前覆盖相同的 24 张业务表、425 个物理字段和 106
 
 ## 当前边界
 
-当前版本只定义**表语义**，尚未包含统一指标清单、指标公式、问题与指标映射、各系统的指标语法或可执行适配器。下一阶段应先从 99 个问题中整理统一指标契约，再生成各系统的指标定义。
-
+当前版本只定义**表语义和基础可加输入**，尚未包含统一业务指标清单、派生公式、问题与指标映射或可执行适配器。下一阶段应先从 99 个问题中整理统一指标契约，再生成各系统的业务指标定义。

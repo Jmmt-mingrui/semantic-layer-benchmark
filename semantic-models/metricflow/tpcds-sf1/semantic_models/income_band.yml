@@ -1,0 +1,33 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: income_band
+  description: 'Lower and upper household-income bounds used by household demographics. Grain: One row per income-band range.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: income_band
+  entities:
+  - name: income_band
+    type: primary
+    expr: ib_income_band_sk
+  dimensions:
+  - name: ib_lower_bound
+    expr: ib_lower_bound
+    type: categorical
+    datatype: integer
+    description: Lower bound.
+  - name: ib_upper_bound
+    expr: ib_upper_bound
+    type: categorical
+    datatype: integer
+    description: Upper bound.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per income-band range.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

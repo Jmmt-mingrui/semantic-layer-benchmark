@@ -6,7 +6,7 @@
 
 项目计划比较 **MetricFlow、Cube、OKF、Ossie 和 Skill**，并加入仅提供 DDL 的基线。所有系统使用相同的数据库、业务语义和问题集，同时评估各系统生成的 SQL，以及生成这些 SQL 所依赖的语义模型结构。
 
-> **项目状态：** 正在建设中。目前已经包含 SF1 项目骨架、99 个 canonical questions、PostgreSQL 参考 SQL，以及首批 Skill 和 OKF 表级语义定义；指标、其他被测系统模型、执行器和评分逻辑尚未实现。
+> **项目状态：** 正在建设中。目前已经包含 SF1 项目骨架、99 个 canonical questions、PostgreSQL 参考 SQL，以及 Skill、OKF、MetricFlow 和 Ossie 表级语义定义；统一业务指标、其他被测系统模型、执行器和评分逻辑尚未实现。
 
 ## 评测范围
 
@@ -30,11 +30,13 @@
 
 ## 已实现的语义模型
 
-第一阶段先建立统一的表级语义契约，再加入指标定义：
+当前先建立统一的表级语义契约，再从问题集中整理统一业务指标：
 
 - **Skill：** 面向 Agent 的 `SKILL.md`，按需渐进加载各表参考文档。
 - **OKF：** 遵循 [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 的知识包，每张表对应一个 Markdown 概念文件。
-- **覆盖范围：** 两种表示均覆盖相同的 24 张 TPC-DS 业务表、425 个物理字段和 106 条显式关系。
+- **MetricFlow：** standalone YAML 语义模型，包含 Entity、Dimension、Measure 和不会重名的基础 Metric。
+- **Apache Ossie：** 通过 `0.2.0.dev0` schema 校验的 YAML 交换文档，包含 Dataset、Field、Relationship 和基础 Metric。
+- **覆盖范围：** 各原生格式在能力允许的范围内覆盖相同的 24 张 TPC-DS 业务表、425 个物理字段、106 条关系和 64 个可加度量输入。
 - **语义内容：** 表粒度、主键、角色化 Join、字段角色、可空性和可加性规则。
 
 格式映射、来源链、建模规则和当前限制见 [`semantic-models/README.zh-CN.md`](semantic-models/README.zh-CN.md)。
@@ -113,7 +115,7 @@ SF1 数据目录已加入 `.gitignore`，因为数据可以重复生成，而且
 - [x] 仅包含 SF1 的仓库骨架
 - [x] 99 个带来源信息的 canonical questions
 - [x] 103 个带出处的 PostgreSQL 参考 SQL
-- [x] 24 张业务表的 Skill 和 OKF 表语义
+- [x] 24 张业务表的 Skill、OKF、MetricFlow 和 Ossie 表语义
 - [ ] PostgreSQL 表结构及可复现 SF1 manifest
 - [ ] 统一语义契约
 - [ ] 从问题集反向整理的统一指标定义

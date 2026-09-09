@@ -1,0 +1,89 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: warehouse
+  description: 'Warehouse identity, capacity, address, geography, and time-zone attributes. Grain: One row per warehouse surrogate
+    key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: warehouse
+  entities:
+  - name: warehouse
+    type: primary
+    expr: w_warehouse_sk
+  dimensions:
+  - name: w_warehouse_id
+    expr: w_warehouse_id
+    type: categorical
+    datatype: string
+    description: Business identifier for warehouse.
+  - name: w_warehouse_name
+    expr: w_warehouse_name
+    type: categorical
+    datatype: string
+    description: Warehouse name.
+  - name: w_warehouse_sq_ft
+    expr: w_warehouse_sq_ft
+    type: categorical
+    datatype: integer
+    description: Warehouse square feet.
+  - name: w_street_number
+    expr: w_street_number
+    type: categorical
+    datatype: string
+    description: Street number.
+  - name: w_street_name
+    expr: w_street_name
+    type: categorical
+    datatype: string
+    description: Street name.
+  - name: w_street_type
+    expr: w_street_type
+    type: categorical
+    datatype: string
+    description: Street type.
+  - name: w_suite_number
+    expr: w_suite_number
+    type: categorical
+    datatype: string
+    description: Suite number.
+  - name: w_city
+    expr: w_city
+    type: categorical
+    datatype: string
+    description: City.
+  - name: w_county
+    expr: w_county
+    type: categorical
+    datatype: string
+    description: County.
+  - name: w_state
+    expr: w_state
+    type: categorical
+    datatype: string
+    description: State.
+  - name: w_zip
+    expr: w_zip
+    type: categorical
+    datatype: string
+    description: Zip.
+  - name: w_country
+    expr: w_country
+    type: categorical
+    datatype: string
+    description: Country.
+  - name: w_gmt_offset
+    expr: w_gmt_offset
+    type: categorical
+    datatype: decimal
+    description: Offset from Greenwich Mean Time in hours.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per warehouse surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
