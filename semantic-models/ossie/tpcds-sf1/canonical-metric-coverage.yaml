@@ -1,0 +1,832 @@
+version: 0.1.0
+status: candidate
+canonical_source: ../../canonical/tpcds-sf1/metrics.yaml
+coverage:
+  metric_families: 42
+  derived_metrics: 25
+  query_exact_metrics: 9
+target: apache_ossie
+pinned_schema: https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/ossie-schema.json
+classification_rules:
+- A reusable metric may be represented as an ANSI_SQL expression.
+- The schema has one Metric shape and no distinct derived or cumulative metric type.
+- Cross-dataset execution, joins, filters, grouping, and windows remain consumer responsibilities.
+- Query-exact formulas are documented but are not marked independently executable without question context.
+base_metric_variants:
+- canonical_id: sales_revenue
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_sales_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_revenue
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_sales_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_revenue
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_sales_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_price_sum
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_sales_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_price_sum
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_sales_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_price_sum
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_sales_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_value_sales
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_quantity * ss_list_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_value_sales
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_quantity * cs_list_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_value_sales
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_quantity * ws_list_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: gross_sales_value
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_quantity * ss_sales_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: gross_sales_value
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_quantity * cs_sales_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: gross_sales_value
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_quantity * ws_sales_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_quantity
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_quantity)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_quantity
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_quantity)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_quantity
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_quantity)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_price_sum
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_list_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_price_sum
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_list_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: list_price_sum
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_list_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: wholesale_cost_sum
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_wholesale_cost)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: wholesale_cost_sum
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_wholesale_cost)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: wholesale_cost_sum
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_wholesale_cost)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_wholesale_cost
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_wholesale_cost)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_wholesale_cost
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_wholesale_cost)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_wholesale_cost
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_wholesale_cost)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_list_price
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_list_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_list_price
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_list_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_list_price
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_list_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_after_discount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_list_price - ss_ext_discount_amt)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_after_discount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_list_price - cs_ext_discount_amt)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_after_discount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_list_price - ws_ext_discount_amt)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_paid
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_net_paid)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_paid
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_net_paid)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_paid
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_net_paid)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_profit
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_net_profit)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_profit
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_net_profit)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: net_profit
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_net_profit)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: discount_amount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_discount_amt)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: discount_amount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_discount_amt)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: discount_amount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_discount_amt)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: coupon_amount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_coupon_amt)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: coupon_amount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_coupon_amt)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: coupon_amount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_coupon_amt)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_tax
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ss_ext_tax)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_tax
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_tax)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: extended_tax
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_tax)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: shipping_cost
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cs_ext_ship_cost)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: shipping_cost
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(ws_ext_ship_cost)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_return_amt)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_return_amount)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_return_amt)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount_including_tax
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_return_amt_inc_tax)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount_including_tax
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_return_amt_inc_tax)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_amount_including_tax
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_return_amt_inc_tax)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_quantity
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_return_quantity)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_quantity
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_return_quantity)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_quantity
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_return_quantity)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_net_loss
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_net_loss)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_net_loss
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_net_loss)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_net_loss
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_net_loss)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: refunded_cash
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_refunded_cash)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: refunded_cash
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_refunded_cash)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: refunded_cash
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_refunded_cash)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_fee
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sr_fee)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_fee
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(cr_fee)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: return_fee
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(wr_fee)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: inventory_quantity_on_hand
+  variant: inventory
+  status: native_sql_metric_candidate
+  canonical_expression: inv_quantity_on_hand
+  dataset: inventory
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_row_count
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(*)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_row_count
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(*)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: sales_row_count
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(*)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: distinct_order_count
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(DISTINCT cs_order_number)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: distinct_order_count
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(DISTINCT ws_order_number)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: customer_count
+  variant: default
+  status: query_context_required
+  canonical_expression: null
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: item_count
+  variant: default
+  status: query_context_required
+  canonical_expression: null
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: non_null_value_count
+  variant: default
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(<field>)
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: distinct_value_count
+  variant: default
+  status: native_sql_metric_candidate
+  canonical_expression: COUNT(DISTINCT <field>)
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_quantity
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_quantity)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_quantity
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_quantity)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_quantity
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_quantity)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_return_quantity
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(sr_return_quantity)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_return_quantity
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cr_return_quantity)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_return_quantity
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(wr_return_quantity)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_list_price
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_list_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_list_price
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_list_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_list_price
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_list_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_coupon_amount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_coupon_amt)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_coupon_amount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_coupon_amt)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_coupon_amount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_coupon_amt)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_price
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_sales_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_price
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_sales_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_sales_price
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_sales_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_profit
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_net_profit)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_profit
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_net_profit)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_profit
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_net_profit)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_sales_price
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_ext_sales_price)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_sales_price
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_ext_sales_price)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_sales_price
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_ext_sales_price)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_wholesale_cost
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_ext_wholesale_cost)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_wholesale_cost
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_ext_wholesale_cost)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_wholesale_cost
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_ext_wholesale_cost)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_discount_amount
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_ext_discount_amt)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_discount_amount
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_ext_discount_amt)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_extended_discount_amount
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_ext_discount_amt)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_paid
+  variant: store
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ss_net_paid)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_paid
+  variant: catalog
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(cs_net_paid)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_net_paid
+  variant: web
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(ws_net_paid)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: average_inventory_quantity
+  variant: default
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(inventory.inv_quantity_on_hand)
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: store_sales
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(ss_quantity)
+  dataset: store_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: catalog_sales
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(cs_quantity)
+  dataset: catalog_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: web_sales
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(ws_quantity)
+  dataset: web_sales
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: store_returns
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(sr_return_quantity)
+  dataset: store_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: catalog_returns
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(cr_return_quantity)
+  dataset: catalog_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: quantity_stddev
+  variant: web_returns
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(wr_return_quantity)
+  dataset: web_returns
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+- canonical_id: inventory_quantity_stddev
+  variant: default
+  status: native_sql_metric_candidate
+  canonical_expression: STDDEV_SAMP(inventory.inv_quantity_on_hand)
+  dataset: null
+  notes: Ossie accepts a typed SQL expression; execution context and joins remain consumer responsibilities.
+derived_metric_mappings:
+- canonical_id: all_channel_sales_revenue
+  status: native_sql_metric_candidate
+  canonical_expression: sales_revenue.store + sales_revenue.catalog + sales_revenue.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: all_channel_sales_quantity
+  status: native_sql_metric_candidate
+  canonical_expression: sales_quantity.store + sales_quantity.catalog + sales_quantity.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: all_channel_return_amount
+  status: native_sql_metric_candidate
+  canonical_expression: return_amount.store + return_amount.catalog + return_amount.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: all_channel_return_quantity
+  status: native_sql_metric_candidate
+  canonical_expression: return_quantity.store + return_quantity.catalog + return_quantity.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: all_channel_net_profit
+  status: native_sql_metric_candidate
+  canonical_expression: net_profit.store + net_profit.catalog + net_profit.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: all_channel_return_net_loss
+  status: native_sql_metric_candidate
+  canonical_expression: return_net_loss.store + return_net_loss.catalog + return_net_loss.web
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: net_sales_amount
+  status: native_sql_metric_candidate
+  canonical_expression: sales_revenue.<channel> - COALESCE(return_amount.<channel>, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: net_sales_quantity
+  status: native_sql_metric_candidate
+  canonical_expression: sales_quantity.<channel> - COALESCE(return_quantity.<channel>, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: net_profit_after_return_loss
+  status: native_sql_metric_candidate
+  canonical_expression: net_profit.<channel> - COALESCE(return_net_loss.<channel>, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: sales_share_pct
+  status: native_sql_metric_candidate
+  canonical_expression: 100 * selected_sales / parent_total_sales
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: growth_ratio
+  status: native_sql_metric_candidate
+  canonical_expression: current_period_value / NULLIF(previous_period_value, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: growth_delta
+  status: native_sql_metric_candidate
+  canonical_expression: current_period_value - previous_period_value
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: gross_margin_ratio
+  status: native_sql_metric_candidate
+  canonical_expression: net_profit / NULLIF(sales_revenue, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: return_ratio_quantity
+  status: native_sql_metric_candidate
+  canonical_expression: return_quantity / NULLIF(sales_quantity, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: return_ratio_amount
+  status: native_sql_metric_candidate
+  canonical_expression: return_amount / NULLIF(net_paid, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: promotion_sales_share_pct
+  status: native_sql_metric_candidate
+  canonical_expression: 100 * promotional_sales_revenue / NULLIF(all_sales_revenue, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: monthly_average
+  status: native_sql_metric_candidate
+  canonical_expression: AVG(monthly_value) OVER (PARTITION BY yearly_parent_grain)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: deviation_from_average_pct
+  status: native_sql_metric_candidate
+  canonical_expression: 100 * (value - average_value) / NULLIF(average_value, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: coefficient_of_variation_pct
+  status: native_sql_metric_candidate
+  canonical_expression: 100 * inventory_quantity_stddev / NULLIF(average_inventory_quantity, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: inventory_change_pct
+  status: native_sql_metric_candidate
+  canonical_expression: 100 * (after_quantity - before_quantity) / NULLIF(before_quantity, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: sales_per_square_foot
+  status: native_sql_metric_candidate
+  canonical_expression: sales_value / NULLIF(warehouse_square_feet, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: elapsed_days_bucket_count
+  status: native_sql_metric_candidate
+  canonical_expression: ''
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: time_window_count_ratio
+  status: native_sql_metric_candidate
+  canonical_expression: first_window_count / NULLIF(second_window_count, 0)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: channel_overlap_count
+  status: native_sql_metric_candidate
+  canonical_expression: ''
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+- canonical_id: cumulative_sales_price
+  status: native_sql_metric_candidate
+  canonical_expression: SUM(sales_price_sum) OVER (PARTITION BY item ORDER BY date ROWS UNBOUNDED PRECEDING)
+  notes: Stored as an expression; Ossie does not declare a separate derived-metric type.
+query_exact_mappings:
+- canonical_id: q04_customer_spend_proxy
+  status: query_context_required
+  canonical_expression: null
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q14_average_line_list_value
+  status: query_context_required
+  canonical_expression: AVG(quantity * list_price) across unioned channel lines
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q21_inventory_before_after_quantity
+  status: query_context_required
+  canonical_expression: Conditional SUM(inv_quantity_on_hand) on each side of PRICE_CHANGE_DATE
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q40_catalog_net_sales_before_after
+  status: query_context_required
+  canonical_expression: Conditional SUM(cs_sales_price - COALESCE(cr_refunded_cash, 0))
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q64_catalog_sale_to_refund_ratio
+  status: query_context_required
+  canonical_expression: SUM(cs_ext_list_price) / NULLIF(SUM(cr_refunded_cash + cr_reversed_charge + cr_store_credit), 0)
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q66_warehouse_monthly_sales_value
+  status: query_context_required
+  canonical_expression: null
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q66_warehouse_monthly_net_value
+  status: query_context_required
+  canonical_expression: null
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q85_average_web_return_values
+  status: query_context_required
+  canonical_expression: null
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+- canonical_id: q93_actual_store_sales_after_return
+  status: query_context_required
+  canonical_expression: SUM((ss_quantity - COALESCE(sr_return_quantity, 0)) * ss_sales_price)
+  notes: Can be documented as SQL but is not independently executable without the mapped question context.
+
