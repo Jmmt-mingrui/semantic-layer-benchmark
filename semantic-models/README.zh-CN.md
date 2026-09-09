@@ -8,8 +8,8 @@
 
 | 表示方式 | 位置 | 状态 | 用途 |
 | --- | --- | --- | --- |
-| Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | 已实现表语义 | Agent 指令及按需加载的表参考文档 |
-| OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | 已实现表语义 | 带 YAML 元数据的可移植 Markdown 知识包 |
+| Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | 已实现表和指标语义 | Agent 指令及按需加载的表与指标参考文档 |
+| OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | 已实现表和指标语义 | 带 YAML 元数据的可移植 Markdown 知识包 |
 | Canonical | [`canonical/tpcds-sf1/`](canonical/tpcds-sf1/) | 已抽取候选指标 | 与具体系统无关的指标清单及 q01-q99 映射 |
 | MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | 已实现表语义 | Standalone MetricFlow YAML 模型和基础 Metric |
 | Cube | [`cube/`](cube/) | 计划中 | Cube 原生数据模型 |
@@ -55,4 +55,4 @@ Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 
 
 ## 当前边界
 
-当前版本已经定义表语义、基础可加输入和一版**候选统一业务指标清单**。在翻译成各系统原生模型和实现执行适配器之前，仍需审核指标命名、query-exact 公式、问题修正、维度、粒度及 Join 要求。
+当前版本已经定义表语义、基础可加输入、一版**候选统一业务指标清单**，以及完整的 Skill 与 OKF 表示。在实现执行适配器和剩余系统原生指标前，仍需审核指标命名、query-exact 公式、问题修正、维度、粒度及 Join 要求。
