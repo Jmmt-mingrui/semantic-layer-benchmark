@@ -24,7 +24,7 @@ The initial dataset scale is **TPC-DS SF1 only**. SF10 is deliberately out of sc
 
 - **99 canonical questions:** one stable task ID from `q01` through `q99`.
 - **103 PostgreSQL reference SQL files:** q14, q23, q24, and q39 each contain two formulations.
-- **One common database:** PostgreSQL loaded from the same SF1 data manifest.
+- **One pluggable database contract:** DuckDB by default, with connection URL and namespace supplied at runtime; every target uses the same SF1 manifest.
 - **One semantic contract:** shared business concepts and relationships, represented separately in each system's native model format.
 - **One observability contract:** the same run, token, tool-call, timing, and error fields across systems.
 
@@ -46,10 +46,10 @@ See [`semantic-models/README.md`](semantic-models/README.md) for the format mapp
 
 ```mermaid
 flowchart TD
-    A["TPC-DS SF1 database"] --> C["Semantic-layer adapter"]
+    A["TPC-DS SF1 database (DuckDB default)"] --> C["Semantic-layer adapter"]
     B["Canonical question + native model"] --> C
     C --> D["Generated SQL"]
-    D --> E["PostgreSQL execution"]
+    D --> E["Configured database execution"]
     E --> F["SQL and result evaluation"]
     C --> G["Traces, tokens, tool calls"]
     G --> H["Efficiency and operability evaluation"]
@@ -69,6 +69,7 @@ Each run must pin the dataset manifest, question-set revision, semantic-model re
 | `data/tpcds/sf1/` | SF1 manifests and local generated-data location |
 | `semantic-models/` | Canonical contract and native models for each target |
 | `runner/adapters/` | Target-specific execution adapters |
+| `runner/config/database.yaml` | Pluggable database connection, namespace, dialect, and safety policy |
 | `evaluators/` | SQL, result, and semantic-structure evaluation |
 | `observability/` | OpenTelemetry, Phoenix, and trace artifacts |
 | `runs/` | Run configurations and local run output |
@@ -107,7 +108,7 @@ The generated SF1 directory is Git-ignored because the data is reproducible and 
 
 ## Planned benchmark phases
 
-1. **SQL evaluation:** give each system the same question and native semantic model, capture generated SQL, execute it on PostgreSQL, and compare results with the reference query.
+1. **SQL evaluation:** give each system the same question and native semantic model, execute generated SQL on the configured database, and compare normalized results with its dialect-specific reference query.
 2. **Structure evaluation:** compare how completely and faithfully each system represents the canonical metrics, dimensions, entities, joins, and time semantics.
 3. **Operational evaluation:** compare latency, token usage, tool calls, retries, failures, trace completeness, and reproducibility.
 
@@ -117,7 +118,7 @@ The generated SF1 directory is Git-ignored because the data is reproducible and 
 - [x] 99 canonical questions with source metadata
 - [x] 103 attributed PostgreSQL reference SQL files
 - [x] Skill, OKF, MetricFlow, and Ossie table semantics for 24 business tables
-- [ ] PostgreSQL schema and reproducible SF1 manifest
+- [ ] DuckDB schema, load path, and reproducible SF1 manifest
 - [x] Candidate canonical metric definitions derived from the question set
 - [ ] Reviewed canonical semantic contract with dimensions, grains, and joins
 - [ ] Native semantic models for all benchmark targets
