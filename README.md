@@ -6,7 +6,7 @@ A reproducible, observable benchmark for comparing semantic-layer systems on a s
 
 The project compares **MetricFlow, Cube, OKF, Ossie, and Skill**, with a DDL-only baseline. Every system receives the same database, semantic intent, and question set. The benchmark evaluates both the SQL each system produces and the semantic-model structure required to produce it.
 
-> **Project status:** work in progress. The SF1 scaffold, 99 canonical questions, PostgreSQL reference SQL, and the first Skill and OKF table-semantic representations are present. Metrics, remaining target models, runners, and scoring logic have not been implemented yet.
+> **Project status:** work in progress. The SF1 scaffold, 99 canonical questions, PostgreSQL reference SQL, and Skill, OKF, MetricFlow, and Ossie table-semantic representations are present. Canonical business metrics, remaining target models, runners, and scoring logic have not been implemented yet.
 
 ## Benchmark scope
 
@@ -30,11 +30,13 @@ The initial dataset scale is **TPC-DS SF1 only**. SF10 is deliberately out of sc
 
 ## Implemented semantic models
 
-The first implementation establishes a shared table-level contract before metric definitions are added:
+The current implementations establish a shared table-level contract before canonical business metrics are derived from the question set:
 
 - **Skill:** an agent-consumable `SKILL.md` with progressively loaded table references.
 - **OKF:** an [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundle with one table concept per Markdown file.
-- **Coverage:** the same 24 TPC-DS business tables, 425 physical columns, and 106 explicit relationships in both representations.
+- **MetricFlow:** standalone YAML semantic models with entities, dimensions, measures, and collision-free base metrics.
+- **Apache Ossie:** a schema-validated `0.2.0.dev0` YAML exchange document containing datasets, fields, relationships, and base metrics.
+- **Coverage:** the same 24 TPC-DS business tables, 425 physical columns, 106 relationships, and 64 additive measure inputs across the representations where the native format supports them.
 - **Semantics:** table grain, primary keys, role-playing joins, column roles, nullability, and additive behavior.
 
 See [`semantic-models/README.md`](semantic-models/README.md) for the format mapping, source chain, modeling rules, and current limitations.
@@ -113,7 +115,7 @@ The generated SF1 directory is Git-ignored because the data is reproducible and 
 - [x] SF1-only repository scaffold
 - [x] 99 canonical questions with source metadata
 - [x] 103 attributed PostgreSQL reference SQL files
-- [x] Skill and OKF table semantics for 24 business tables
+- [x] Skill, OKF, MetricFlow, and Ossie table semantics for 24 business tables
 - [ ] PostgreSQL schema and reproducible SF1 manifest
 - [ ] Canonical semantic contract
 - [ ] Shared metric definitions derived from the question set
