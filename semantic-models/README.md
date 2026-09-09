@@ -8,8 +8,8 @@ This directory contains the common semantic contract and each benchmark target's
 
 | Representation | Location | Status | Purpose |
 | --- | --- | --- | --- |
-| Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | Table semantics implemented | Agent instructions plus progressively loaded table references |
-| OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | Table semantics implemented | Portable Markdown knowledge bundle with YAML metadata |
+| Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | Table and metric semantics implemented | Agent instructions plus progressively loaded table and metric references |
+| OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | Table and metric semantics implemented | Portable Markdown knowledge bundle with YAML metadata |
 | Canonical | [`canonical/tpcds-sf1/`](canonical/tpcds-sf1/) | Candidate metrics extracted | System-neutral metric catalog and q01-q99 mapping |
 | MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | Table semantics implemented | Standalone MetricFlow YAML models and base metrics |
 | Cube | [`cube/`](cube/) | Planned | Cube-native data model |
@@ -55,4 +55,4 @@ This project is TPC-DS-derived and is not an audited TPC benchmark implementatio
 
 ## Current boundary
 
-This version defines table semantics, base additive inputs, and a **candidate canonical business-metric inventory**. The metric names, query-exact formulas, question overrides, dimensions, grains, and join requirements still require review before native-system translation and executable adapters are added.
+This version defines table semantics, base additive inputs, a **candidate canonical business-metric inventory**, and its complete Skill and OKF representations. The metric names, query-exact formulas, question overrides, dimensions, grains, and join requirements still require review before executable adapters and the remaining native-system translations are added.
