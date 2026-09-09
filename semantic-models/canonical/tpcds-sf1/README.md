@@ -10,8 +10,11 @@ This directory contains the first system-neutral business-metric contract extrac
 | --- | --- |
 | [`metrics.yaml`](metrics.yaml) | Reusable base metric families, derived metrics, and benchmark-specific formulas |
 | [`question-metric-map.yaml`](question-metric-map.yaml) | Complete q01-q99 mapping from each question to metrics and analysis operations |
+| [`dataset-contexts.yaml`](dataset-contexts.yaml) | Database-independent fact grains, time roles, dimensions, and safe fact relationships |
 
 The candidate contract currently contains 42 base metric families, 25 reusable derived metrics, 9 query-exact metric definitions, and mappings for all 99 questions.
+
+Metric variants inherit grain, time-role, dimension reachability, and fact-join constraints from their logical `dataset`. Global execution rules define null propagation, zero denominators, decimal precision, filtering order, additivity, and runtime namespace resolution.
 
 ## Extraction method
 
