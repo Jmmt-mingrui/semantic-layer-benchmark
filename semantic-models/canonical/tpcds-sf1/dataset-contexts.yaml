@@ -1,0 +1,75 @@
+version: 0.1.0
+status: candidate
+database_independent: true
+
+datasets:
+  store_sales:
+    grain: [ss_item_sk, ss_ticket_number]
+    default_time_role: sold_date
+    time_roles: {sold_date: ss_sold_date_sk, sold_time: ss_sold_time_sk}
+    dimensions: [item, customer, customer_demographics, household_demographics, customer_address, store, promotion]
+    primary_entity: store_sale_line
+  store_returns:
+    grain: [sr_item_sk, sr_ticket_number]
+    default_time_role: returned_date
+    time_roles: {returned_date: sr_returned_date_sk, returned_time: sr_return_time_sk}
+    dimensions: [item, customer, customer_demographics, household_demographics, customer_address, store, reason]
+    primary_entity: store_return_line
+  catalog_sales:
+    grain: [cs_item_sk, cs_order_number]
+    default_time_role: sold_date
+    time_roles: {sold_date: cs_sold_date_sk, sold_time: cs_sold_time_sk, shipped_date: cs_ship_date_sk}
+    dimensions: [item, billing_customer, billing_customer_demographics, billing_household_demographics, billing_address, shipping_customer, shipping_customer_demographics, shipping_household_demographics, shipping_address, call_center, catalog_page, ship_mode, warehouse, promotion]
+    primary_entity: catalog_sale_line
+  catalog_returns:
+    grain: [cr_item_sk, cr_order_number]
+    default_time_role: returned_date
+    time_roles: {returned_date: cr_returned_date_sk, returned_time: cr_returned_time_sk}
+    dimensions: [item, refunded_customer, refunded_customer_demographics, refunded_household_demographics, refunded_address, returning_customer, returning_customer_demographics, returning_household_demographics, returning_address, call_center, catalog_page, ship_mode, warehouse, reason]
+    primary_entity: catalog_return_line
+  web_sales:
+    grain: [ws_item_sk, ws_order_number]
+    default_time_role: sold_date
+    time_roles: {sold_date: ws_sold_date_sk, sold_time: ws_sold_time_sk, shipped_date: ws_ship_date_sk}
+    dimensions: [item, billing_customer, billing_customer_demographics, billing_household_demographics, billing_address, shipping_customer, shipping_customer_demographics, shipping_household_demographics, shipping_address, web_page, web_site, ship_mode, warehouse, promotion]
+    primary_entity: web_sale_line
+  web_returns:
+    grain: [wr_item_sk, wr_order_number]
+    default_time_role: returned_date
+    time_roles: {returned_date: wr_returned_date_sk, returned_time: wr_returned_time_sk}
+    dimensions: [item, refunded_customer, refunded_customer_demographics, refunded_household_demographics, refunded_address, returning_customer, returning_customer_demographics, returning_household_demographics, returning_address, web_page, reason]
+    primary_entity: web_return_line
+  inventory:
+    grain: [inv_date_sk, inv_item_sk, inv_warehouse_sk]
+    default_time_role: snapshot_date
+    time_roles: {snapshot_date: inv_date_sk}
+    dimensions: [item, warehouse]
+    primary_entity: inventory_snapshot
+    time_additivity: semi_additive
+
+fact_relationships:
+  store_sale_to_return:
+    from: store_returns
+    to: store_sales
+    keys: [[sr_item_sk, ss_item_sk], [sr_ticket_number, ss_ticket_number]]
+    cardinality: one_to_zero_or_one
+    policy: join_only_when_the_question_requires_originating_sale_context
+  catalog_sale_to_return:
+    from: catalog_returns
+    to: catalog_sales
+    keys: [[cr_item_sk, cs_item_sk], [cr_order_number, cs_order_number]]
+    cardinality: one_to_zero_or_one
+    policy: join_only_when_the_question_requires_originating_sale_context
+  web_sale_to_return:
+    from: web_returns
+    to: web_sales
+    keys: [[wr_item_sk, ws_item_sk], [wr_order_number, ws_order_number]]
+    cardinality: one_to_zero_or_one
+    policy: join_only_when_the_question_requires_originating_sale_context
+
+cross_channel_policy:
+  aggregate_before_join: true
+  allowed_shared_keys: [customer, item, calendar_period]
+  null_fill: metric_or_question_specific
+  reject_raw_fact_fanout: true
+

@@ -24,7 +24,7 @@
 
 - **99 个 canonical questions：** 使用 `q01` 至 `q99` 的稳定题目编号。
 - **103 个 PostgreSQL 参考 SQL：** q14、q23、q24 和 q39 各包含两种 SQL formulation。
-- **一个公共数据库：** 所有系统连接由同一份 SF1 manifest 加载的 PostgreSQL。
+- **一份可插拔数据库契约：** 默认使用 DuckDB，连接地址和 namespace 在运行时注入；所有系统使用同一份 SF1 manifest。
 - **一份统一语义契约：** 公共业务概念和关系分别转换为各系统的原生语义模型。
 - **一份统一可观测契约：** 所有系统记录相同的运行、Token、工具调用、耗时和错误字段。
 
@@ -46,10 +46,10 @@
 
 ```mermaid
 flowchart TD
-    A["TPC-DS SF1 数据库"] --> C["语义层适配器"]
+    A["TPC-DS SF1 数据库（默认 DuckDB）"] --> C["语义层适配器"]
     B["Canonical question + 原生语义模型"] --> C
     C --> D["生成 SQL"]
-    D --> E["PostgreSQL 执行"]
+    D --> E["配置的数据库执行"]
     E --> F["SQL 与结果评估"]
     C --> G["Trace、Token、工具调用"]
     G --> H["效率与可运维性评估"]
@@ -69,6 +69,7 @@ flowchart TD
 | `data/tpcds/sf1/` | SF1 manifest 和本地生成数据位置 |
 | `semantic-models/` | 统一语义契约及各系统原生语义模型 |
 | `runner/adapters/` | 各被测系统的运行适配器 |
+| `runner/config/database.yaml` | 可插拔数据库连接、namespace、dialect 和安全策略 |
 | `evaluators/` | SQL、结果和语义结构评估 |
 | `observability/` | OpenTelemetry、Phoenix 和 Trace 产物 |
 | `runs/` | 运行配置和本地运行结果 |
@@ -107,7 +108,7 @@ SF1 数据目录已加入 `.gitignore`，因为数据可以重复生成，而且
 
 ## 计划中的评测阶段
 
-1. **SQL 评估：** 向每个系统提供相同问题和原生语义模型，记录生成 SQL，在 PostgreSQL 中执行，并与参考查询结果比较。
+1. **SQL 评估：** 向每个系统提供相同问题和原生语义模型，在配置的数据库中执行生成 SQL，并与对应方言参考查询的归一化结果比较。
 2. **结构评估：** 对比各系统对统一 Metric、Dimension、Entity、Join 和时间语义的表达完整度与准确度。
 3. **运行评估：** 对比耗时、Token、工具调用、重试、失败、Trace 完整性和可复现性。
 
@@ -117,7 +118,7 @@ SF1 数据目录已加入 `.gitignore`，因为数据可以重复生成，而且
 - [x] 99 个带来源信息的 canonical questions
 - [x] 103 个带出处的 PostgreSQL 参考 SQL
 - [x] 24 张业务表的 Skill、OKF、MetricFlow 和 Ossie 表语义
-- [ ] PostgreSQL 表结构及可复现 SF1 manifest
+- [ ] DuckDB 表结构、加载流程及可复现 SF1 manifest
 - [x] 从问题集反向整理的候选统一指标定义
 - [ ] 已审核且补齐维度、粒度和 Join 的统一语义契约
 - [ ] 所有被测系统的原生语义模型

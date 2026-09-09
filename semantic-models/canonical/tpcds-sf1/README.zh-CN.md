@@ -10,8 +10,11 @@
 | --- | --- |
 | [`metrics.yaml`](metrics.yaml) | 可复用基础指标族、派生指标和 benchmark 特殊公式 |
 | [`question-metric-map.yaml`](question-metric-map.yaml) | q01-q99 每个问题对应的指标和分析操作 |
+| [`dataset-contexts.yaml`](dataset-contexts.yaml) | 与数据库无关的事实粒度、时间角色、可用维度和安全事实关系 |
 
 当前候选契约包含 42 个基础指标族、25 个可复用派生指标、9 个 query-exact 指标定义，并且已经覆盖全部 99 个问题。
+
+每个指标 variant 根据逻辑 `dataset` 继承粒度、时间角色、维度可达性和事实 Join 约束。全局执行规则统一规定空值传播、除零、Decimal 精度、过滤顺序、可加性及运行时 namespace 解析方式。
 
 ## 抽取方法
 

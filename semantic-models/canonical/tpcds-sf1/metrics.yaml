@@ -2,6 +2,7 @@ version: 0.1.0
 status: candidate
 benchmark: tpcds-derived
 scale_factor: 1
+dataset_contexts: dataset-contexts.yaml
 
 sources:
   questions: benchmark/tpcds/questions/canonical/questions.jsonl
@@ -15,6 +16,46 @@ naming_rules:
   - Counts identify their counted entity or row grain.
   - Ranking, filtering, bucketing, and threshold comparison are analysis operations, not standalone metrics.
   - Query-exact metrics preserve unusual benchmark formulas without presenting them as general business definitions.
+
+execution_contract:
+  database_independent: true
+  relation_names:
+    policy: logical_dataset_names_only
+    runtime_namespace_source: runner/config/database.yaml
+  grain:
+    policy: aggregate_each_fact_at_the_requested_output_grain_before_cross_fact_join
+    reject_implicit_many_to_many_fact_joins: true
+  dimensions:
+    policy: dimensions_must_be_reachable_from_each_input_dataset_through_declared_relationships
+    preserve_role_playing_dimensions: true
+  time:
+    sales_default: sold_date
+    returns_default: returned_date
+    inventory_default: snapshot_date
+    fulfillment_default: shipped_date
+    require_explicit_time_role_when_ambiguous: true
+  filters:
+    policy: apply_before_aggregation_unless_the_question_requires_post_aggregate_filtering
+    preserve_null_predicates: true
+  nulls:
+    additive_aggregates: sql_standard
+    derived_arithmetic: propagate_null
+    missing_cross_channel_value: do_not_coalesce_unless_explicitly_required
+  division:
+    zero_denominator: null
+    implementation_pattern: numerator / NULLIF(denominator, 0)
+  precision:
+    currency: decimal
+    ratios: decimal
+    rounding: only_when_explicit_in_reference_sql_or_question
+  additivity:
+    additive: may_sum_across_declared_dimensions_and_time
+    non_additive: recompute_from_base_inputs_at_requested_grain
+    semi_additive: never_sum_across_snapshot_time
+  provenance:
+    formula_precedence: official_toolkit_template_then_reference_sql_then_question_paraphrase
+    reference_sql_dialect: postgres
+    runtime_default_dialect: duckdb
 
 metric_families:
   - id: sales_revenue
