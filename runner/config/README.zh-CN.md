@@ -15,3 +15,5 @@
 `benchmark/tpcds/sql/reference/postgres/` 中的 PostgreSQL SQL 继续作为带出处的结果 oracle 和公式参考，但不再定义运行时连接。DuckDB 翻译放在 `benchmark/tpcds/sql/reference/duckdb/`，并且必须通过结果等价校验。
 
 原生语义模型在部署或适配器渲染时解析物理 namespace；canonical 层不依赖 catalog 或 schema 名称。
+
+使用 `pip install -e '.[test]'` 安装运行和测试依赖。`runner.core.database.connect()` 当前注册 DuckDB，并统一返回列名、结果行和执行耗时；其他数据库驱动可以实现同一边界，而无需修改 benchmark 输入。

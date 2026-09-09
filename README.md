@@ -118,7 +118,8 @@ The generated SF1 directory is Git-ignored because the data is reproducible and 
 - [x] 99 canonical questions with source metadata
 - [x] 103 attributed PostgreSQL reference SQL files
 - [x] Skill, OKF, MetricFlow, and Ossie table semantics for 24 business tables
-- [ ] DuckDB schema, load path, and reproducible SF1 manifest
+- [x] DuckDB schema, deterministic loader, and pluggable read-only connection adapter
+- [ ] Generated SF1 manifest with table checksums and row counts
 - [x] Candidate canonical metric definitions derived from the question set
 - [ ] Reviewed canonical semantic contract with dimensions, grains, and joins
 - [ ] Native semantic models for all benchmark targets
