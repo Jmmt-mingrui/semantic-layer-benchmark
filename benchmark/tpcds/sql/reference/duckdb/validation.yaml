@@ -1,0 +1,21 @@
+version: 0.1.0
+engine: duckdb
+engine_version: 1.4.0
+schema: data/tpcds/schema/duckdb/schema.sql
+validated_at: 2026-09-09
+validation_level: empty_schema_execution
+queries:
+  q01: {source: ../postgres/query01.sql, dialect_rewrite: none, status: passed}
+  q02: {source: ../postgres/query02.sql, dialect_rewrite: none, status: passed}
+  q03: {source: ../postgres/query03.sql, dialect_rewrite: none, status: passed}
+  q04: {source: ../postgres/query04.sql, dialect_rewrite: none, status: passed}
+  q05: {source: ../postgres/query05.sql, dialect_rewrite: none, status: passed}
+  q06: {source: ../postgres/query06.sql, dialect_rewrite: none, status: passed}
+  q07: {source: ../postgres/query07.sql, dialect_rewrite: none, status: passed}
+  q08: {source: ../postgres/query08.sql, dialect_rewrite: none, status: passed}
+  q09: {source: ../postgres/query09.sql, dialect_rewrite: none, status: passed}
+  q10: {source: ../postgres/query10.sql, dialect_rewrite: none, status: passed}
+result_equivalence:
+  status: pending_sf1_data
+  required_manifest: data/tpcds/sf1/manifests/duckdb-sf1.json
+
