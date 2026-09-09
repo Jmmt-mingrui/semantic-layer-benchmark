@@ -10,13 +10,13 @@
 | --- | --- | --- | --- |
 | Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | 已实现表语义 | Agent 指令及按需加载的表参考文档 |
 | OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | 已实现表语义 | 带 YAML 元数据的可移植 Markdown 知识包 |
-| Canonical | [`canonical/`](canonical/) | 计划中 | 与具体系统无关的语义和指标契约 |
+| Canonical | [`canonical/tpcds-sf1/`](canonical/tpcds-sf1/) | 已抽取候选指标 | 与具体系统无关的指标清单及 q01-q99 映射 |
 | MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | 已实现表语义 | Standalone MetricFlow YAML 模型和基础 Metric |
 | Cube | [`cube/`](cube/) | 计划中 | Cube 原生数据模型 |
 | Ossie | [`ossie/tpcds-sf1/`](ossie/tpcds-sf1/) | 已实现表语义 | Apache Ossie `0.2.0.dev0` YAML 交换文档 |
 | DDL-only | [`ddl-only/`](ddl-only/) | 计划中 | 不包含增强语义的对照基线 |
 
-Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 个物理字段。MetricFlow 和 Ossie 还定义了 64 个可加基础聚合；Ossie 将 106 条关系表示成显式对象，MetricFlow 则通过共享 Entity 表达相同的 Join 路径。`dbgen_version` 只记录数据生成器元数据，不属于零售业务表，因此被排除。
+Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 个物理字段。MetricFlow 和 Ossie 还定义了 64 个可加基础聚合；Ossie 将 106 条关系表示成显式对象，MetricFlow 则通过共享 Entity 表达相同的 Join 路径。Canonical SF1 层已经增加 42 个基础指标族、25 个派生指标、9 个 query-exact 公式，以及全部 99 个问题的指标映射。`dbgen_version` 只记录数据生成器元数据，不属于零售业务表，因此被排除。
 
 ## 统一表级契约
 
@@ -55,4 +55,4 @@ Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 
 
 ## 当前边界
 
-当前版本只定义**表语义和基础可加输入**，尚未包含统一业务指标清单、派生公式、问题与指标映射或可执行适配器。下一阶段应先从 99 个问题中整理统一指标契约，再生成各系统的业务指标定义。
+当前版本已经定义表语义、基础可加输入和一版**候选统一业务指标清单**。在翻译成各系统原生模型和实现执行适配器之前，仍需审核指标命名、query-exact 公式、问题修正、维度、粒度及 Join 要求。
