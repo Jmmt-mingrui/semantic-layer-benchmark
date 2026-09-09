@@ -32,8 +32,8 @@ The initial dataset scale is **TPC-DS SF1 only**. SF10 is deliberately out of sc
 
 The current implementations establish a shared table-level contract before canonical business metrics are derived from the question set:
 
-- **Skill:** an agent-consumable `SKILL.md` with progressively loaded table references.
-- **OKF:** an [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundle with one table concept per Markdown file.
+- **Skill:** an agent-consumable `SKILL.md` with progressively loaded table and business-metric references.
+- **OKF:** an [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundle containing table and metric knowledge concepts.
 - **MetricFlow:** standalone YAML semantic models with entities, dimensions, measures, and collision-free base metrics.
 - **Apache Ossie:** a schema-validated `0.2.0.dev0` YAML exchange document containing datasets, fields, relationships, and base metrics.
 - **Canonical metrics:** 42 base metric families, 25 reusable derived metrics, 9 query-exact formulas, and mappings for all 99 questions.
