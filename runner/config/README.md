@@ -15,3 +15,5 @@ Secrets must never be committed. An adapter may replace `driver` and `dialect`, 
 PostgreSQL SQL under `benchmark/tpcds/sql/reference/postgres/` remains an attributed result oracle and formula reference; it is not the runtime connection contract. DuckDB translations belong under `benchmark/tpcds/sql/reference/duckdb/` and require result-equivalence validation.
 
 Native semantic models resolve physical namespaces during deployment or adapter rendering. The canonical layer never depends on a catalog or schema name.
+
+Install the runtime and test dependencies with `pip install -e '.[test]'`. `runner.core.database.connect()` currently registers DuckDB and returns normalized columns, rows, and elapsed time; additional drivers can implement the same boundary without changing benchmark inputs.
