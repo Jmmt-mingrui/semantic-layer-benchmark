@@ -26,4 +26,6 @@
 
 ## 当前边界
 
-这些文件定义表语义和可复用 Measure 输入，尚未定义从 99 个问题反向整理出的统一业务指标。
+[`canonical-metric-coverage.yaml`](canonical-metric-coverage.yaml) 已将所有 canonical 指标及 variant 映射到当前固定版本 MetricFlow 的原生能力。113 个基础 variant 中，56 个已经对应现有 simple metric，31 个需要新增 average/count Measure，26 个需要表达式 Measure 或查询层实现。25 个派生定义被分为 21 个 derived 候选、1 个 cumulative 候选和 3 个查询层定义；9 个 query-exact 公式全部保留在查询层。
+
+该文件是实现验收清单，不是可执行的 MetricFlow project artifact。只有在 Measure 和兼容粒度得到验证后才会写入原生 YAML，避免把不支持的查询逻辑伪装成有效 Metric。
