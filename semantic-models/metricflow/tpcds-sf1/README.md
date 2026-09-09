@@ -26,4 +26,6 @@ This is the standalone specification used by the open-source MetricFlow parser, 
 
 ## Current boundary
 
-These files define table semantics and reusable measure inputs. They do not yet define the canonical business metrics derived from the 99 benchmark questions.
+[`canonical-metric-coverage.yaml`](canonical-metric-coverage.yaml) maps every canonical metric and variant to MetricFlow's pinned native capabilities. Of 113 base variants, 56 already resolve to existing simple metrics, 31 require a new native average/count measure, and 26 require a native expression measure or query-layer implementation. The 25 derived definitions are classified into 21 derived candidates, one cumulative candidate, and three query-layer definitions; all nine query-exact formulas remain in the query layer.
+
+This coverage file is the implementation checklist, not an executable MetricFlow project artifact. Native YAML is added only after the required measures and compatible grains are verified, so unsupported query logic is not disguised as a valid metric.
