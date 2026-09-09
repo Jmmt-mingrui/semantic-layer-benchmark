@@ -10,13 +10,13 @@ This directory contains the common semantic contract and each benchmark target's
 | --- | --- | --- | --- |
 | Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | Table semantics implemented | Agent instructions plus progressively loaded table references |
 | OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | Table semantics implemented | Portable Markdown knowledge bundle with YAML metadata |
-| Canonical | [`canonical/`](canonical/) | Planned | System-neutral semantic and metric contract |
+| Canonical | [`canonical/tpcds-sf1/`](canonical/tpcds-sf1/) | Candidate metrics extracted | System-neutral metric catalog and q01-q99 mapping |
 | MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | Table semantics implemented | Standalone MetricFlow YAML models and base metrics |
 | Cube | [`cube/`](cube/) | Planned | Cube-native data model |
 | Ossie | [`ossie/tpcds-sf1/`](ossie/tpcds-sf1/) | Table semantics implemented | Apache Ossie `0.2.0.dev0` YAML exchange document |
 | DDL-only | [`ddl-only/`](ddl-only/) | Planned | Control baseline without enriched semantics |
 
-Skill, OKF, MetricFlow, and Ossie currently describe the same 24 business tables and 425 physical columns. MetricFlow and Ossie additionally define 64 additive base aggregations; Ossie carries all 106 relationships as explicit objects, while MetricFlow encodes the same join paths through shared entities. `dbgen_version` is excluded because it records generator metadata rather than retail business data.
+Skill, OKF, MetricFlow, and Ossie currently describe the same 24 business tables and 425 physical columns. MetricFlow and Ossie additionally define 64 additive base aggregations; Ossie carries all 106 relationships as explicit objects, while MetricFlow encodes the same join paths through shared entities. The canonical SF1 layer now adds a candidate catalog of 42 base metric families, 25 derived metrics, 9 query-exact formulas, and mappings for all 99 questions. `dbgen_version` is excluded because it records generator metadata rather than retail business data.
 
 ## Shared table contract
 
@@ -55,4 +55,4 @@ This project is TPC-DS-derived and is not an audited TPC benchmark implementatio
 
 ## Current boundary
 
-This version defines **table semantics and base additive inputs only**. It does not yet define the canonical business-metric inventory, derived formulas, question-to-metric mappings, or executable adapters. Those artifacts should be added after the 99 questions are analyzed into a shared metric contract.
+This version defines table semantics, base additive inputs, and a **candidate canonical business-metric inventory**. The metric names, query-exact formulas, question overrides, dimensions, grains, and join requirements still require review before native-system translation and executable adapters are added.
