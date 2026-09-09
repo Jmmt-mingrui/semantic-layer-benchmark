@@ -29,7 +29,7 @@ Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 
 - 门店、目录和网站渠道中销售明细与退货明细的复合键关系；
 - 可加、不可加和半可加度量的使用规则。
 
-各表示对同一契约采用不同编码方式。Skill 把行为约束放在 `SKILL.md` 中，并把详细表定义放到 `references/` 下按需加载。OKF 使用 v0.2 知识包，每张表由 YAML frontmatter 和 Markdown 正文组成。MetricFlow 使用共享 Entity 表示 Join，并通过本地 PostgreSQL 日期表达式提供事实表聚合时间。Ossie 在一个厂商中立文档中表达 Dataset、Field、Relationship 和聚合表达式。本项目把 OKF 作为知识表示来评测，不预设它是可以直接生成 SQL 的语义引擎。
+各表示对同一契约采用不同编码方式。Skill 把行为约束放在 `SKILL.md` 中，并把详细表定义放到 `references/` 下按需加载。OKF 使用 v0.2 知识包，每张表由 YAML frontmatter 和 Markdown 正文组成。MetricFlow 使用共享 Entity 表示 Join，并通过本地 PostgreSQL 日期表达式提供事实表聚合时间。Ossie 在一个厂商中立文档中表达 Dataset、Field、Relationship 和聚合表达式。按照 Ossie 官方结构，顶层 `semantic_model` 是完整模型容器，下面的 `datasets` 数组才承载逻辑事实表和维表；这里采用一个文件是标准输入的组织选择，不是“只有一张表”。参见 [官方 Core Metadata Specification](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md#semantic-model) 和 [官方 TPC-DS 示例](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/examples/tpcds_semantic_model.yaml)。本项目把 OKF 作为知识表示来评测，不预设它是可以直接生成 SQL 的语义引擎。
 
 ## 来源链
 
