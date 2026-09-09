@@ -32,8 +32,8 @@
 
 当前先建立统一的表级语义契约，再从问题集中整理统一业务指标：
 
-- **Skill：** 面向 Agent 的 `SKILL.md`，按需渐进加载各表参考文档。
-- **OKF：** 遵循 [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 的知识包，每张表对应一个 Markdown 概念文件。
+- **Skill：** 面向 Agent 的 `SKILL.md`，按需渐进加载表和业务指标参考文档。
+- **OKF：** 遵循 [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 的知识包，包含表与指标 knowledge concepts。
 - **MetricFlow：** standalone YAML 语义模型，包含 Entity、Dimension、Measure 和不会重名的基础 Metric。
 - **Apache Ossie：** 通过 `0.2.0.dev0` schema 校验的 YAML 交换文档，包含 Dataset、Field、Relationship 和基础 Metric。
 - **Canonical 指标：** 42 个基础指标族、25 个可复用派生指标、9 个 query-exact 公式，以及全部 99 个问题的映射。
