@@ -8,10 +8,25 @@
 
 - Ossie 文档版本：`0.2.0.dev0`
 - Ossie 源码 commit：[`c109cf5`](https://github.com/apache/ossie/tree/c109cf5b0a06970a97599e8f7c2a72859822a3a4)
+- Core Metadata Specification：[`spec.md#semantic-model`](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md#semantic-model)
 - 机器可读 schema：[`core-spec/ossie-schema.json`](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/ossie-schema.json)
 - 官方 TPC-DS Ossie 示例：[`examples/tpcds_semantic_model.yaml`](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/examples/tpcds_semantic_model.yaml)
 - 物理表结构：[固定 PostgreSQL DDL](https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql)
 - 逻辑语义：[TPC-DS v4.0.0 官方规范](https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf)
+
+## 官方对文档结构的解释
+
+[Apache Ossie 官方 README](https://github.com/apache/ossie/blob/main/README.md) 说，Ossie 提供的是一个“single JSON- and YAML-based specification that any tool can read and write”（任何工具都可以读写的统一 JSON/YAML 规范）。这里的 `single` 指统一的语义交换规范，并不是要求每个仓库只能有一个文件。
+
+[Core Metadata Specification](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md) 明确定义了模型层次：
+
+- `semantic_model` 是完整语义模型的顶层容器，包含 datasets、relationships 和 metrics；
+- `datasets` 是必需的逻辑 Dataset 集合，其中包括事实表和维表；
+- 每个 Dataset 的 `source` 指向底层物理表、视图或查询。
+
+[官方 TPC-DS 示例](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/examples/tpcds_semantic_model.yaml) 采用了同样的结构：一个名为 `tpcds_retail_model` 的顶层模型，下面包含 `store_sales`、`date_dim`、`customer`、`item`、`store` 等多个 Dataset，之后再定义 relationships 和 metrics。
+
+因此，本 benchmark 将一个 YAML 文件作为完整 TPC-DS SF1 语义图的标准 Ossie 输入。这是与官方示例一致的文件组织选择，并不表示 Ossie 只有一张物理表，也不表示 Ossie 禁止拆分源文件。如果后续为了维护性拆分文件，跑 benchmark 前仍需要把它们组装并校验为同一个逻辑 Ossie 模型。
 
 ## 覆盖范围
 
