@@ -1,0 +1,174 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: store
+  description: 'Versioned store operations, organization, market, geography, address, time-zone, and tax attributes. Grain:
+    One slowly changing dimension row per store version.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: store
+  entities:
+  - name: store
+    type: primary
+    expr: s_store_sk
+  - name: date_dim
+    type: foreign
+    expr: s_closed_date_sk
+    role: store closing date
+  dimensions:
+  - name: s_store_id
+    expr: s_store_id
+    type: categorical
+    datatype: string
+    description: Business identifier for store.
+  - name: s_rec_start_date
+    expr: s_rec_start_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version became effective.
+    type_params:
+      time_granularity: day
+  - name: s_rec_end_date
+    expr: s_rec_end_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version stopped being effective.
+    type_params:
+      time_granularity: day
+  - name: s_store_name
+    expr: s_store_name
+    type: categorical
+    datatype: string
+    description: Store name.
+  - name: s_number_employees
+    expr: s_number_employees
+    type: categorical
+    datatype: integer
+    description: Number employees.
+  - name: s_floor_space
+    expr: s_floor_space
+    type: categorical
+    datatype: integer
+    description: Floor space.
+  - name: s_hours
+    expr: s_hours
+    type: categorical
+    datatype: string
+    description: Hours.
+  - name: s_manager
+    expr: s_manager
+    type: categorical
+    datatype: string
+    description: Manager.
+  - name: s_market_id
+    expr: s_market_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for market.
+  - name: s_geography_class
+    expr: s_geography_class
+    type: categorical
+    datatype: string
+    description: Geography class.
+  - name: s_market_desc
+    expr: s_market_desc
+    type: categorical
+    datatype: string
+    description: Market description.
+  - name: s_market_manager
+    expr: s_market_manager
+    type: categorical
+    datatype: string
+    description: Market manager.
+  - name: s_division_id
+    expr: s_division_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for division.
+  - name: s_division_name
+    expr: s_division_name
+    type: categorical
+    datatype: string
+    description: Division name.
+  - name: s_company_id
+    expr: s_company_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for company.
+  - name: s_company_name
+    expr: s_company_name
+    type: categorical
+    datatype: string
+    description: Company name.
+  - name: s_street_number
+    expr: s_street_number
+    type: categorical
+    datatype: string
+    description: Street number.
+  - name: s_street_name
+    expr: s_street_name
+    type: categorical
+    datatype: string
+    description: Street name.
+  - name: s_street_type
+    expr: s_street_type
+    type: categorical
+    datatype: string
+    description: Street type.
+  - name: s_suite_number
+    expr: s_suite_number
+    type: categorical
+    datatype: string
+    description: Suite number.
+  - name: s_city
+    expr: s_city
+    type: categorical
+    datatype: string
+    description: City.
+  - name: s_county
+    expr: s_county
+    type: categorical
+    datatype: string
+    description: County.
+  - name: s_state
+    expr: s_state
+    type: categorical
+    datatype: string
+    description: State.
+  - name: s_zip
+    expr: s_zip
+    type: categorical
+    datatype: string
+    description: Zip.
+  - name: s_country
+    expr: s_country
+    type: categorical
+    datatype: string
+    description: Country.
+  - name: s_gmt_offset
+    expr: s_gmt_offset
+    type: categorical
+    datatype: decimal
+    description: Offset from Greenwich Mean Time in hours.
+  - name: s_tax_precentage
+    expr: s_tax_precentage
+    type: categorical
+    datatype: decimal
+    description: Tax precentage.
+  - name: s_closed_date
+    expr: to_date(cast(s_closed_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the store closing date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: store
+      benchmark_grain: One slowly changing dimension row per store version.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

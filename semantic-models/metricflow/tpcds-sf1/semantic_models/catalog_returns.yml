@@ -1,0 +1,179 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: catalog_returns
+  description: 'Returned catalog line items, refund roles, return reasons, and financial effects. Grain: One returned catalog
+    line item per item and order number.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: catalog_returns
+  entities:
+  - name: catalog_return_line
+    type: primary
+    expr: concat_ws('|', cast(cr_item_sk as text), cast(cr_order_number as text))
+  - name: date_dim
+    type: foreign
+    expr: cr_returned_date_sk
+    role: return date
+  - name: time_dim
+    type: foreign
+    expr: cr_returned_time_sk
+    role: return time
+  - name: item
+    type: foreign
+    expr: cr_item_sk
+    role: returned item
+  - name: catalog_returns_refunded_customer
+    type: foreign
+    expr: cr_refunded_customer_sk
+    role: refunded customer
+  - name: catalog_returns_refunded_customer_demographics
+    type: foreign
+    expr: cr_refunded_cdemo_sk
+    role: refunded customer demographics
+  - name: catalog_returns_refunded_household_demographics
+    type: foreign
+    expr: cr_refunded_hdemo_sk
+    role: refunded household demographics
+  - name: catalog_returns_refund_address
+    type: foreign
+    expr: cr_refunded_addr_sk
+    role: refund address
+  - name: catalog_returns_returning_customer
+    type: foreign
+    expr: cr_returning_customer_sk
+    role: returning customer
+  - name: catalog_returns_returning_customer_demographics
+    type: foreign
+    expr: cr_returning_cdemo_sk
+    role: returning customer demographics
+  - name: catalog_returns_returning_household_demographics
+    type: foreign
+    expr: cr_returning_hdemo_sk
+    role: returning household demographics
+  - name: catalog_returns_returning_customer_address
+    type: foreign
+    expr: cr_returning_addr_sk
+    role: returning customer address
+  - name: call_center
+    type: foreign
+    expr: cr_call_center_sk
+    role: processing call center
+  - name: catalog_page
+    type: foreign
+    expr: cr_catalog_page_sk
+    role: catalog page
+  - name: ship_mode
+    type: foreign
+    expr: cr_ship_mode_sk
+    role: shipping mode
+  - name: warehouse
+    type: foreign
+    expr: cr_warehouse_sk
+    role: fulfillment warehouse
+  - name: reason
+    type: foreign
+    expr: cr_reason_sk
+    role: return reason
+  - name: catalog_sale_line
+    type: foreign
+    expr: concat_ws('|', cast(cr_item_sk as text), cast(cr_order_number as text))
+    role: matching catalog sale line
+  dimensions:
+  - name: cr_refunded_cash
+    expr: cr_refunded_cash
+    type: categorical
+    datatype: decimal
+    description: Return value refunded as cash.
+  - name: cr_returned_date
+    expr: to_date(cast(cr_returned_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the return date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: catalog
+      benchmark_grain: One returned catalog line item per item and order number.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: cr_returned_date
+  measures:
+  - name: cr_return_quantity
+    expr: cr_return_quantity
+    agg: sum
+    create_metric: false
+    description: Number of units returned on the line.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_return_amount
+    expr: cr_return_amount
+    agg: sum
+    create_metric: false
+    description: Returned merchandise amount.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_return_tax
+    expr: cr_return_tax
+    agg: sum
+    create_metric: false
+    description: Tax amount associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_return_amt_inc_tax
+    expr: cr_return_amt_inc_tax
+    agg: sum
+    create_metric: false
+    description: Return amount including tax.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_fee
+    expr: cr_fee
+    agg: sum
+    create_metric: false
+    description: Return fee charged for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_return_ship_cost
+    expr: cr_return_ship_cost
+    agg: sum
+    create_metric: false
+    description: Shipping cost associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_reversed_charge
+    expr: cr_reversed_charge
+    agg: sum
+    create_metric: false
+    description: Return value credited by reversing a charge.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_store_credit
+    expr: cr_store_credit
+    agg: sum
+    create_metric: false
+    description: Return value issued as store credit.
+    config:
+      meta:
+        additivity: additive
+  - name: cr_net_loss
+    expr: cr_net_loss
+    agg: sum
+    create_metric: false
+    description: Net loss attributed to the returned line.
+    config:
+      meta:
+        additivity: additive

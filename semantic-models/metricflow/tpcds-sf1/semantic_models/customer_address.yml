@@ -1,0 +1,116 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: customer_address
+  description: 'Postal, geographic, time-zone, and location-type attributes for customer addresses. Grain: One row per customer
+    address surrogate key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: customer_address
+  entities:
+  - name: customer_address
+    type: primary
+    expr: ca_address_sk
+  - name: catalog_returns_refund_address
+    type: unique
+    expr: ca_address_sk
+    role: refund address from catalog_returns
+  - name: catalog_returns_returning_customer_address
+    type: unique
+    expr: ca_address_sk
+    role: returning customer address from catalog_returns
+  - name: catalog_sales_billing_address
+    type: unique
+    expr: ca_address_sk
+    role: billing address from catalog_sales
+  - name: catalog_sales_shipping_address
+    type: unique
+    expr: ca_address_sk
+    role: shipping address from catalog_sales
+  - name: web_returns_refund_address
+    type: unique
+    expr: ca_address_sk
+    role: refund address from web_returns
+  - name: web_returns_returning_customer_address
+    type: unique
+    expr: ca_address_sk
+    role: returning customer address from web_returns
+  - name: web_sales_billing_address
+    type: unique
+    expr: ca_address_sk
+    role: billing address from web_sales
+  - name: web_sales_shipping_address
+    type: unique
+    expr: ca_address_sk
+    role: shipping address from web_sales
+  dimensions:
+  - name: ca_address_id
+    expr: ca_address_id
+    type: categorical
+    datatype: string
+    description: Business identifier for address.
+  - name: ca_street_number
+    expr: ca_street_number
+    type: categorical
+    datatype: string
+    description: Street number.
+  - name: ca_street_name
+    expr: ca_street_name
+    type: categorical
+    datatype: string
+    description: Street name.
+  - name: ca_street_type
+    expr: ca_street_type
+    type: categorical
+    datatype: string
+    description: Street type.
+  - name: ca_suite_number
+    expr: ca_suite_number
+    type: categorical
+    datatype: string
+    description: Suite number.
+  - name: ca_city
+    expr: ca_city
+    type: categorical
+    datatype: string
+    description: City.
+  - name: ca_county
+    expr: ca_county
+    type: categorical
+    datatype: string
+    description: County.
+  - name: ca_state
+    expr: ca_state
+    type: categorical
+    datatype: string
+    description: State.
+  - name: ca_zip
+    expr: ca_zip
+    type: categorical
+    datatype: string
+    description: Zip.
+  - name: ca_country
+    expr: ca_country
+    type: categorical
+    datatype: string
+    description: Country.
+  - name: ca_gmt_offset
+    expr: ca_gmt_offset
+    type: categorical
+    datatype: decimal
+    description: Offset from Greenwich Mean Time in hours.
+  - name: ca_location_type
+    expr: ca_location_type
+    type: categorical
+    datatype: string
+    description: Location type.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per customer address surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

@@ -1,0 +1,75 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: household_demographics
+  description: 'Household income-band, buying-potential, dependent-count, and vehicle-count combinations. Grain: One row per
+    unique household-demographic combination.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: household_demographics
+  entities:
+  - name: household_demographics
+    type: primary
+    expr: hd_demo_sk
+  - name: income_band
+    type: foreign
+    expr: hd_income_band_sk
+    role: household income band
+  - name: catalog_returns_refunded_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: refunded household demographics from catalog_returns
+  - name: catalog_returns_returning_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: returning household demographics from catalog_returns
+  - name: catalog_sales_billing_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: billing household demographics from catalog_sales
+  - name: catalog_sales_shipping_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: shipping household demographics from catalog_sales
+  - name: web_returns_refunded_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: refunded household demographics from web_returns
+  - name: web_returns_returning_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: returning household demographics from web_returns
+  - name: web_sales_billing_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: billing household demographics from web_sales
+  - name: web_sales_shipping_household_demographics
+    type: unique
+    expr: hd_demo_sk
+    role: shipping household demographics from web_sales
+  dimensions:
+  - name: hd_buy_potential
+    expr: hd_buy_potential
+    type: categorical
+    datatype: string
+    description: Buy potential.
+  - name: hd_dep_count
+    expr: hd_dep_count
+    type: categorical
+    datatype: integer
+    description: Dependent count.
+  - name: hd_vehicle_count
+    expr: hd_vehicle_count
+    type: categorical
+    datatype: integer
+    description: Vehicle count.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per unique household-demographic combination.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

@@ -1,0 +1,165 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: web_site
+  description: 'Versioned website operations, market, organization, address, time-zone, and tax attributes. Grain: One slowly
+    changing dimension row per website version.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: web_site
+  entities:
+  - name: web_site
+    type: primary
+    expr: web_site_sk
+  - name: web_site_website_opening_date
+    type: foreign
+    expr: web_open_date_sk
+    role: website opening date
+  - name: web_site_website_closing_date
+    type: foreign
+    expr: web_close_date_sk
+    role: website closing date
+  dimensions:
+  - name: web_site_id
+    expr: web_site_id
+    type: categorical
+    datatype: string
+    description: Business identifier for site.
+  - name: web_rec_start_date
+    expr: web_rec_start_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version became effective.
+    type_params:
+      time_granularity: day
+  - name: web_rec_end_date
+    expr: web_rec_end_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version stopped being effective.
+    type_params:
+      time_granularity: day
+  - name: web_name
+    expr: web_name
+    type: categorical
+    datatype: string
+    description: Name.
+  - name: web_class
+    expr: web_class
+    type: categorical
+    datatype: string
+    description: Class.
+  - name: web_manager
+    expr: web_manager
+    type: categorical
+    datatype: string
+    description: Manager.
+  - name: web_mkt_id
+    expr: web_mkt_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for market.
+  - name: web_mkt_class
+    expr: web_mkt_class
+    type: categorical
+    datatype: string
+    description: Market class.
+  - name: web_mkt_desc
+    expr: web_mkt_desc
+    type: categorical
+    datatype: string
+    description: Market description.
+  - name: web_market_manager
+    expr: web_market_manager
+    type: categorical
+    datatype: string
+    description: Market manager.
+  - name: web_company_id
+    expr: web_company_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for company.
+  - name: web_company_name
+    expr: web_company_name
+    type: categorical
+    datatype: string
+    description: Company name.
+  - name: web_street_number
+    expr: web_street_number
+    type: categorical
+    datatype: string
+    description: Street number.
+  - name: web_street_name
+    expr: web_street_name
+    type: categorical
+    datatype: string
+    description: Street name.
+  - name: web_street_type
+    expr: web_street_type
+    type: categorical
+    datatype: string
+    description: Street type.
+  - name: web_suite_number
+    expr: web_suite_number
+    type: categorical
+    datatype: string
+    description: Suite number.
+  - name: web_city
+    expr: web_city
+    type: categorical
+    datatype: string
+    description: City.
+  - name: web_county
+    expr: web_county
+    type: categorical
+    datatype: string
+    description: County.
+  - name: web_state
+    expr: web_state
+    type: categorical
+    datatype: string
+    description: State.
+  - name: web_zip
+    expr: web_zip
+    type: categorical
+    datatype: string
+    description: Zip.
+  - name: web_country
+    expr: web_country
+    type: categorical
+    datatype: string
+    description: Country.
+  - name: web_gmt_offset
+    expr: web_gmt_offset
+    type: categorical
+    datatype: decimal
+    description: Offset from Greenwich Mean Time in hours.
+  - name: web_tax_percentage
+    expr: web_tax_percentage
+    type: categorical
+    datatype: decimal
+    description: Tax percentage.
+  - name: web_open_date
+    expr: to_date(cast(web_open_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the website opening date role.
+  - name: web_close_date
+    expr: to_date(cast(web_close_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the website closing date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: web
+      benchmark_grain: One slowly changing dimension row per website version.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

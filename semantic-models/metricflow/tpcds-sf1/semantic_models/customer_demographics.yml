@@ -1,0 +1,96 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: customer_demographics
+  description: 'Reusable combinations of gender, marital status, education, credit, purchase estimate, and dependent counts.
+    Grain: One row per unique customer-demographic combination.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: customer_demographics
+  entities:
+  - name: customer_demographics
+    type: primary
+    expr: cd_demo_sk
+  - name: catalog_returns_refunded_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: refunded customer demographics from catalog_returns
+  - name: catalog_returns_returning_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: returning customer demographics from catalog_returns
+  - name: catalog_sales_billing_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: billing customer demographics from catalog_sales
+  - name: catalog_sales_shipping_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: shipping customer demographics from catalog_sales
+  - name: web_returns_refunded_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: refunded customer demographics from web_returns
+  - name: web_returns_returning_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: returning customer demographics from web_returns
+  - name: web_sales_billing_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: billing customer demographics from web_sales
+  - name: web_sales_shipping_customer_demographics
+    type: unique
+    expr: cd_demo_sk
+    role: shipping customer demographics from web_sales
+  dimensions:
+  - name: cd_gender
+    expr: cd_gender
+    type: categorical
+    datatype: string
+    description: Gender.
+  - name: cd_marital_status
+    expr: cd_marital_status
+    type: categorical
+    datatype: string
+    description: Marital status.
+  - name: cd_education_status
+    expr: cd_education_status
+    type: categorical
+    datatype: string
+    description: Education status.
+  - name: cd_purchase_estimate
+    expr: cd_purchase_estimate
+    type: categorical
+    datatype: integer
+    description: Purchase estimate.
+  - name: cd_credit_rating
+    expr: cd_credit_rating
+    type: categorical
+    datatype: string
+    description: Credit rating.
+  - name: cd_dep_count
+    expr: cd_dep_count
+    type: categorical
+    datatype: integer
+    description: Dependent count.
+  - name: cd_dep_employed_count
+    expr: cd_dep_employed_count
+    type: categorical
+    datatype: integer
+    description: Dependent employed count.
+  - name: cd_dep_college_count
+    expr: cd_dep_college_count
+    type: categorical
+    datatype: integer
+    description: Dependent college count.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per unique customer-demographic combination.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

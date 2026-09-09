@@ -1,0 +1,133 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: item
+  description: 'Versioned product identity, hierarchy, manufacturer, price, physical, and manager attributes. Grain: One slowly
+    changing dimension row per item version.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: item
+  entities:
+  - name: item
+    type: primary
+    expr: i_item_sk
+  dimensions:
+  - name: i_item_id
+    expr: i_item_id
+    type: categorical
+    datatype: string
+    description: Business identifier for item.
+  - name: i_rec_start_date
+    expr: i_rec_start_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version became effective.
+    type_params:
+      time_granularity: day
+  - name: i_rec_end_date
+    expr: i_rec_end_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version stopped being effective.
+    type_params:
+      time_granularity: day
+  - name: i_item_desc
+    expr: i_item_desc
+    type: categorical
+    datatype: string
+    description: Item description.
+  - name: i_current_price
+    expr: i_current_price
+    type: categorical
+    datatype: decimal
+    description: Flag indicating current price.
+  - name: i_wholesale_cost
+    expr: i_wholesale_cost
+    type: categorical
+    datatype: decimal
+    description: Wholesale cost per unit at the transaction.
+  - name: i_brand_id
+    expr: i_brand_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for brand.
+  - name: i_brand
+    expr: i_brand
+    type: categorical
+    datatype: string
+    description: Brand.
+  - name: i_class_id
+    expr: i_class_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for class.
+  - name: i_class
+    expr: i_class
+    type: categorical
+    datatype: string
+    description: Class.
+  - name: i_category_id
+    expr: i_category_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for category.
+  - name: i_category
+    expr: i_category
+    type: categorical
+    datatype: string
+    description: Category.
+  - name: i_manufact_id
+    expr: i_manufact_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for manufacturer.
+  - name: i_manufact
+    expr: i_manufact
+    type: categorical
+    datatype: string
+    description: Manufacturer.
+  - name: i_size
+    expr: i_size
+    type: categorical
+    datatype: string
+    description: Size.
+  - name: i_formulation
+    expr: i_formulation
+    type: categorical
+    datatype: string
+    description: Formulation.
+  - name: i_color
+    expr: i_color
+    type: categorical
+    datatype: string
+    description: Color.
+  - name: i_units
+    expr: i_units
+    type: categorical
+    datatype: string
+    description: Units.
+  - name: i_container
+    expr: i_container
+    type: categorical
+    datatype: string
+    description: Container.
+  - name: i_manager_id
+    expr: i_manager_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for manager.
+  - name: i_product_name
+    expr: i_product_name
+    type: categorical
+    datatype: string
+    description: Product name.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One slowly changing dimension row per item version.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

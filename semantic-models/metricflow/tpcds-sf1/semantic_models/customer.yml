@@ -1,0 +1,150 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: customer
+  description: 'Customer identity, profile, birth attributes, contact details, and current dimension pointers. Grain: One
+    row per customer surrogate key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: customer
+  entities:
+  - name: customer
+    type: primary
+    expr: c_customer_sk
+  - name: customer_demographics
+    type: foreign
+    expr: c_current_cdemo_sk
+    role: current customer demographics
+  - name: household_demographics
+    type: foreign
+    expr: c_current_hdemo_sk
+    role: current household demographics
+  - name: customer_address
+    type: foreign
+    expr: c_current_addr_sk
+    role: current customer address
+  - name: customer_first_ship_to_date
+    type: foreign
+    expr: c_first_shipto_date_sk
+    role: first ship-to date
+  - name: customer_first_sales_date
+    type: foreign
+    expr: c_first_sales_date_sk
+    role: first sales date
+  - name: catalog_returns_refunded_customer
+    type: unique
+    expr: c_customer_sk
+    role: refunded customer from catalog_returns
+  - name: catalog_returns_returning_customer
+    type: unique
+    expr: c_customer_sk
+    role: returning customer from catalog_returns
+  - name: catalog_sales_billing_customer
+    type: unique
+    expr: c_customer_sk
+    role: billing customer from catalog_sales
+  - name: catalog_sales_shipping_customer
+    type: unique
+    expr: c_customer_sk
+    role: shipping customer from catalog_sales
+  - name: web_returns_refunded_customer
+    type: unique
+    expr: c_customer_sk
+    role: refunded customer from web_returns
+  - name: web_returns_returning_customer
+    type: unique
+    expr: c_customer_sk
+    role: returning customer from web_returns
+  - name: web_sales_billing_customer
+    type: unique
+    expr: c_customer_sk
+    role: billing customer from web_sales
+  - name: web_sales_shipping_customer
+    type: unique
+    expr: c_customer_sk
+    role: shipping customer from web_sales
+  dimensions:
+  - name: c_customer_id
+    expr: c_customer_id
+    type: categorical
+    datatype: string
+    description: Business identifier for customer.
+  - name: c_salutation
+    expr: c_salutation
+    type: categorical
+    datatype: string
+    description: Salutation.
+  - name: c_first_name
+    expr: c_first_name
+    type: categorical
+    datatype: string
+    description: First name.
+  - name: c_last_name
+    expr: c_last_name
+    type: categorical
+    datatype: string
+    description: Last name.
+  - name: c_preferred_cust_flag
+    expr: c_preferred_cust_flag
+    type: categorical
+    datatype: string
+    description: Flag indicating preferred cust.
+  - name: c_birth_day
+    expr: c_birth_day
+    type: categorical
+    datatype: integer
+    description: Birth day.
+  - name: c_birth_month
+    expr: c_birth_month
+    type: categorical
+    datatype: integer
+    description: Birth month.
+  - name: c_birth_year
+    expr: c_birth_year
+    type: categorical
+    datatype: integer
+    description: Birth year.
+  - name: c_birth_country
+    expr: c_birth_country
+    type: categorical
+    datatype: string
+    description: Birth country.
+  - name: c_login
+    expr: c_login
+    type: categorical
+    datatype: string
+    description: Login.
+  - name: c_email_address
+    expr: c_email_address
+    type: categorical
+    datatype: string
+    description: Email address.
+  - name: c_last_review_date
+    expr: c_last_review_date
+    type: categorical
+    datatype: string
+    description: Last review date.
+  - name: c_first_shipto_date
+    expr: to_date(cast(c_first_shipto_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the first ship-to date role.
+  - name: c_first_sales_date
+    expr: to_date(cast(c_first_sales_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the first sales date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per customer surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

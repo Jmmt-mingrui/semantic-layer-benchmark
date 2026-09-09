@@ -1,0 +1,225 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: date_dim
+  description: 'Calendar and fiscal attributes used by all sold, shipped, returned, effective, and access date roles. Grain:
+    One row per calendar date.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: date_dim
+  entities:
+  - name: date_dim
+    type: primary
+    expr: d_date_sk
+  - name: call_center_call_center_closing_date
+    type: unique
+    expr: d_date_sk
+    role: call-center closing date from call_center
+  - name: call_center_call_center_opening_date
+    type: unique
+    expr: d_date_sk
+    role: call-center opening date from call_center
+  - name: catalog_page_catalog_page_start_date
+    type: unique
+    expr: d_date_sk
+    role: catalog-page start date from catalog_page
+  - name: catalog_page_catalog_page_end_date
+    type: unique
+    expr: d_date_sk
+    role: catalog-page end date from catalog_page
+  - name: catalog_sales_sale_date
+    type: unique
+    expr: d_date_sk
+    role: sale date from catalog_sales
+  - name: catalog_sales_shipment_date
+    type: unique
+    expr: d_date_sk
+    role: shipment date from catalog_sales
+  - name: customer_first_ship_to_date
+    type: unique
+    expr: d_date_sk
+    role: first ship-to date from customer
+  - name: customer_first_sales_date
+    type: unique
+    expr: d_date_sk
+    role: first sales date from customer
+  - name: promotion_promotion_start_date
+    type: unique
+    expr: d_date_sk
+    role: promotion start date from promotion
+  - name: promotion_promotion_end_date
+    type: unique
+    expr: d_date_sk
+    role: promotion end date from promotion
+  - name: web_page_page_creation_date
+    type: unique
+    expr: d_date_sk
+    role: page creation date from web_page
+  - name: web_page_last_page_access_date
+    type: unique
+    expr: d_date_sk
+    role: last page access date from web_page
+  - name: web_sales_sale_date
+    type: unique
+    expr: d_date_sk
+    role: sale date from web_sales
+  - name: web_sales_shipment_date
+    type: unique
+    expr: d_date_sk
+    role: shipment date from web_sales
+  - name: web_site_website_opening_date
+    type: unique
+    expr: d_date_sk
+    role: website opening date from web_site
+  - name: web_site_website_closing_date
+    type: unique
+    expr: d_date_sk
+    role: website closing date from web_site
+  dimensions:
+  - name: d_date_id
+    expr: d_date_id
+    type: categorical
+    datatype: string
+    description: Business identifier for date.
+  - name: d_date
+    expr: d_date
+    type: time
+    datatype: date
+    description: Date.
+    type_params:
+      time_granularity: day
+  - name: d_month_seq
+    expr: d_month_seq
+    type: categorical
+    datatype: integer
+    description: Month seq.
+  - name: d_week_seq
+    expr: d_week_seq
+    type: categorical
+    datatype: integer
+    description: Week seq.
+  - name: d_quarter_seq
+    expr: d_quarter_seq
+    type: categorical
+    datatype: integer
+    description: Quarter seq.
+  - name: d_year
+    expr: d_year
+    type: categorical
+    datatype: integer
+    description: Year.
+  - name: d_dow
+    expr: d_dow
+    type: categorical
+    datatype: integer
+    description: Day of week.
+  - name: d_moy
+    expr: d_moy
+    type: categorical
+    datatype: integer
+    description: Month of year.
+  - name: d_dom
+    expr: d_dom
+    type: categorical
+    datatype: integer
+    description: Day of month.
+  - name: d_qoy
+    expr: d_qoy
+    type: categorical
+    datatype: integer
+    description: Quarter of year.
+  - name: d_fy_year
+    expr: d_fy_year
+    type: categorical
+    datatype: integer
+    description: Fiscal year year.
+  - name: d_fy_quarter_seq
+    expr: d_fy_quarter_seq
+    type: categorical
+    datatype: integer
+    description: Fiscal year quarter seq.
+  - name: d_fy_week_seq
+    expr: d_fy_week_seq
+    type: categorical
+    datatype: integer
+    description: Fiscal year week seq.
+  - name: d_day_name
+    expr: d_day_name
+    type: categorical
+    datatype: string
+    description: Day name.
+  - name: d_quarter_name
+    expr: d_quarter_name
+    type: categorical
+    datatype: string
+    description: Quarter name.
+  - name: d_holiday
+    expr: d_holiday
+    type: categorical
+    datatype: string
+    description: Holiday.
+  - name: d_weekend
+    expr: d_weekend
+    type: categorical
+    datatype: string
+    description: Weekend.
+  - name: d_following_holiday
+    expr: d_following_holiday
+    type: categorical
+    datatype: string
+    description: Following holiday.
+  - name: d_first_dom
+    expr: d_first_dom
+    type: categorical
+    datatype: integer
+    description: First day of month.
+  - name: d_last_dom
+    expr: d_last_dom
+    type: categorical
+    datatype: integer
+    description: Last day of month.
+  - name: d_same_day_ly
+    expr: d_same_day_ly
+    type: categorical
+    datatype: integer
+    description: Same day ly.
+  - name: d_same_day_lq
+    expr: d_same_day_lq
+    type: categorical
+    datatype: integer
+    description: Same day lq.
+  - name: d_current_day
+    expr: d_current_day
+    type: categorical
+    datatype: string
+    description: Flag indicating current day.
+  - name: d_current_week
+    expr: d_current_week
+    type: categorical
+    datatype: string
+    description: Flag indicating current week.
+  - name: d_current_month
+    expr: d_current_month
+    type: categorical
+    datatype: string
+    description: Flag indicating current month.
+  - name: d_current_quarter
+    expr: d_current_quarter
+    type: categorical
+    datatype: string
+    description: Flag indicating current quarter.
+  - name: d_current_year
+    expr: d_current_year
+    type: categorical
+    datatype: string
+    description: Flag indicating current year.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per calendar date.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

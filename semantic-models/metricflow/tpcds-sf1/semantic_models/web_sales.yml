@@ -1,0 +1,228 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: web_sales
+  description: 'Web order line items with billing, shipping, site/page, fulfillment, promotion, and financial measures. Grain:
+    One web sales line per item and order number.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: web_sales
+  entities:
+  - name: web_sale_line
+    type: primary
+    expr: concat_ws('|', cast(ws_item_sk as text), cast(ws_order_number as text))
+  - name: web_sales_sale_date
+    type: foreign
+    expr: ws_sold_date_sk
+    role: sale date
+  - name: time_dim
+    type: foreign
+    expr: ws_sold_time_sk
+    role: sale time
+  - name: web_sales_shipment_date
+    type: foreign
+    expr: ws_ship_date_sk
+    role: shipment date
+  - name: item
+    type: foreign
+    expr: ws_item_sk
+    role: sold item
+  - name: web_sales_billing_customer
+    type: foreign
+    expr: ws_bill_customer_sk
+    role: billing customer
+  - name: web_sales_billing_customer_demographics
+    type: foreign
+    expr: ws_bill_cdemo_sk
+    role: billing customer demographics
+  - name: web_sales_billing_household_demographics
+    type: foreign
+    expr: ws_bill_hdemo_sk
+    role: billing household demographics
+  - name: web_sales_billing_address
+    type: foreign
+    expr: ws_bill_addr_sk
+    role: billing address
+  - name: web_sales_shipping_customer
+    type: foreign
+    expr: ws_ship_customer_sk
+    role: shipping customer
+  - name: web_sales_shipping_customer_demographics
+    type: foreign
+    expr: ws_ship_cdemo_sk
+    role: shipping customer demographics
+  - name: web_sales_shipping_household_demographics
+    type: foreign
+    expr: ws_ship_hdemo_sk
+    role: shipping household demographics
+  - name: web_sales_shipping_address
+    type: foreign
+    expr: ws_ship_addr_sk
+    role: shipping address
+  - name: web_page
+    type: foreign
+    expr: ws_web_page_sk
+    role: web page
+  - name: web_site
+    type: foreign
+    expr: ws_web_site_sk
+    role: web site
+  - name: ship_mode
+    type: foreign
+    expr: ws_ship_mode_sk
+    role: shipping mode
+  - name: warehouse
+    type: foreign
+    expr: ws_warehouse_sk
+    role: fulfillment warehouse
+  - name: promotion
+    type: foreign
+    expr: ws_promo_sk
+    role: applied promotion
+  dimensions:
+  - name: ws_wholesale_cost
+    expr: ws_wholesale_cost
+    type: categorical
+    datatype: decimal
+    description: Wholesale cost per unit at the transaction.
+  - name: ws_list_price
+    expr: ws_list_price
+    type: categorical
+    datatype: decimal
+    description: List price per unit at the transaction.
+  - name: ws_sales_price
+    expr: ws_sales_price
+    type: categorical
+    datatype: decimal
+    description: Actual selling price per unit at the transaction.
+  - name: ws_sold_date
+    expr: to_date(cast(ws_sold_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the sale date role.
+  - name: ws_ship_date
+    expr: to_date(cast(ws_ship_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the shipment date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: web
+      benchmark_grain: One web sales line per item and order number.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: ws_sold_date
+  measures:
+  - name: ws_quantity
+    expr: ws_quantity
+    agg: sum
+    create_metric: false
+    description: Number of units sold on the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_discount_amt
+    expr: ws_ext_discount_amt
+    agg: sum
+    create_metric: false
+    description: Extended discount amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_sales_price
+    expr: ws_ext_sales_price
+    agg: sum
+    create_metric: false
+    description: Extended sales amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_wholesale_cost
+    expr: ws_ext_wholesale_cost
+    agg: sum
+    create_metric: false
+    description: Extended wholesale cost for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_list_price
+    expr: ws_ext_list_price
+    agg: sum
+    create_metric: false
+    description: Extended list-price amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_tax
+    expr: ws_ext_tax
+    agg: sum
+    create_metric: false
+    description: Extended tax amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_coupon_amt
+    expr: ws_coupon_amt
+    agg: sum
+    create_metric: false
+    description: Coupon discount amount applied to the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_ext_ship_cost
+    expr: ws_ext_ship_cost
+    agg: sum
+    create_metric: false
+    description: Extended shipping cost for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_net_paid
+    expr: ws_net_paid
+    agg: sum
+    create_metric: false
+    description: Net amount paid before channel-specific tax or shipping additions.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_net_paid_inc_tax
+    expr: ws_net_paid_inc_tax
+    agg: sum
+    create_metric: false
+    description: Net amount paid including tax.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_net_paid_inc_ship
+    expr: ws_net_paid_inc_ship
+    agg: sum
+    create_metric: false
+    description: Net amount paid including shipping.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_net_paid_inc_ship_tax
+    expr: ws_net_paid_inc_ship_tax
+    agg: sum
+    create_metric: false
+    description: Net amount paid including shipping and tax.
+    config:
+      meta:
+        additivity: additive
+  - name: ws_net_profit
+    expr: ws_net_profit
+    agg: sum
+    create_metric: false
+    description: Net profit attributed to the line.
+    config:
+      meta:
+        additivity: additive

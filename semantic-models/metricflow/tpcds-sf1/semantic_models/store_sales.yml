@@ -1,0 +1,165 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: store_sales
+  description: 'Point-of-sale line items with customer context, promotion, store, and financial measures. Grain: One store
+    sales line per item and ticket number.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: store_sales
+  entities:
+  - name: store_sale_line
+    type: primary
+    expr: concat_ws('|', cast(ss_item_sk as text), cast(ss_ticket_number as text))
+  - name: date_dim
+    type: foreign
+    expr: ss_sold_date_sk
+    role: sale date
+  - name: time_dim
+    type: foreign
+    expr: ss_sold_time_sk
+    role: sale time
+  - name: item
+    type: foreign
+    expr: ss_item_sk
+    role: sold item
+  - name: customer
+    type: foreign
+    expr: ss_customer_sk
+    role: purchasing customer
+  - name: customer_demographics
+    type: foreign
+    expr: ss_cdemo_sk
+    role: customer demographics at sale
+  - name: household_demographics
+    type: foreign
+    expr: ss_hdemo_sk
+    role: household demographics at sale
+  - name: customer_address
+    type: foreign
+    expr: ss_addr_sk
+    role: customer address at sale
+  - name: store
+    type: foreign
+    expr: ss_store_sk
+    role: selling store
+  - name: promotion
+    type: foreign
+    expr: ss_promo_sk
+    role: applied promotion
+  dimensions:
+  - name: ss_wholesale_cost
+    expr: ss_wholesale_cost
+    type: categorical
+    datatype: decimal
+    description: Wholesale cost per unit at the transaction.
+  - name: ss_list_price
+    expr: ss_list_price
+    type: categorical
+    datatype: decimal
+    description: List price per unit at the transaction.
+  - name: ss_sales_price
+    expr: ss_sales_price
+    type: categorical
+    datatype: decimal
+    description: Actual selling price per unit at the transaction.
+  - name: ss_sold_date
+    expr: to_date(cast(ss_sold_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the sale date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: store
+      benchmark_grain: One store sales line per item and ticket number.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: ss_sold_date
+  measures:
+  - name: ss_quantity
+    expr: ss_quantity
+    agg: sum
+    create_metric: false
+    description: Number of units sold on the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_ext_discount_amt
+    expr: ss_ext_discount_amt
+    agg: sum
+    create_metric: false
+    description: Extended discount amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_ext_sales_price
+    expr: ss_ext_sales_price
+    agg: sum
+    create_metric: false
+    description: Extended sales amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_ext_wholesale_cost
+    expr: ss_ext_wholesale_cost
+    agg: sum
+    create_metric: false
+    description: Extended wholesale cost for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_ext_list_price
+    expr: ss_ext_list_price
+    agg: sum
+    create_metric: false
+    description: Extended list-price amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_ext_tax
+    expr: ss_ext_tax
+    agg: sum
+    create_metric: false
+    description: Extended tax amount for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_coupon_amt
+    expr: ss_coupon_amt
+    agg: sum
+    create_metric: false
+    description: Coupon discount amount applied to the line.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_net_paid
+    expr: ss_net_paid
+    agg: sum
+    create_metric: false
+    description: Net amount paid before channel-specific tax or shipping additions.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_net_paid_inc_tax
+    expr: ss_net_paid_inc_tax
+    agg: sum
+    create_metric: false
+    description: Net amount paid including tax.
+    config:
+      meta:
+        additivity: additive
+  - name: ss_net_profit
+    expr: ss_net_profit
+    agg: sum
+    create_metric: false
+    description: Net profit attributed to the line.
+    config:
+      meta:
+        additivity: additive

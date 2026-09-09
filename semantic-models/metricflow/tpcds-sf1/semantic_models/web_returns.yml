@@ -1,0 +1,167 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: web_returns
+  description: 'Returned web line items, refunded and returning customer roles, reason, and financial effects. Grain: One
+    returned web line item per item and order number.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: web_returns
+  entities:
+  - name: web_return_line
+    type: primary
+    expr: concat_ws('|', cast(wr_item_sk as text), cast(wr_order_number as text))
+  - name: date_dim
+    type: foreign
+    expr: wr_returned_date_sk
+    role: return date
+  - name: time_dim
+    type: foreign
+    expr: wr_returned_time_sk
+    role: return time
+  - name: item
+    type: foreign
+    expr: wr_item_sk
+    role: returned item
+  - name: web_returns_refunded_customer
+    type: foreign
+    expr: wr_refunded_customer_sk
+    role: refunded customer
+  - name: web_returns_refunded_customer_demographics
+    type: foreign
+    expr: wr_refunded_cdemo_sk
+    role: refunded customer demographics
+  - name: web_returns_refunded_household_demographics
+    type: foreign
+    expr: wr_refunded_hdemo_sk
+    role: refunded household demographics
+  - name: web_returns_refund_address
+    type: foreign
+    expr: wr_refunded_addr_sk
+    role: refund address
+  - name: web_returns_returning_customer
+    type: foreign
+    expr: wr_returning_customer_sk
+    role: returning customer
+  - name: web_returns_returning_customer_demographics
+    type: foreign
+    expr: wr_returning_cdemo_sk
+    role: returning customer demographics
+  - name: web_returns_returning_household_demographics
+    type: foreign
+    expr: wr_returning_hdemo_sk
+    role: returning household demographics
+  - name: web_returns_returning_customer_address
+    type: foreign
+    expr: wr_returning_addr_sk
+    role: returning customer address
+  - name: web_page
+    type: foreign
+    expr: wr_web_page_sk
+    role: web page
+  - name: reason
+    type: foreign
+    expr: wr_reason_sk
+    role: return reason
+  - name: web_sale_line
+    type: foreign
+    expr: concat_ws('|', cast(wr_item_sk as text), cast(wr_order_number as text))
+    role: matching web sale line
+  dimensions:
+  - name: wr_refunded_cash
+    expr: wr_refunded_cash
+    type: categorical
+    datatype: decimal
+    description: Return value refunded as cash.
+  - name: wr_returned_date
+    expr: to_date(cast(wr_returned_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the return date role.
+  config:
+    meta:
+      benchmark_kind: fact
+      benchmark_domain: web
+      benchmark_grain: One returned web line item per item and order number.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+  defaults:
+    agg_time_dimension: wr_returned_date
+  measures:
+  - name: wr_return_quantity
+    expr: wr_return_quantity
+    agg: sum
+    create_metric: false
+    description: Number of units returned on the line.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_return_amt
+    expr: wr_return_amt
+    agg: sum
+    create_metric: false
+    description: Returned merchandise amount.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_return_tax
+    expr: wr_return_tax
+    agg: sum
+    create_metric: false
+    description: Tax amount associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_return_amt_inc_tax
+    expr: wr_return_amt_inc_tax
+    agg: sum
+    create_metric: false
+    description: Return amount including tax.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_fee
+    expr: wr_fee
+    agg: sum
+    create_metric: false
+    description: Return fee charged for the line.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_return_ship_cost
+    expr: wr_return_ship_cost
+    agg: sum
+    create_metric: false
+    description: Shipping cost associated with the return.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_reversed_charge
+    expr: wr_reversed_charge
+    agg: sum
+    create_metric: false
+    description: Return value credited by reversing a charge.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_account_credit
+    expr: wr_account_credit
+    agg: sum
+    create_metric: false
+    description: Return value issued as account credit.
+    config:
+      meta:
+        additivity: additive
+  - name: wr_net_loss
+    expr: wr_net_loss
+    agg: sum
+    create_metric: false
+    description: Net loss attributed to the returned line.
+    config:
+      meta:
+        additivity: additive

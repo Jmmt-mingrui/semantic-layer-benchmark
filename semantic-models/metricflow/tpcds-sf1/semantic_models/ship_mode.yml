@@ -1,0 +1,49 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: ship_mode
+  description: 'Shipping type, code, carrier, and contract attributes for catalog and web fulfillment. Grain: One row per
+    shipping-mode surrogate key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: ship_mode
+  entities:
+  - name: ship_mode
+    type: primary
+    expr: sm_ship_mode_sk
+  dimensions:
+  - name: sm_ship_mode_id
+    expr: sm_ship_mode_id
+    type: categorical
+    datatype: string
+    description: Business identifier for ship mode.
+  - name: sm_type
+    expr: sm_type
+    type: categorical
+    datatype: string
+    description: Type.
+  - name: sm_code
+    expr: sm_code
+    type: categorical
+    datatype: string
+    description: Code.
+  - name: sm_carrier
+    expr: sm_carrier
+    type: categorical
+    datatype: string
+    description: Carrier.
+  - name: sm_contract
+    expr: sm_contract
+    type: categorical
+    datatype: string
+    description: Contract.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: shared
+      benchmark_grain: One row per shipping-mode surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

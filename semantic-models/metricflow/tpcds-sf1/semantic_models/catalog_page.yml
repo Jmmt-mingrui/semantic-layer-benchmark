@@ -1,0 +1,76 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: catalog_page
+  description: 'Catalog page, department, catalog number, and active-date attributes. Grain: One row per catalog page surrogate
+    key.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: catalog_page
+  entities:
+  - name: catalog_page
+    type: primary
+    expr: cp_catalog_page_sk
+  - name: catalog_page_catalog_page_start_date
+    type: foreign
+    expr: cp_start_date_sk
+    role: catalog-page start date
+  - name: catalog_page_catalog_page_end_date
+    type: foreign
+    expr: cp_end_date_sk
+    role: catalog-page end date
+  dimensions:
+  - name: cp_catalog_page_id
+    expr: cp_catalog_page_id
+    type: categorical
+    datatype: string
+    description: Business identifier for catalog page.
+  - name: cp_department
+    expr: cp_department
+    type: categorical
+    datatype: string
+    description: Department.
+  - name: cp_catalog_number
+    expr: cp_catalog_number
+    type: categorical
+    datatype: integer
+    description: Catalog number.
+  - name: cp_catalog_page_number
+    expr: cp_catalog_page_number
+    type: categorical
+    datatype: integer
+    description: Catalog page number.
+  - name: cp_description
+    expr: cp_description
+    type: categorical
+    datatype: string
+    description: Description.
+  - name: cp_type
+    expr: cp_type
+    type: categorical
+    datatype: string
+    description: Type.
+  - name: cp_start_date
+    expr: to_date(cast(cp_start_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the catalog-page start date role.
+  - name: cp_end_date
+    expr: to_date(cast(cp_end_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the catalog-page end date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: catalog
+      benchmark_grain: One row per catalog page surrogate key.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

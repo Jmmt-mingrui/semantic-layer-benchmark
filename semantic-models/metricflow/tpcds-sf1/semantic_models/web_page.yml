@@ -1,0 +1,104 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: web_page
+  description: 'Versioned web-page identity, lifecycle, ownership, URL, type, and content-volume attributes. Grain: One slowly
+    changing dimension row per web-page version.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: web_page
+  entities:
+  - name: web_page
+    type: primary
+    expr: wp_web_page_sk
+  - name: web_page_page_creation_date
+    type: foreign
+    expr: wp_creation_date_sk
+    role: page creation date
+  - name: web_page_last_page_access_date
+    type: foreign
+    expr: wp_access_date_sk
+    role: last page access date
+  - name: customer
+    type: foreign
+    expr: wp_customer_sk
+    role: associated customer
+  dimensions:
+  - name: wp_web_page_id
+    expr: wp_web_page_id
+    type: categorical
+    datatype: string
+    description: Business identifier for web page.
+  - name: wp_rec_start_date
+    expr: wp_rec_start_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version became effective.
+    type_params:
+      time_granularity: day
+  - name: wp_rec_end_date
+    expr: wp_rec_end_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version stopped being effective.
+    type_params:
+      time_granularity: day
+  - name: wp_autogen_flag
+    expr: wp_autogen_flag
+    type: categorical
+    datatype: string
+    description: Flag indicating auto-generated.
+  - name: wp_url
+    expr: wp_url
+    type: categorical
+    datatype: string
+    description: Url.
+  - name: wp_type
+    expr: wp_type
+    type: categorical
+    datatype: string
+    description: Type.
+  - name: wp_char_count
+    expr: wp_char_count
+    type: categorical
+    datatype: integer
+    description: Char count.
+  - name: wp_link_count
+    expr: wp_link_count
+    type: categorical
+    datatype: integer
+    description: Link count.
+  - name: wp_image_count
+    expr: wp_image_count
+    type: categorical
+    datatype: integer
+    description: Image count.
+  - name: wp_max_ad_count
+    expr: wp_max_ad_count
+    type: categorical
+    datatype: integer
+    description: Max ad count.
+  - name: wp_creation_date
+    expr: to_date(cast(wp_creation_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the page creation date role.
+  - name: wp_access_date
+    expr: to_date(cast(wp_access_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the last page access date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: web
+      benchmark_grain: One slowly changing dimension row per web-page version.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql

@@ -1,0 +1,190 @@
+# MetricFlow standalone schema pinned to commit 8750c1dfe79c9d92e37fc9b8542d544e29f8852e.
+# Schema: https://github.com/dbt-labs/metricflow/blob/8750c1dfe79c9d92e37fc9b8542d544e29f8852e/metricflow_semantic_interfaces/parsing/schemas.py
+# Physical DDL: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
+---
+semantic_model:
+  name: call_center
+  description: 'Versioned operating and geographic attributes for catalog call centers. Grain: One slowly changing dimension
+    row per call-center version.'
+  node_relation:
+    database: tpcds
+    schema_name: public
+    alias: call_center
+  entities:
+  - name: call_center
+    type: primary
+    expr: cc_call_center_sk
+  - name: call_center_call_center_closing_date
+    type: foreign
+    expr: cc_closed_date_sk
+    role: call-center closing date
+  - name: call_center_call_center_opening_date
+    type: foreign
+    expr: cc_open_date_sk
+    role: call-center opening date
+  dimensions:
+  - name: cc_call_center_id
+    expr: cc_call_center_id
+    type: categorical
+    datatype: string
+    description: Business identifier for call center.
+  - name: cc_rec_start_date
+    expr: cc_rec_start_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version became effective.
+    type_params:
+      time_granularity: day
+  - name: cc_rec_end_date
+    expr: cc_rec_end_date
+    type: time
+    datatype: date
+    description: Date on which this dimension version stopped being effective.
+    type_params:
+      time_granularity: day
+  - name: cc_name
+    expr: cc_name
+    type: categorical
+    datatype: string
+    description: Name.
+  - name: cc_class
+    expr: cc_class
+    type: categorical
+    datatype: string
+    description: Class.
+  - name: cc_employees
+    expr: cc_employees
+    type: categorical
+    datatype: integer
+    description: Employees.
+  - name: cc_sq_ft
+    expr: cc_sq_ft
+    type: categorical
+    datatype: integer
+    description: Square feet.
+  - name: cc_hours
+    expr: cc_hours
+    type: categorical
+    datatype: string
+    description: Hours.
+  - name: cc_manager
+    expr: cc_manager
+    type: categorical
+    datatype: string
+    description: Manager.
+  - name: cc_mkt_id
+    expr: cc_mkt_id
+    type: categorical
+    datatype: integer
+    description: Business identifier for market.
+  - name: cc_mkt_class
+    expr: cc_mkt_class
+    type: categorical
+    datatype: string
+    description: Market class.
+  - name: cc_mkt_desc
+    expr: cc_mkt_desc
+    type: categorical
+    datatype: string
+    description: Market description.
+  - name: cc_market_manager
+    expr: cc_market_manager
+    type: categorical
+    datatype: string
+    description: Market manager.
+  - name: cc_division
+    expr: cc_division
+    type: categorical
+    datatype: integer
+    description: Division.
+  - name: cc_division_name
+    expr: cc_division_name
+    type: categorical
+    datatype: string
+    description: Division name.
+  - name: cc_company
+    expr: cc_company
+    type: categorical
+    datatype: integer
+    description: Company.
+  - name: cc_company_name
+    expr: cc_company_name
+    type: categorical
+    datatype: string
+    description: Company name.
+  - name: cc_street_number
+    expr: cc_street_number
+    type: categorical
+    datatype: string
+    description: Street number.
+  - name: cc_street_name
+    expr: cc_street_name
+    type: categorical
+    datatype: string
+    description: Street name.
+  - name: cc_street_type
+    expr: cc_street_type
+    type: categorical
+    datatype: string
+    description: Street type.
+  - name: cc_suite_number
+    expr: cc_suite_number
+    type: categorical
+    datatype: string
+    description: Suite number.
+  - name: cc_city
+    expr: cc_city
+    type: categorical
+    datatype: string
+    description: City.
+  - name: cc_county
+    expr: cc_county
+    type: categorical
+    datatype: string
+    description: County.
+  - name: cc_state
+    expr: cc_state
+    type: categorical
+    datatype: string
+    description: State.
+  - name: cc_zip
+    expr: cc_zip
+    type: categorical
+    datatype: string
+    description: Zip.
+  - name: cc_country
+    expr: cc_country
+    type: categorical
+    datatype: string
+    description: Country.
+  - name: cc_gmt_offset
+    expr: cc_gmt_offset
+    type: categorical
+    datatype: decimal
+    description: Offset from Greenwich Mean Time in hours.
+  - name: cc_tax_percentage
+    expr: cc_tax_percentage
+    type: categorical
+    datatype: decimal
+    description: Tax percentage.
+  - name: cc_closed_date
+    expr: to_date(cast(cc_closed_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the call-center closing date role.
+  - name: cc_open_date
+    expr: to_date(cast(cc_open_date_sk as text), 'J')
+    type: time
+    datatype: date
+    type_params:
+      time_granularity: day
+    description: Derived calendar date for the call-center opening date role.
+  config:
+    meta:
+      benchmark_kind: dimension
+      benchmark_domain: catalog
+      benchmark_grain: One slowly changing dimension row per call-center version.
+      source_spec: https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf
+      source_ddl: https://github.com/litkhai/tpcds-scripts/blob/63ee7120a89ba5d1c5d8287f98c8e8c427768c98/engines/postgres/ddl/schema.sql
