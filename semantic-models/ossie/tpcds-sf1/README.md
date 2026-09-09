@@ -36,4 +36,6 @@ Integer date surrogate keys are marked as time-role dimensions because TPC-DS de
 
 ## Current boundary
 
-The included aggregate expressions are base semantic inputs, not the final canonical metric inventory. Derived, ratio, cumulative, and question-specific metrics will be added after the 99 questions are normalized into shared definitions.
+[`canonical-metric-coverage.yaml`](canonical-metric-coverage.yaml) maps the complete canonical inventory to Ossie's pinned Metric expression shape. It identifies 111 of 113 base variants and all 25 derived definitions as SQL metric candidates. Two parameterized base definitions and all nine query-exact formulas require question context before execution.
+
+Ossie does not declare separate simple, ratio, derived, or cumulative metric types; those distinctions therefore remain in the canonical catalog and coverage metadata. The coverage file is an implementation checklist rather than part of the schema-validated Ossie exchange document.
