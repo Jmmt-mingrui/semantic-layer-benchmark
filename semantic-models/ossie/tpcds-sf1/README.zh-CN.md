@@ -36,4 +36,6 @@
 
 ## 当前边界
 
-当前聚合表达式是基础语义输入，不是最终统一指标清单。Derived、Ratio、Cumulative 和逐题指标将在 99 个问题归一化之后加入。
+[`canonical-metric-coverage.yaml`](canonical-metric-coverage.yaml) 已将完整 canonical 指标清单映射到当前固定版本 Ossie 的 Metric 表达式结构。其中，113 个基础 variant 中有 111 个属于 SQL Metric 候选，25 个派生定义也都可以作为表达式候选；2 个参数化基础定义和全部 9 个 query-exact 公式需要逐题上下文才能执行。
+
+Ossie schema 不区分 simple、ratio、derived 或 cumulative Metric 类型，因此这些区别继续保留在 canonical 清单和覆盖元数据中。覆盖文件是实现验收清单，不属于通过 Ossie schema 校验的交换文档本体。
