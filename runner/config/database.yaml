@@ -1,0 +1,19 @@
+version: 0.1.0
+connection:
+  driver: duckdb
+  url:
+    env: BENCHMARK_DATABASE_URL
+    default: duckdb:///./data/tpcds/sf1/tpcds.duckdb
+  read_only: true
+namespace:
+  catalog: {env: BENCHMARK_DATABASE_CATALOG, default: null}
+  schema: {env: BENCHMARK_DATABASE_SCHEMA, default: main}
+dialect:
+  name: duckdb
+  parameter_style: question_mark
+  identifier_quote: '"'
+policies:
+  require_read_only: true
+  reject_embedded_credentials: true
+  relation_resolution: runtime
+  reference_sql_is_oracle_not_runtime_contract: true
