@@ -4,13 +4,14 @@
 
 所有被测系统使用同一份运行时数据库配置。默认本地引擎是 DuckDB，但无需修改 canonical questions 或指标即可替换连接。
 
-当前目录包含三类不同输入：
+当前目录包含四类不同输入：
 
 | 文件 | 作用 |
 | --- | --- |
 | [`database.yaml`](database.yaml) | 所有目标共享的只读数据库连接契约 |
 | [`targets.native.yaml`](targets.native.yaml) | 每个条件的原生产物、操作 Allowlist、Fallback 和 Readiness 定义 |
 | [`native-sf1-q01.yaml`](native-sf1-q01.yaml) | 只选择一个实例化 q01 和空白上下文基线的契约 Pilot |
+| [`control-sf1-q01.yaml`](control-sf1-q01.yaml) | 空白上下文和 DDL-only 控制组各运行三次的可执行 q01 计划 |
 
 Experiment 和产物结构见 [`../contracts/`](../contracts/)，全新对话的准确行为见 [`../prompts/`](../prompts/)。
 
@@ -35,3 +36,5 @@ Experiment 和产物结构见 [`../contracts/`](../contracts/)，全新对话的
 Harness 只允许在原生操作外增加超时、安全、脱敏和 Telemetry，不能在主赛道开始前把 MetricFlow、Cube、Ossie、OKF 或 Skill 转换为共享文本。`blank_context` 可以调用数据库发现工具，但不预加载 Schema；`ddl_only` 可以看到 DDL，并且单独报告。
 
 Readiness 必须显式记录。标记为 `*_pending` 的目标不能静默跳过，也不能改走直接 SQL。只有在原生模型、固定版本、Health Check 和 Adapter 全部存在后，Preflight 才允许它运行。
+
+控制组 Runner 和 Scripted 协议测试的用法见 [`../README.zh-CN.md`](../README.zh-CN.md)。Scripted Run 不能作为公开模型评测结果。
