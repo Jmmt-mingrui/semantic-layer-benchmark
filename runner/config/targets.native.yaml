@@ -1,0 +1,202 @@
+version: 0.1.0
+policy:
+  primary_lane: native_end_to_end
+  preserve_native_artifacts: true
+  normalize_to_shared_context: false
+  transparent_observability_wrappers_only: true
+  undeclared_fallback: forbidden
+  unsupported_behavior: record_unsupported
+
+common:
+  submit_operation: benchmark.submit_result
+  fresh_conversation_per_trial: true
+  raw_gold_access: forbidden
+  mutating_database_operations: forbidden
+  secret_logging: forbidden
+
+targets:
+  blank_context:
+    role: baseline
+    agent_required: true
+    readiness: ready_for_runner_implementation
+    initial_semantic_context: none
+    native_surface:
+      name: duckdb_catalog_and_read_only_sql
+      artifact_root: null
+      tool_catalog: runner/tools/blank-context.tools.json
+      result_origin: agent_authored_sql
+    allowed_operations:
+      - db.list_relations
+      - db.describe_relations
+      - db.execute_readonly
+      - benchmark.submit_result
+    prohibited_operations:
+      - artifact.read
+      - semantic.search
+      - benchmark.read_gold
+    notes: >-
+      Blank means zero preloaded data or semantic context, not zero prompt tokens. The
+      common system prompt, materialized user question, generic tool schemas, and tool
+      results are still part of the conversation.
+
+  ddl_only:
+    role: baseline
+    agent_required: true
+    readiness: ready_for_runner_implementation
+    initial_semantic_context: physical_ddl_only
+    native_surface:
+      name: duckdb_ddl_and_read_only_sql
+      artifact_root: data/tpcds/schema/duckdb
+      result_origin: agent_authored_sql
+    allowed_operations:
+      - artifact.read_ddl
+      - db.execute_readonly
+      - benchmark.submit_result
+    prohibited_operations:
+      - semantic.search
+      - benchmark.read_gold
+
+  metricflow:
+    role: executable_semantic_engine
+    agent_required: true
+    readiness: native_runtime_adapter_pending
+    initial_semantic_context: native_discovery_only
+    native_surface:
+      name: self_hosted_metricflow_cli
+      artifact_root: semantic-models/metricflow/tpcds-sf1
+      result_origin: native_engine
+      implementation_revision: 8750c1dfe79c9d92e37fc9b8542d544e29f8852e
+      source: https://docs.getdbt.com/docs/build/metricflow-commands
+    preflight_operations:
+      - metricflow.health_checks
+      - metricflow.validate_configs
+    allowed_operations:
+      - metricflow.list_metrics
+      - metricflow.list_dimensions
+      - metricflow.list_dimension_values
+      - metricflow.list_entities
+      - metricflow.query
+      - benchmark.submit_result
+    prohibited_operations:
+      - db.list_relations
+      - db.describe_relations
+      - db.execute_readonly
+      - benchmark.read_gold
+    notes: >-
+      The agent selects native metrics, dimensions, filters, time bounds, order, and
+      limit. MetricFlow must compile and execute the request. Direct SQL fallback is
+      not permitted in this condition.
+
+  cube:
+    role: executable_semantic_engine
+    agent_required: true
+    readiness: native_model_and_runtime_adapter_pending
+    initial_semantic_context: native_discovery_only
+    native_surface:
+      name: cube_rest_api
+      artifact_root: null
+      result_origin: native_engine
+      image_digest: {env: BENCHMARK_CUBE_IMAGE_DIGEST, required: true}
+      source: https://docs.cube.dev/reference/core-data-apis/rest-api
+    preflight_operations:
+      - cube.readyz
+      - cube.meta
+    allowed_operations:
+      - cube.meta
+      - cube.load
+      - benchmark.submit_result
+    prohibited_operations:
+      - cube.sql
+      - db.list_relations
+      - db.describe_relations
+      - db.execute_readonly
+      - benchmark.read_gold
+    notes: >-
+      This registry defines the REST Query API variant. Semantic SQL is a separate
+      native variant and must not be mixed into the same condition.
+
+  ossie:
+    role: semantic_interchange_specification
+    agent_required: true
+    readiness: native_consumer_adapter_pending
+    initial_semantic_context: native_artifact_discovery
+    native_surface:
+      name: ossie_yaml_spec_consumer
+      artifact_root: semantic-models/ossie/tpcds-sf1
+      result_origin: agent_authored_sql
+      spec_revision: c109cf5b0a06970a97599e8f7c2a72859822a3a4
+      source: https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md
+    preflight_operations:
+      - ossie.validate
+    allowed_operations:
+      - ossie.inspect_model
+      - ossie.read_native_yaml
+      - db.execute_readonly
+      - benchmark.submit_result
+    prohibited_operations:
+      - semantic.normalized_chunks
+      - benchmark.read_gold
+    notes: >-
+      Ossie is evaluated as its native model specification, not represented as a
+      standalone query engine. The consumer exposes the original validated YAML and
+      does not translate it into OKF, Skill, or shared evidence before the trial.
+
+  okf:
+    role: agent_knowledge_representation
+    agent_required: true
+    readiness: native_consumer_adapter_pending
+    initial_semantic_context: bundle_index_only
+    native_surface:
+      name: okf_markdown_bundle
+      artifact_root: semantic-models/okf/tpcds-sf1
+      result_origin: agent_authored_sql
+      spec_version: "0.2"
+      spec_commit: {env: BENCHMARK_OKF_SPEC_COMMIT, required: true}
+      source: https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+    preflight_operations:
+      - okf.validate_frontmatter
+      - okf.validate_links
+    allowed_operations:
+      - okf.list_files
+      - okf.read_file
+      - okf.follow_link
+      - okf.search_text
+      - db.execute_readonly
+      - benchmark.submit_result
+    prohibited_operations:
+      - semantic.normalized_chunks
+      - benchmark.read_gold
+    notes: >-
+      OKF v0.2 intentionally requires no bespoke runtime. Native use therefore means
+      reading the original Markdown, YAML frontmatter, indexes, and links directly;
+      no embedding index or shared chunk conversion is used in the primary lane.
+
+  skill:
+    role: agent_workflow_and_knowledge_package
+    agent_required: true
+    readiness: native_host_adapter_pending
+    initial_semantic_context: skill_metadata_only
+    native_surface:
+      name: host_skill_activation
+      artifact_root: semantic-models/skill/tpcds-sf1-table-semantics
+      mount_as: .agents/skills/tpcds-sf1-table-semantics
+      result_origin: agent_authored_sql
+      host_revision: {env: BENCHMARK_SKILL_HOST_REVISION, required: true}
+      source: https://learn.chatgpt.com/docs/build-skills
+    preflight_operations:
+      - skill.validate_package
+      - skill.confirm_discoverable
+    allowed_operations:
+      - skill.activate
+      - skill.read_instruction
+      - skill.read_reference
+      - db.execute_readonly
+      - benchmark.submit_result
+    prohibited_operations:
+      - skill.preload_all_references
+      - semantic.normalized_chunks
+      - benchmark.read_gold
+    notes: >-
+      The host initially exposes only skill discovery metadata. It loads the complete
+      SKILL.md when activated and reads referenced files on demand. Preloading every
+      reference would invalidate the native Skill condition.
