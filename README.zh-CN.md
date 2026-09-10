@@ -6,7 +6,7 @@
 
 项目比较 **MetricFlow、Cube、Apache Ossie、Open Knowledge Format（OKF）和 Agent Skill**，并设置相互独立的**空白上下文**和 **DDL-only** 对照组。评测顺序是：先比较 SQL 与结果质量，再比较语义模型结构，同时在两个阶段中记录运行行为。
 
-> **项目状态：** 正在建设中。初始工作负载是 TPC-DS 派生 SF1。目前仓库已经包含 99 个 canonical questions、103 份带出处的 PostgreSQL 参考 SQL formulation、DuckDB 表结构和加载器、q01-q10 DuckDB 参考 SQL、只读数据库适配器、候选统一指标契约，以及 Skill、OKF、MetricFlow 和 Ossie 的初始表示。Cube、端到端适配器、评估器和 Trace 采集仍处于计划阶段。下文会明确区分“已经实现”和“实验设计”。
+> **项目状态：** 正在建设中。初始工作负载是 TPC-DS 派生 SF1。目前仓库已经包含 99 个 canonical questions、103 份带出处的 PostgreSQL 参考 SQL formulation、DuckDB 表结构和加载器、q01-q10 DuckDB 参考 SQL、候选统一指标契约、Skill、OKF、MetricFlow 和 Ossie 的初始表示，以及可执行的空白上下文/DDL-only 控制组 Harness。Cube、真实 Agent Provider、语义目标 Adapter 和完整 Benchmark Run 仍处于计划阶段。下文会明确区分“已经实现”和“实验设计”。
 
 ## 这个基准要回答什么
 
@@ -219,14 +219,14 @@ Ossie 只有一个 YAML 文件并不表示只有一张表。其官方结构中�
 
 | 组件 | 基准环境 | 状态 |
 | --- | --- | --- |
-| 编排器与评估器 | Linux、Python 3.11+、固定仓库 Revision | 带版本契约已有，执行实现待完成 |
+| 编排器与评估器 | Linux、Python 3.11+、固定仓库 Revision | 已有 q01 控制组 Runner、精确结果 Evaluator 和版本化产物 |
 | 数据库 | DuckDB 1.4.0，SF1 文件只读挂载 | Schema、Loader 和只读 Adapter 已有 |
 | MetricFlow | 固定 standalone commit `8750c1d`；Adapter 选择 DuckDB SQL Renderer | 表语义已有，可执行 Adapter 待实现 |
 | Cube | 固定 Cube 镜像、隔离服务、官方 DuckDB Data Source；正确性 Run 关闭 Cache | 原生模型和 Adapter 待实现 |
 | Skill | 与其他知识条件相同的参考 Agent；Package 挂载到临时 Repo Skill 位置 | 表和 Metric 知识已有，Harness 集成待实现 |
 | OKF | 相同参考 Agent，直接且受 Allowlist 限制地浏览 Markdown 和链接 | 表和 Metric Bundle 已有，原生 Consumer 待实现 |
 | Ossie | 固定 Schema Validator 和透明原始文档 Consumer | 模型已通过 Schema 校验，Consumer 待实现 |
-| Telemetry | OpenTelemetry 兼容 Collector 和本地 Trace；Phoenix 为可选查看器 | Event 契约已有，采集待实现 |
+| Telemetry | OpenTelemetry 兼容 Collector 和本地 Trace；Phoenix 为可选查看器 | 控制组 Runner 已输出经校验的本地 Trace Event，Collector 导出待实现 |
 
 Cube 官方支持本地 DuckDB 数据库路径。固定版本的 MetricFlow 源码包含 DuckDB SQL Renderer，因此计划中的 Self-hosted 条件可以通过原生 Metric Query 在 DuckDB 上执行，并暴露编译 SQL 供诊断。但本项目不会宣称所有当前 dbt 产品部署都正式支持 DuckDB；发布结果前，固定版本必须通过可执行兼容性 Gate。
 
@@ -290,6 +290,7 @@ flowchart TB
 | `semantic-models/canonical/` | 系统无关的语义和指标契约 |
 | `semantic-models/{target}/` | 每个对象的原生表示 |
 | `runner/config/` | 可插拔数据库、原生目标注册表和实验配置 |
+| `runner/core/` | 控制组 Orchestration、Agent 协议、Tool Dispatch、SQL Policy 和结果 Hash |
 | `runner/contracts/` | 带版本的 Experiment、Question、Trace、Trial 和 Run JSON Schema |
 | `runner/prompts/` | 固定的公共 Agent Prompt 与对话协议 |
 | `runner/tools/` | 目标实际可见的 Tool Schema，当前从空白上下文基线开始 |
@@ -330,19 +331,21 @@ flowchart TB
 - [ ] Cube 原生语义模型
 - [x] 带版本的 Experiment、Question Instance、Trial、Run 和 Trace Event 契约
 - [x] 原生目标注册表、空白上下文对话协议和 q01 实例化 Pilot
-- [ ] 原生目标 Adapter 和透明可观测 Wrapper
-- [ ] SQL/Result 和 Structure Evaluator
-- [ ] OpenTelemetry 事件 Schema 和 Trace 采集
+- [x] 可执行的 q01 空白上下文及 DDL-only 控制组 Runner，以及全新 Scripted Agent Trial
+- [x] 控制组只读 SQL Policy、精确结果 Evaluator 和经校验的本地 Trace 采集
+- [ ] 真实 Agent Provider 和语义目标 Adapter
+- [ ] 完整 SQL/Result 和 Structure Evaluator
+- [ ] OpenTelemetry Collector 导出
 - [ ] 重复运行的基准报告
 
 ## 后续实现顺序
 
-1. 按已固化的契约实现 Preflight 和空白上下文 q01 Runner。
-2. 生成一份 SF1 Manifest，并在 DuckDB 上验证 q01 参考结果。
-3. 先实例化并 Review q02-q10，再处理 q11-q99，同时确保 Evaluator 字段对目标不可见。
-4. 实现 DDL-only、Skill、OKF、Ossie、MetricFlow 和 Cube 原生 Adapter，禁止静默 Fallback。
-5. 先实现原生 Phase 1 执行和结果评测，再实现 Phase 2 结构评分。
-6. 运行 q01-q10 原生 Pilot，复盘失败后扩展至全部 99 题；受控上下文消融仅作为独立次要实验运行。
+1. 生成一份 SF1 Manifest，并在 DuckDB 上验证 q01 参考结果。
+2. 增加一个使用原生 Tool Calling 和全新对话的真实 Agent Provider Adapter。
+3. 运行 q01 空白上下文和 DDL-only Pilot，并复盘 Trace 与失败分类。
+4. 先实例化并 Review q02-q10，再处理 q11-q99，同时确保 Evaluator 字段对目标不可见。
+5. 实现 Skill、OKF、Ossie、MetricFlow 和 Cube 原生 Adapter，禁止静默 Fallback。
+6. 先完成 Phase 1 评测和 q01-q10 原生 Pilot，再进行 Phase 2 结构评分及全部 99 题扩展；受控上下文消融仅作为独立次要实验运行。
 
 ## 官方格式和运行时资料
 

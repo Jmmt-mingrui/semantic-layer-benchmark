@@ -13,6 +13,7 @@ from scripts.load_tpcds_sf1 import TABLES, snapshot_checksum
 ROOT = Path(__file__).parents[2]
 CONTRACTS = ROOT / "runner" / "contracts"
 CONFIG = ROOT / "runner" / "config" / "native-sf1-q01.yaml"
+CONTROL_CONFIG = ROOT / "runner" / "config" / "control-sf1-q01.yaml"
 TARGETS = ROOT / "runner" / "config" / "targets.native.yaml"
 QUESTIONS = ROOT / "benchmark" / "tpcds" / "questions" / "instances" / "sf1-qualification-q01.jsonl"
 TRANSCRIPT = ROOT / "runner" / "examples" / "blank-context-q01.transcript.yaml"
@@ -82,6 +83,8 @@ def test_dataset_manifest_shape_accepts_loader_output() -> None:
 def test_pilot_config_conforms_to_experiment_schema() -> None:
     schema = json.loads((CONTRACTS / "experiment.schema.json").read_text())
     Draft202012Validator(schema).validate(load_yaml(CONFIG))
+    Draft202012Validator(schema).validate(load_yaml(CONTROL_CONFIG))
+    assert load_yaml(CONTROL_CONFIG)["targets"]["include"] == ["blank_context", "ddl_only"]
 
 
 def test_native_registry_preserves_every_target_surface() -> None:
