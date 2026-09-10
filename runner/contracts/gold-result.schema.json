@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/gold-result.schema.json",
+  "title": "Evaluator-only gold result identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark",
+    "scale_factor",
+    "question_id",
+    "instance_id",
+    "dataset",
+    "question_instance",
+    "reference_sql",
+    "result",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "benchmark": {"const": "TPC-DS-derived"},
+    "scale_factor": {"const": 1},
+    "question_id": {"type": "string", "pattern": "^q(?:0[1-9]|[1-9][0-9])$"},
+    "instance_id": {"type": "string", "minLength": 1},
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_path", "manifest_sha256", "dataset_sha256", "database_sha256"],
+      "properties": {
+        "manifest_path": {"type": "string", "minLength": 1},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "dataset_sha256": {"$ref": "#/$defs/sha256"},
+        "database_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "question_instance": {"$ref": "#/$defs/fileIdentity"},
+    "reference_sql": {"$ref": "#/$defs/fileIdentity"},
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "row_count", "sha256", "comparison", "order_sensitive"],
+      "properties": {
+        "columns": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "row_count": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "comparison": {"const": "exact_normalized"},
+        "order_sensitive": {"const": true}
+      }
+    },
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
