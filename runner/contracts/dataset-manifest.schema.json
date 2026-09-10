@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/dataset-manifest.schema.json",
+  "title": "TPC-DS-derived dataset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark",
+    "scale_factor",
+    "generator",
+    "engine",
+    "schema",
+    "database",
+    "tables",
+    "dataset_sha256",
+    "generated_at",
+    "elapsed_ms"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "benchmark": {"const": "TPC-DS-derived"},
+    "scale_factor": {"const": 1},
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "binary_sha256"],
+      "properties": {
+        "name": {"const": "dsdgen"},
+        "version": {"type": "string", "minLength": 1},
+        "binary_sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Required by publication preflight even though local development manifests may use null."
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "duckdb"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "schema": {"$ref": "#/$defs/fileIdentity"},
+    "database": {"$ref": "#/$defs/fileIdentity"},
+    "tables": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "call_center",
+        "catalog_page",
+        "catalog_returns",
+        "catalog_sales",
+        "customer",
+        "customer_address",
+        "customer_demographics",
+        "date_dim",
+        "dbgen_version",
+        "household_demographics",
+        "income_band",
+        "inventory",
+        "item",
+        "promotion",
+        "reason",
+        "ship_mode",
+        "store",
+        "store_returns",
+        "store_sales",
+        "time_dim",
+        "warehouse",
+        "web_page",
+        "web_returns",
+        "web_sales",
+        "web_site"
+      ],
+      "properties": {
+        "call_center": {"$ref": "#/$defs/tableIdentity"},
+        "catalog_page": {"$ref": "#/$defs/tableIdentity"},
+        "catalog_returns": {"$ref": "#/$defs/tableIdentity"},
+        "catalog_sales": {"$ref": "#/$defs/tableIdentity"},
+        "customer": {"$ref": "#/$defs/tableIdentity"},
+        "customer_address": {"$ref": "#/$defs/tableIdentity"},
+        "customer_demographics": {"$ref": "#/$defs/tableIdentity"},
+        "date_dim": {"$ref": "#/$defs/tableIdentity"},
+        "dbgen_version": {"$ref": "#/$defs/tableIdentity"},
+        "household_demographics": {"$ref": "#/$defs/tableIdentity"},
+        "income_band": {"$ref": "#/$defs/tableIdentity"},
+        "inventory": {"$ref": "#/$defs/tableIdentity"},
+        "item": {"$ref": "#/$defs/tableIdentity"},
+        "promotion": {"$ref": "#/$defs/tableIdentity"},
+        "reason": {"$ref": "#/$defs/tableIdentity"},
+        "ship_mode": {"$ref": "#/$defs/tableIdentity"},
+        "store": {"$ref": "#/$defs/tableIdentity"},
+        "store_returns": {"$ref": "#/$defs/tableIdentity"},
+        "store_sales": {"$ref": "#/$defs/tableIdentity"},
+        "time_dim": {"$ref": "#/$defs/tableIdentity"},
+        "warehouse": {"$ref": "#/$defs/tableIdentity"},
+        "web_page": {"$ref": "#/$defs/tableIdentity"},
+        "web_returns": {"$ref": "#/$defs/tableIdentity"},
+        "web_sales": {"$ref": "#/$defs/tableIdentity"},
+        "web_site": {"$ref": "#/$defs/tableIdentity"}
+      }
+    },
+    "dataset_sha256": {"$ref": "#/$defs/sha256"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "elapsed_ms": {"type": "number", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "tableIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "sha256", "rows"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "rows": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

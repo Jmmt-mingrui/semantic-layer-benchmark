@@ -30,8 +30,8 @@ Canonical 层是结构比较的 Oracle。Benchmark Trial 只向被测对象提�
 
 | 表示 | 类型 | 原生消费方式 | 基准角色 |
 | --- | --- | --- | --- |
-| MetricFlow | 可执行 Metric 编译器 | 查询 Metric 和 Dimension，再编译或执行 SQL | 原生运行时及标准化上下文对比 |
-| Cube | 可执行语义服务 | 查询模型元数据、REST/GraphQL 或 Semantic SQL | 原生运行时及标准化上下文对比 |
+| MetricFlow | 可执行 Metric 编译器 | 查询 Metric 和 Dimension，再编译或执行 SQL | 主原生运行时对比；可选消融单独进行 |
+| Cube | 可执行语义服务 | 查询模型元数据和一个明确声明的原生查询接口 | 主原生运行时对比；可选消融单独进行 |
 | Ossie | 语义交换规范 | 校验、导入、转换，或通过 Adapter 暴露 | 结构、互操作和 Agent 消费对比 |
 | OKF v0.2 | 可移植知识表示 | 浏览带 YAML 元数据的索引化 Markdown Concept | Retrieval 和 Agent Context 对比 |
 | Skill | Agent 工作流包 | 激活 `SKILL.md` 并渐进读取 Reference | 原生 Agent 工作流及 Context 对比 |
@@ -44,11 +44,11 @@ OKF 和 Skill 不会被当成 SQL 引擎。Ossie 也不会被强行绑定一个�
 | --- | --- | --- |
 | Canonical | [`canonical/tpcds-sf1/`](canonical/tpcds-sf1/) | 候选 Metric Catalog 和 q01-q99 映射已有 |
 | MetricFlow | [`metricflow/tpcds-sf1/`](metricflow/tpcds-sf1/) | 24 个表模型、Entity、Dimension、基础 Measure 和 Capability Map 已有 |
-| Cube | [`cube/`](cube/) | 计划中；不能从占位文件推断已有原生模型 |
+| Cube | `cube/`（尚未创建） | 计划中；不能从占位文件推断已有原生模型 |
 | Ossie | [`ossie/tpcds-sf1/`](ossie/tpcds-sf1/) | 一份通过 Schema 校验的完整模型文档和 Capability Map 已有 |
 | OKF v0.2 | [`okf/tpcds-sf1/`](okf/tpcds-sf1/) | 表和候选 Metric Concept 已有 |
 | Skill | [`skill/tpcds-sf1-table-semantics/`](skill/tpcds-sf1-table-semantics/) | `SKILL.md`、表 Reference 和候选 Metric Reference 已有 |
-| DDL-only | [`ddl-only/`](ddl-only/) | 对照表示计划中 |
+| DDL-only | [`../data/tpcds/schema/duckdb/`](../data/tpcds/schema/duckdb/) 下的物理 Schema | 对照组直接使用原始 DDL，不再复制一份语义模型 |
 
 Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 个物理字段。MetricFlow 和 Ossie 包含 64 个可加或半可加基础输入。Ossie 保存 106 条显式 Relationship，MetricFlow 通过 Entity 表达等价 Join Path。Canonical Inventory 包含 42 个 Base Metric Family、25 个 Derived Metric、9 个 Query-exact Formula 和全部 99 题的映射。
 
@@ -76,8 +76,8 @@ Skill、OKF、MetricFlow 和 Ossie 当前描述相同的 24 张业务表和 425 
 - Trial 开始前校验固定版本的 standalone YAML。
 - Agent 通过 Adapter 发现可用 Metric 和 Dimension。
 - 接收包含 Metric、Group-by、Filter、Order 和时间范围的结构化请求。
-- 使用固定版本的 MetricFlow DuckDB Renderer 编译。
-- 将输出 SQL 交给统一只读数据库 Runner 执行，以共享结果归一化逻辑。
+- 通过固定版本的 Self-hosted MetricFlow Query 命令执行，并在可用时通过原生 Compile/Explain 选项捕获编译 SQL。
+- 评测 MetricFlow 返回的结果；原生条件禁止回退到直接 SQL Runner。
 - 分别记录规划耗时、编译耗时、输出 SQL、校验结果和 Fallback 状态。
 
 MetricFlow 官方文档说明了 Semantic Graph 和 SQL Construction 模型，CLI 也可以通过 Compile/Explain 查看生成 SQL。本仓库固定的是较早的 standalone 编写格式，不能假设它与当前 dbt 的 Model-embedded YAML 可直接互换。
@@ -97,8 +97,8 @@ Cube 官方文档明确支持本地 DuckDB 文件及 REST、GraphQL、SQL 和 Me
 
 - 使用固定的 `0.2.0.dev0` Schema 校验完整文档。
 - 将顶层 Semantic Model 视为完整容器；`datasets` 数组包含所有事实和维度 Dataset。
-- 受控 Context 赛道将文档转换成与其他表示相同的 Evidence Chunk。
-- 原生端到端赛道通过 Benchmark Reference Loader 暴露模型，再由参考 Agent 编写 SQL。
+- 原生端到端赛道通过透明 Benchmark Consumer 暴露经过校验的原始 YAML，再由参考 Agent 编写 SQL。
+- 只有单独标记的受控上下文消融才允许转换成统一 Evidence Chunk。
 - 只有明确标记为 Interoperability Variant 时，才允许将其导入兼容引擎执行。
 
 Ossie 的核心结果是结构覆盖和互操作性。它不会因为缺少独立 Serving Runtime 而被扣分。
@@ -106,12 +106,12 @@ Ossie 的核心结果是结构覆盖和互操作性。它不会因为缺少独�
 ### Open Knowledge Format
 
 - 校验必填 YAML Frontmatter 和内部 Index。
-- 从 `index.md` 开始，检索匹配的表或 Metric Concept，并在固定证据预算内跟随相关链接。
-- 与其他受控 Context 条件使用相同 Retriever。
+- 从 `index.md` 开始，直接读取原始 Markdown 和 YAML Frontmatter，并跟随相关链接。
+- 主原生条件不能建立共享 Embedding Index，也不能把 Bundle 转换成统一 Chunk。
 - 由参考 Agent 根据检索知识编写 DuckDB SQL。
 - 记录 Concept ID、源路径、检索排名、Token 数和 Broken Link 行为。
 
-OKF v0.2 的目标是规定可移植 Markdown 加 Frontmatter Corpus，而不是规定 Storage、Serving 或 Query Infrastructure。Adapter 负责检索；不能把 SQL 生成归功于 OKF 本身。
+OKF v0.2 的目标是规定可移植 Markdown 加 Frontmatter Corpus，而不是规定 Storage、Serving 或 Query Infrastructure。Benchmark Consumer 只提供不改变文档的 Allowlist 文件操作；不能把 SQL 生成归功于 OKF 本身。
 
 ### Agent Skill
 
@@ -121,7 +121,7 @@ OKF v0.2 的目标是规定可移植 Markdown 加 Frontmatter Corpus，而不是
 - 由同一个参考 Agent 生成 DuckDB SQL。
 - 记录显式或隐式激活方式，以及每一次 Reference Read。
 
-OpenAI 官方文档将 Skill 定义为包含指令、资源和可选 Script 的 Package，并采用 Progressive Disclosure：初始只提供元数据，被选择后再完整读取 `SKILL.md`。原生 Skill 赛道保留这个行为；受控 Context 赛道移除激活差异，只比较内容质量。
+OpenAI 官方文档将 Skill 定义为包含指令、资源和可选 Script 的 Package，并采用 Progressive Disclosure：初始只提供元数据，被选择后再完整读取 `SKILL.md`。主原生 Skill 赛道保留这个行为；任何移除激活差异的实验都必须作为单独标记的消融。
 
 ## 结构评测契约
 
@@ -149,9 +149,9 @@ Evaluator 检查：
 - 原生 Parser、Schema、Semantic 或 Package Validation；
 - 出处和机器可发现性元数据。
 
-## 受控 Context 标准化
+## 可选受控上下文消融
 
-Phase 1A 中，每种格式被转换成不可变 Evidence Record，包含：
+仅在 Phase 1C 中，每种格式可以被转换成不可变 Evidence Record，包含：
 
 - `evidence_id` 和 Target；
 - 源路径和所表达的 Canonical ID；
@@ -159,7 +159,7 @@ Phase 1A 中，每种格式被转换成不可变 Evidence Record，包含：
 - 出处及原生校验状态；
 - 确定性 Chunk 顺序和 Token 数。
 
-所有对象使用同一个 Chunker、Search Index、Top-k、Tie-breaking Rule 和 Token Cap。Retrieval Output 是 Trace 的一部分。参考 SQL、预期结果、Question-to-metric Map 和 Evaluator Annotation 永远不能被索引。
+所有消融条件使用同一个 Chunker、Search Index、Top-k、Tie-breaking Rule 和 Token Cap。Retrieval Output 是 Trace 的一部分。参考 SQL、预期结果、Question-to-metric Map 和 Evaluator Annotation 永远不能被索引。这些次要分数不能被描述为原生行为。
 
 ## 数据库与 Namespace 解析
 

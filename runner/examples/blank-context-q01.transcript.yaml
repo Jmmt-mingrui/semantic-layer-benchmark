@@ -1,0 +1,77 @@
+schema_version: 0.1.0
+kind: illustrative_transcript
+executed: false
+result_notice: This file is not a benchmark result and contains no gold SQL or result rows.
+condition:
+  target: blank_context
+  lane: native_end_to_end
+  instance_id: q01-sf1-qualification
+initial_context_assertions:
+  ddl: absent
+  semantic_models: absent
+  table_names: absent
+  prior_messages: absent
+  gold_assets: absent
+messages:
+  - sequence: 0
+    role: system
+    content_ref: runner/prompts/native-agent-system.md
+  - sequence: 1
+    role: user
+    content: >-
+      For stores in Tennessee (state code TN) during calendar year 2000,
+      return up to 100 customer IDs, sorted in ascending order, whose total
+      store return amount is more than 20% above the average total return
+      amount for customers of that same store.
+  - sequence: 2
+    role: assistant
+    tool_call:
+      id: call-001
+      name: db.list_relations
+      arguments: {schema: main}
+  - sequence: 3
+    role: tool
+    tool_call_id: call-001
+    result_artifact: artifacts/call-001-result.json
+    result_summary: {relation_count: 25}
+  - sequence: 4
+    role: assistant
+    tool_call:
+      id: call-002
+      name: db.describe_relations
+      arguments:
+        relations: [store_returns, date_dim, store, customer]
+  - sequence: 5
+    role: tool
+    tool_call_id: call-002
+    result_artifact: artifacts/call-002-result.json
+    result_summary: {relation_count: 4}
+  - sequence: 6
+    role: assistant
+    tool_call:
+      id: call-003
+      name: db.execute_readonly
+      arguments_artifact: artifacts/call-003-request.json
+  - sequence: 7
+    role: tool
+    tool_call_id: call-003
+    result_artifact: artifacts/call-003-result.json
+    result_summary:
+      result_handle: result-001
+      columns: [c_customer_id]
+      row_count: null
+  - sequence: 8
+    role: assistant
+    tool_call:
+      id: call-004
+      name: benchmark.submit_result
+      arguments:
+        status: success
+        result_handles: [result-001]
+  - sequence: 9
+    role: tool
+    tool_call_id: call-004
+    result_summary: {accepted: true}
+  - sequence: 10
+    role: assistant
+    content: Result submitted.

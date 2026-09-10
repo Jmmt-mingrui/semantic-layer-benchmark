@@ -1,0 +1,66 @@
+schema_version: 0.1.0
+experiment_id: native-sf1-q01-contract-pilot
+description: One-question native blank-context pilot used to prove the run contract.
+lane: native_end_to_end
+protocol_revision: native-v0.1
+
+workload:
+  benchmark: TPC-DS-derived
+  scale_factor: 1
+  question_instances: benchmark/tpcds/questions/instances/sf1-qualification-q01.jsonl
+  question_ids: [q01]
+  unresolved_parameter_policy: reject
+  multi_statement_policy: declared_group_only
+
+dataset:
+  manifest: data/tpcds/sf1/manifests/duckdb-sf1.json
+  database_config: runner/config/database.yaml
+  read_only: true
+  snapshot_sha256: {env: BENCHMARK_DATASET_SHA256, required: true}
+
+agent:
+  provider: {env: BENCHMARK_AGENT_PROVIDER, required: true}
+  model: {env: BENCHMARK_AGENT_MODEL, required: true}
+  model_revision: {env: BENCHMARK_AGENT_MODEL_REVISION, required: false, default: null}
+  system_prompt: runner/prompts/native-agent-system.md
+  user_prompt_template: runner/prompts/native-agent-user.md
+  fresh_conversation_per_trial: true
+  generation:
+    temperature: 0
+    seed: 20260910
+    max_output_tokens: 4096
+    max_turns: 12
+    parallel_tool_calls: false
+
+targets:
+  registry: runner/config/targets.native.yaml
+  include: [blank_context]
+  native_only: true
+  fallback_policy: record_unsupported_no_fallback
+
+execution:
+  repetitions: 3
+  question_order: randomized
+  target_order: randomized
+  random_seed: 20260910
+  timeouts:
+    trial_seconds: 300
+    tool_seconds: 60
+    database_seconds: 120
+  cache_mode: correctness_uncached
+  max_database_attempts: 3
+
+isolation:
+  gold_assets: evaluator_only
+  cross_trial_memory: disabled
+  target_network: disabled
+  secrets_in_prompts: false
+  mid_trial_hints: false
+
+artifacts:
+  run_directory: runs/native-sf1-q01
+  save_sanitized_conversation: true
+  save_native_requests: true
+  save_sql: true
+  save_result_rows: false
+  save_result_hash: true

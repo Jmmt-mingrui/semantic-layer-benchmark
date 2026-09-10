@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/run-record.schema.json",
+  "title": "Benchmark run record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "experiment_id",
+    "started_at",
+    "finished_at",
+    "reproducibility",
+    "environment",
+    "trial_records",
+    "summary",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "experiment_id": {"type": "string", "minLength": 1},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": ["string", "null"], "format": "date-time"},
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_sha", "experiment_sha256", "dataset_manifest_sha256", "target_registry_sha256"],
+      "properties": {
+        "repository_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "experiment_sha256": {"$ref": "#/$defs/sha256"},
+        "dataset_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "target_registry_sha256": {"$ref": "#/$defs/sha256"},
+        "prompt_sha256": {"$ref": "#/$defs/sha256"},
+        "question_instances_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "architecture", "python", "database", "cpu_limit", "memory_limit_mb"],
+      "properties": {
+        "os": {"type": "string", "minLength": 1},
+        "architecture": {"type": "string", "minLength": 1},
+        "python": {"type": "string", "minLength": 1},
+        "database": {"type": "string", "minLength": 1},
+        "container_image_digest": {"type": ["string", "null"]},
+        "cpu_limit": {"type": "number", "exclusiveMinimum": 0},
+        "memory_limit_mb": {"type": "integer", "minimum": 1}
+      }
+    },
+    "trial_records": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planned", "completed", "passed", "failed", "unsupported", "invalid", "timeout"],
+      "properties": {
+        "planned": {"type": "integer", "minimum": 0},
+        "completed": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0},
+        "unsupported": {"type": "integer", "minimum": 0},
+        "invalid": {"type": "integer", "minimum": 0},
+        "timeout": {"type": "integer", "minimum": 0}
+      }
+    },
+    "status": {"enum": ["running", "completed", "completed_with_failures", "aborted", "invalid"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
