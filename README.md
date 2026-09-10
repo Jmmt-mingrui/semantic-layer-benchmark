@@ -248,7 +248,7 @@ pip install -e '.[test]'
 4. Create the database and reproducibility manifest:
 
 ```bash
-python scripts/load_tpcds_sf1.py --generator-binary /path/to/dsdgen
+python -m scripts.load_tpcds_sf1 --generator-binary /path/to/dsdgen
 pytest -q
 ```
 
@@ -284,6 +284,7 @@ flowchart TB
 | `benchmark/tpcds/questions/instances/` | Materialized, target-visible question instances with evaluator-only compartments |
 | `benchmark/tpcds/sql/reference/duckdb/` | DuckDB reference translations and validation state |
 | `benchmark/tpcds/sql/reference/postgres/` | Attributed PostgreSQL formula/reference SQL |
+| `benchmark/tpcds/results/gold/` | Evaluator-only dataset-bound result identities without result rows |
 | `benchmark/tpcds/sql/generated/` | SQL produced by each target and trial |
 | `data/tpcds/schema/duckdb/` | DuckDB physical schema |
 | `data/tpcds/sf1/` | Generated SF1 database, manifest, and local data location |
@@ -333,6 +334,7 @@ The official toolkit is governed by the TPC EULA and is linked rather than vendo
 - [x] Native target registry, blank-context prompt protocol, and q01 materialized pilot
 - [x] Executable q01 blank-context and DDL-only control runner with fresh scripted Agent trials
 - [x] Read-only SQL policy, exact-result evaluator, and validated local trace capture for controls
+- [x] SF1 publication preflight and evaluator-only q01 gold-identity tooling
 - [ ] Live Agent provider and semantic-target adapters
 - [ ] Full SQL/result and structure evaluators
 - [ ] OpenTelemetry collector export
