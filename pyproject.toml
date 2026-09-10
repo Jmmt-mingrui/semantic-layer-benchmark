@@ -8,14 +8,17 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
   "duckdb==1.4.0",
+  "jsonschema>=4.23,<5",
   "PyYAML>=6.0,<7",
 ]
 
 [project.optional-dependencies]
 test = [
-  "jsonschema>=4.23,<5",
   "pytest>=8,<9",
 ]
+
+[project.scripts]
+semantic-benchmark = "runner.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
