@@ -4,13 +4,14 @@
 
 Every target uses the same runtime database configuration. DuckDB is the default local engine, but the connection can be replaced without changing canonical questions or metrics.
 
-The directory now contains three distinct inputs:
+The directory now contains four distinct inputs:
 
 | File | Purpose |
 | --- | --- |
 | [`database.yaml`](database.yaml) | Shared read-only database connection contract |
 | [`targets.native.yaml`](targets.native.yaml) | Native artifact, operation allowlist, fallback, and readiness definition for every condition |
 | [`native-sf1-q01.yaml`](native-sf1-q01.yaml) | Contract pilot selecting one materialized q01 instance and the blank-context baseline |
+| [`control-sf1-q01.yaml`](control-sf1-q01.yaml) | Executable three-repetition q01 plan for blank-context and DDL-only controls |
 
 Experiment and artifact shapes are defined in [`../contracts/`](../contracts/). The exact fresh-conversation behavior is defined in [`../prompts/`](../prompts/).
 
@@ -35,3 +36,5 @@ Install the runtime and test dependencies with `pip install -e '.[test]'`. `runn
 The primary harness only intercepts native operations for timeouts, safety, sanitization, and telemetry. It must not convert MetricFlow, Cube, Ossie, OKF, or Skill into shared text before a primary-lane trial. `blank_context` receives database discovery tools but no preloaded schema; `ddl_only` receives DDL and is reported separately.
 
 Readiness is explicit. A target marked `*_pending` cannot be silently skipped or routed through direct SQL. Preflight records it as unavailable until its native model, pinned version, health check, and adapter are present.
+
+The control runner and its scripted protocol-test usage are documented in [`../README.md`](../README.md). Scripted runs are not publishable model measurements.
