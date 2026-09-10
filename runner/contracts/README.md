@@ -11,6 +11,7 @@ These versioned contracts separate orchestration, target-visible inputs, native 
 | [`experiment.schema.json`](experiment.schema.json) | Experiment author | Runner preflight | Immutable run plan, target set, budgets, isolation, and artifact policy |
 | [`dataset-manifest.schema.json`](dataset-manifest.schema.json) | SF1 loader | Runner preflight | Generator, schema, table, row-count, file-hash, and snapshot identity |
 | [`question-instance.schema.json`](question-instance.schema.json) | Workload curator | Prompt renderer and evaluator | Materialized user question separated from evaluator-only SQL and comparison rules |
+| [`gold-result.schema.json`](gold-result.schema.json) | Dataset freeze tool | Evaluator preflight | Dataset-bound reference result identity without persisted result rows |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner and adapters | Trace store and report builder | Ordered, sanitized lifecycle and usage events |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial orchestrator and evaluator | Run aggregator | One question × target × repetition outcome |
 | [`run-record.schema.json`](run-record.schema.json) | Run aggregator | Report builder | Reproducibility envelope and trial summary |
@@ -84,6 +85,8 @@ Native limitations are results, not reasons to silently switch paths. If MetricF
 Missing tools, missing materialized questions, missing database manifests, mutable version references, and unresolved environment pins fail before any billable agent call. Timeouts and native service errors remain distinct from wrong results.
 
 A local development manifest may omit the `dsdgen` binary hash, but publication preflight requires it. `dataset_sha256` is derived from the physical schema hash plus sorted table row counts and source-file hashes, so timestamps, local paths, and database serialization do not change the logical snapshot identity.
+
+A gold-result identity binds the dataset manifest, database hash, materialized question, and reference SQL to normalized result columns, row count, and SHA-256. It contains no result rows and remains evaluator-only. Recreating it requires all snapshot checks to pass first.
 
 ## Required artifacts
 

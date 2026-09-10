@@ -11,6 +11,7 @@
 | [`experiment.schema.json`](experiment.schema.json) | 实验作者 | Runner Preflight | 固定运行计划、目标集合、预算、隔离和产物策略 |
 | [`dataset-manifest.schema.json`](dataset-manifest.schema.json) | SF1 Loader | Runner Preflight | 固定 Generator、Schema、表、行数、文件 Hash 和快照身份 |
 | [`question-instance.schema.json`](question-instance.schema.json) | Workload 维护者 | Prompt Renderer 与 Evaluator | 将实例化用户问题与仅评测可见的 SQL、比较规则分开 |
+| [`gold-result.schema.json`](gold-result.schema.json) | 数据冻结工具 | Evaluator Preflight | 与数据集绑定且不持久化结果行的参考结果身份 |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner 与 Adapter | Trace Store 与报告生成器 | 有序且脱敏的生命周期与用量事件 |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial Orchestrator 与 Evaluator | Run Aggregator | 一个问题 × 一个目标 × 一次重复的结果 |
 | [`run-record.schema.json`](run-record.schema.json) | Run Aggregator | 报告生成器 | 可复现性 Envelope 与 Trial 汇总 |
@@ -84,6 +85,8 @@ Runner 按照以下状态顺序执行：
 缺少工具、实例化问题、数据库 Manifest、不可变版本引用或环境 Pin 时，必须在产生任何付费 Agent 调用前失败。Timeout、原生服务错误和结果错误需要分别统计。
 
 本地开发 Manifest 可以暂时不记录 `dsdgen` Binary Hash，但发布结果前的 Preflight 必须要求该字段。`dataset_sha256` 根据物理 Schema Hash、排序后的表行数和源文件 Hash 计算，因此时间戳、本地路径和数据库文件序列化不会改变逻辑快照身份。
+
+Gold Result Identity 会把数据 Manifest、数据库 Hash、实例化问题和参考 SQL 绑定到标准化结果的列名、行数及 SHA-256。它不包含结果行，并且始终只对 Evaluator 可见；只有全部快照检查通过后才能重新生成。
 
 ## 必需产物
 

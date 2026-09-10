@@ -4,7 +4,7 @@ import duckdb
 import pytest
 
 from runner.core.database import DatabaseSettings, connect, duckdb_path_from_url
-from scripts.load_tpcds_sf1 import load_table
+from scripts.load_tpcds_sf1 import TABLES, load_table, require_generated_sources
 
 
 def test_relative_duckdb_url() -> None:
@@ -36,3 +36,10 @@ def test_load_table_accepts_tpcds_trailing_delimiter(tmp_path: Path) -> None:
         connection.execute("CREATE TABLE main.sample(id INTEGER, label VARCHAR)")
         assert load_table(connection, "sample", source) == 2
         assert connection.execute("SELECT * FROM sample ORDER BY id").fetchall() == [(1, "alpha"), (2, None)]
+
+
+def test_generated_source_preflight_reports_all_missing_files(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError) as error:
+        require_generated_sources(tmp_path)
+    assert str(tmp_path / f"{TABLES[0]}.dat") in str(error.value)
+    assert str(tmp_path / f"{TABLES[-1]}.dat") in str(error.value)

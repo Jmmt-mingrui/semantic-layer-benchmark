@@ -248,7 +248,7 @@ pip install -e '.[test]'
 4. 创建数据库和可复现 Manifest：
 
 ```bash
-python scripts/load_tpcds_sf1.py --generator-binary /path/to/dsdgen
+python -m scripts.load_tpcds_sf1 --generator-binary /path/to/dsdgen
 pytest -q
 ```
 
@@ -284,6 +284,7 @@ flowchart TB
 | `benchmark/tpcds/questions/instances/` | 已实例化的目标可见问题，以及隔离的 Evaluator-only 区域 |
 | `benchmark/tpcds/sql/reference/duckdb/` | DuckDB 参考转换及校验状态 |
 | `benchmark/tpcds/sql/reference/postgres/` | 带出处的 PostgreSQL 公式/参考 SQL |
+| `benchmark/tpcds/results/gold/` | 不包含结果行、与数据集绑定的 Evaluator-only 结果身份 |
 | `benchmark/tpcds/sql/generated/` | 每个对象和 Trial 生成的 SQL |
 | `data/tpcds/schema/duckdb/` | DuckDB 物理 Schema |
 | `data/tpcds/sf1/` | 生成的 SF1 数据库、Manifest 和本地数据目录 |
@@ -333,6 +334,7 @@ flowchart TB
 - [x] 原生目标注册表、空白上下文对话协议和 q01 实例化 Pilot
 - [x] 可执行的 q01 空白上下文及 DDL-only 控制组 Runner，以及全新 Scripted Agent Trial
 - [x] 控制组只读 SQL Policy、精确结果 Evaluator 和经校验的本地 Trace 采集
+- [x] SF1 发布 Preflight 和 Evaluator-only q01 Gold Identity 工具
 - [ ] 真实 Agent Provider 和语义目标 Adapter
 - [ ] 完整 SQL/Result 和 Structure Evaluator
 - [ ] OpenTelemetry Collector 导出
