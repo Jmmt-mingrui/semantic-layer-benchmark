@@ -2,134 +2,348 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A reproducible, observable benchmark for comparing semantic-layer systems on a shared TPC-DS-derived workload.
+A reproducible and observable benchmark for studying how semantic engines, interchange formats, and agent knowledge packages affect analytics accuracy on one shared workload.
 
-The project compares **MetricFlow, Cube, OKF, Ossie, and Skill**, with a DDL-only baseline. Every system receives the same database, semantic intent, and question set. The benchmark evaluates both the SQL each system produces and the semantic-model structure required to produce it.
+The project compares **MetricFlow, Cube, Apache Ossie, Open Knowledge Format (OKF), and an Agent Skill**, with a **DDL-only control**. It evaluates SQL and result quality first, semantic-model structure second, and operational behavior across both phases.
 
-> **Project status:** work in progress. The SF1 scaffold, 99 canonical questions, PostgreSQL reference SQL, Skill, OKF, MetricFlow, and Ossie table semantics, and a first candidate canonical metric inventory are present. Remaining target models, runners, and scoring logic have not been implemented yet.
+> **Project status:** work in progress. TPC-DS-derived SF1 is the initial workload. The repository already contains 99 canonical questions, 103 attributed PostgreSQL reference SQL formulations, a DuckDB schema and loader, q01-q10 DuckDB reference SQL, a read-only database adapter, a candidate canonical metric contract, and initial Skill, OKF, MetricFlow, and Ossie representations. Cube, end-to-end target adapters, evaluators, and trace collection are still planned. Documentation below distinguishes implemented assets from the experimental design.
 
-## Benchmark scope
+## What this benchmark is trying to answer
 
-| Area | What is compared |
+The benchmark is designed around five questions:
+
+1. Does semantic context improve execution-correct answers over a DDL-only baseline?
+2. Which failures come from natural-language planning, semantic modeling, SQL compilation, or database execution?
+3. How faithfully can each representation encode the same metrics, dimensions, joins, grains, and time rules?
+4. What are the latency, token, tool-call, retry, and cost trade-offs of each intended usage pattern?
+5. Which components should be combined in a production architecture instead of treated as substitutes?
+
+The benchmark does **not** assume that all five targets are the same kind of product.
+
+## Target roles: what is actually being compared
+
+| Target | Primary role | Intended use in this benchmark | Produces SQL natively? |
+| --- | --- | --- | --- |
+| MetricFlow | Metric compiler and semantic query engine | An agent constructs a metric request; MetricFlow validates the semantic graph and compiles SQL | Yes |
+| Cube | Semantic-layer service and query API | An agent discovers members and submits a REST or Semantic SQL request to a running Cube service | Yes |
+| Apache Ossie | Semantic-model interchange specification | A validator and reference adapter load the Ossie document; an agent consumes it, with interoperability tested separately | No standalone runtime is assumed |
+| OKF | Portable knowledge representation | A shared retriever exposes relevant Markdown concepts to the same SQL-generating agent | No |
+| Skill | Agent workflow and progressively disclosed context | The agent activates `SKILL.md`, loads referenced knowledge as needed, and writes SQL | No |
+| DDL-only | Control condition | The same agent receives only the physical schema and question | Agent writes SQL directly |
+
+MetricFlow and Cube can therefore be compared as native semantic runtimes. Skill and OKF can be compared as agent knowledge delivery mechanisms. Ossie is primarily evaluated as a portable model and, in end-to-end tests, through an explicitly named adapter. Unsupported capabilities are reported as `not_applicable` or `unsupported`; they are never silently scored as zero.
+
+## Shared benchmark contract
+
+The initial workload is **TPC-DS-derived SF1 only**. SF10 remains out of scope.
+
+| Contract | Frozen input |
 | --- | --- |
-| SQL generation | Executability, result equivalence, referenced tables and columns, filters, joins, aggregations, and ordering |
-| Semantic structure | Metric, measure, dimension, entity, relationship, time-grain, and reusable-definition coverage |
-| Efficiency | End-to-end latency, model latency, input/output/cached tokens, and database execution time |
-| Agent behavior | Tool calls, tool arguments, retries, failures, and generated artifacts |
-| Operability | Trace completeness, error classification, reproducibility, and run-to-run stability |
+| Workload | 99 stable task IDs, `q01` through `q99` |
+| Reference logic | 103 SQL formulations; q14, q23, q24, and q39 each have two accepted formulations |
+| Data | One SF1 snapshot plus row counts, checksums, generator version, and manifest hash |
+| Database | DuckDB 1.4.0 by default, opened read-only through a pluggable connection contract |
+| Semantics | One system-neutral catalog of datasets, metrics, dimensions, joins, grains, time roles, and calculation rules |
+| Agent | The same model, prompt shell, tool policy, context budget, retry policy, and generation parameters within a lane |
+| Observability | The same run, trace, token, tool-call, timing, artifact, and error schema |
 
-The initial dataset scale is **TPC-DS SF1 only**. SF10 is deliberately out of scope for the current phase.
+The workload is intentionally pluggable. A future enterprise SaaS workload can be added as a new workload pack—data manifest, questions, reference results, and canonical semantics—without changing evaluator or target-adapter contracts.
 
-## Shared inputs
-
-- **99 canonical questions:** one stable task ID from `q01` through `q99`.
-- **103 PostgreSQL reference SQL files:** q14, q23, q24, and q39 each contain two formulations.
-- **One pluggable database contract:** DuckDB by default, with connection URL and namespace supplied at runtime; every target uses the same SF1 manifest.
-- **One semantic contract:** shared business concepts and relationships, represented separately in each system's native model format.
-- **One observability contract:** the same run, token, tool-call, timing, and error fields across systems.
-
-## Implemented semantic models
-
-The current implementations establish a shared table-level contract before canonical business metrics are derived from the question set:
-
-- **Skill:** an agent-consumable `SKILL.md` with progressively loaded table and business-metric references.
-- **OKF:** an [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) bundle containing table and metric knowledge concepts.
-- **MetricFlow:** standalone YAML semantic models with entities, dimensions, measures, and collision-free base metrics.
-- **Apache Ossie:** a schema-validated `0.2.0.dev0` YAML exchange document containing datasets, fields, relationships, and base metrics.
-- **Canonical metrics:** 42 base metric families, 25 reusable derived metrics, 9 query-exact formulas, and mappings for all 99 questions.
-- **Coverage:** the same 24 TPC-DS business tables, 425 physical columns, 106 relationships, and 64 additive measure inputs across the representations where the native format supports them.
-- **Semantics:** table grain, primary keys, role-playing joins, column roles, nullability, and additive behavior.
-
-See [`semantic-models/README.md`](semantic-models/README.md) for the format mapping, source chain, modeling rules, and current limitations.
-
-## How the benchmark works
+## Benchmark architecture
 
 ```mermaid
-flowchart TD
-    A["TPC-DS SF1 database (DuckDB default)"] --> C["Semantic-layer adapter"]
-    B["Canonical question + native model"] --> C
-    C --> D["Generated SQL"]
-    D --> E["Configured database execution"]
-    E --> F["SQL and result evaluation"]
-    C --> G["Traces, tokens, tool calls"]
-    G --> H["Efficiency and operability evaluation"]
-    B --> I["Semantic-structure evaluation"]
+flowchart TB
+    subgraph inputs["Pinned inputs"]
+        Q["Questions"]
+        C["Canonical semantics"]
+        D["SF1 manifest"]
+        G["Gold SQL and results"]
+    end
+
+    C --> M["Native model build and validation"]
+    Q --> R["Experiment orchestrator"]
+    M --> R
+    D --> R
+
+    subgraph target["One isolated target condition per trial"]
+        E["MetricFlow or Cube"]
+        K["Skill or OKF"]
+        O["Ossie adapter"]
+        B["DDL-only control"]
+    end
+
+    R --> E
+    R --> K
+    R --> O
+    R --> B
+    E --> A["Candidate request, SQL, and answer"]
+    K --> A
+    O --> A
+    B --> A
+    A --> DB["Read-only DuckDB"]
+    DB --> V["SQL and result evaluator"]
+    G --> V
+    R --> T["OpenTelemetry events"]
+    A --> T
+    DB --> T
+    V --> T
+    T --> P["Run artifacts and report"]
+    V --> P
 ```
 
-Each run must pin the dataset manifest, question-set revision, semantic-model revision, system version, model configuration, and prompt configuration. This keeps comparisons attributable instead of mixing product changes with workload changes.
+The gold SQL, expected results, and question-to-metric map are evaluator-only assets. A target never receives them. Each trial exposes only its question, allowed physical schema, native semantic representation, and declared tools.
+
+## Experimental lanes
+
+A single leaderboard would hide important differences, so the benchmark publishes separate lanes and a metric vector for each lane.
+
+| Phase and lane | Question answered | Participants | Output |
+| --- | --- | --- | --- |
+| Phase 1A: controlled context-to-SQL | How useful is the information encoded by each representation when the runtime is held constant? | All five targets plus DDL-only | DuckDB SQL generated by the same agent using a shared retriever and equal evidence budget |
+| Phase 1B: native end-to-end | How well does each target work when used as intended? | All five targets plus DDL-only | Native request, generated SQL where observable, and final result |
+| Phase 1C: native serving | What does deterministic semantic compilation and serving cost? | MetricFlow and Cube only | Compile/serve result, cold and warm latency, and engine diagnostics |
+| Phase 2: semantic structure | How completely and faithfully is the canonical contract represented? | All five semantic targets | Coverage and fidelity manifest with native validation results |
+| Phase 3: operations | What resources and failure modes occur? | Every applicable Phase 1 trial | Traces, tokens, tools, retries, timing, errors, and estimated cost |
+
+### Controlled context-to-SQL lane
+
+This is the closest apples-to-apples ablation. Every representation is converted into attributed `SemanticEvidence` chunks. One shared retriever, retrieval limit, token budget, agent model, and prompt are used. The agent writes DuckDB SQL directly; MetricFlow and Cube do not compile it in this lane. This isolates the value of the encoded semantic information from native engine behavior.
+
+### Native end-to-end lane
+
+This lane measures practical usage rather than an identical interface:
+
+- MetricFlow: the agent selects metrics, dimensions, filters, and time bounds; MetricFlow compiles the request to SQL.
+- Cube: the agent inspects model metadata and calls the Cube query API or Semantic SQL interface.
+- Skill: the agent activates the Skill and progressively loads only the referenced instructions and concepts it needs.
+- OKF: the agent navigates the bundle index and retrieved concepts, then writes SQL.
+- Ossie: the reference adapter exposes the validated model to the same agent, which writes SQL. Any execution through another engine is labeled as a separate interoperability variant.
+- DDL-only: the same agent writes SQL without enriched semantic context.
+
+This lane answers “what happens if I adopt this target in its intended form?” It must not be interpreted as a pure file-format comparison.
+
+## How each target is used
+
+| Target | Artifact under test | Adapter surface | SQL author | Typical application |
+| --- | --- | --- | --- | --- |
+| MetricFlow | Native semantic-model and metric YAML | Metric/dimension discovery plus compile/query command | MetricFlow compiler after agent planning | Governed metric definitions and reusable dimensional queries |
+| Cube | Cube YAML or JavaScript data model | `/v1/meta`, `/v1/load`, or Semantic SQL | Cube runtime | Semantic APIs for BI, embedded analytics, and agents |
+| Ossie | One complete YAML document containing datasets, fields, relationships, and metrics | Schema validator plus benchmark reference loader | Reference agent, unless an interoperability variant is declared | Moving a semantic model between compatible tools |
+| OKF | Markdown concepts with YAML frontmatter and indexes | Shared search/retrieval tool | Reference agent | Portable business context, provenance, and curated knowledge |
+| Skill | `SKILL.md` plus optional references and scripts | Native activation and progressive file reads | Reference agent | Repeatable agent instructions and task-specific expertise |
+
+One Ossie YAML file does not mean one table. In the official model shape, the top-level semantic model is a container and its `datasets` collection contains the logical fact and dimension tables.
+
+## One trial, step by step
+
+1. Resolve and record the workload, data-manifest, repository, model, prompt, adapter, and target-version pins.
+2. Start exactly one isolated target condition and pass its health and native-validation gates.
+3. Select a question without exposing reference SQL, reference results, or the canonical question mapping.
+4. Start a root trace and enforce the same timeout, retry, context, and tool policies for that lane.
+5. Let the agent retrieve context or invoke the target; capture the native request, tool sequence, and generated SQL when observable.
+6. Reject mutating or multi-statement SQL outside the question contract, then execute against the same read-only DuckDB snapshot.
+7. Normalize types, column order rules, row ordering, floating-point tolerance, and nulls before comparing with the reference result.
+8. Persist the sanitized trace, artifacts, result hash, error classification, and scoring record under one `run_id` and `trial_id`.
+
+## Fairness and validity rules
+
+- **Same semantics:** native models must be translated from the canonical contract. A target cannot receive extra business facts that others do not receive.
+- **No gold leakage:** reference SQL, results, evaluator rules, and question-to-metric mappings are outside the target sandbox.
+- **Same model within a lane:** provider, model revision, temperature, seed where supported, prompt shell, maximum output, and retry policy are pinned.
+- **Equal evidence budget:** controlled-context retrieval uses the same chunker, top-k, and token cap. Retrieved evidence is logged.
+- **Capability-matched native use:** each native adapter may expose the target’s intended interface, but the interface and all tool calls are recorded.
+- **Read-only execution:** targets cannot mutate the database. Credentials and sensitive environment values are never placed in prompts or traces.
+- **Cache separation:** correctness runs use uncached results. Cold-start, warm-process, and engine-cache measurements are separate scenarios.
+- **Resource isolation:** latency runs are sequential initially, with pinned CPU, memory, timeout, and container-image digest. A warm-up trial is excluded from timing summaries.
+- **Repeated trials:** the default design uses three independent trials per question and condition. Target and question order is randomized and recorded.
+- **Explicit limitations:** native validation failure, unsupported semantics, adapter fallback, and query-layer workarounds are surfaced rather than hidden.
+
+## Evaluation
+
+### Phase 1: SQL and result quality
+
+Result equivalence is the primary correctness measure because two structurally different SQL statements can be semantically equivalent. Textual SQL equality is diagnostic only.
+
+| Measure | Meaning |
+| --- | --- |
+| Execution accuracy | Normalized candidate result equals the accepted reference result |
+| SQL execution rate | Candidate SQL parses, binds, and executes within policy |
+| Semantic component accuracy | Correct tables, columns, joins, filters, aggregations, grouping, ordering, and limit behavior |
+| Native-plan accuracy | Agent selected the correct metrics, dimensions, filters, and time roles before compilation |
+| Answer completeness | All required outputs for a question are returned; q14, q23, q24, and q39 retain one question-level denominator |
+| Stability | Agreement across repeated trials for the same question and condition |
+
+### Phase 2: semantic-structure quality
+
+The structure evaluator compares native artifacts against canonical IDs and records:
+
+- dataset, field, dimension, entity, relationship, and role-playing join coverage;
+- base, derived, cumulative, ratio, and query-exact metric coverage;
+- fact grain, aggregation time, dimension reachability, additivity, null, and division-by-zero fidelity;
+- native expression versus query-layer workaround versus unsupported status;
+- native parser/schema/semantic validation results;
+- provenance, documentation, reuse, and machine-discoverability signals.
+
+The report publishes counts and per-capability rates instead of hiding them behind one subjective aggregate score.
+
+### Statistics
+
+- Accuracy differences are paired by question. Report point estimates, 95% confidence intervals, and paired significance tests where assumptions are met.
+- Latency, tokens, tool calls, and cost are reported as median, p95, and distribution—not only averages.
+- Results are stratified by question complexity, join count, metric type, channel, and whether the requested logic is natively representable.
+- `not_applicable` values are excluded from denominators and displayed separately.
+
+## Observability contract
+
+Every trial emits a root span with child events or spans for `context.retrieve`, `llm.generate`, `tool.call`, `semantic.compile`, `db.execute`, and `evaluate` when applicable.
+
+| Category | Required fields |
+| --- | --- |
+| Identity | `run_id`, `trial_id`, `question_id`, target, lane, repetition, timestamps |
+| Reproducibility | repository SHA, workload revision, manifest SHA-256, native-model SHA-256, adapter version, image digest |
+| Model usage | provider, model revision, generation parameters, prompt hash, input/output/cached tokens where reported |
+| Tool usage | ordered tool name, sanitized arguments, result metadata, status, latency, retry linkage |
+| Semantic work | retrieved concept IDs, native request, compile status, fallback or workaround flags |
+| SQL work | generated SQL artifact, statement policy, execution time, row count, result hash |
+| Errors | stage, normalized category, native code, retryability, sanitized message |
+| Cost | model usage, target-service usage, and database cost under a pinned price snapshot when available |
+
+Raw secrets are never logged. Provider-hidden reasoning is not requested or inferred. A missing provider usage field is recorded as unavailable, not estimated silently.
+
+## Execution environment
+
+The first reproducible environment is local and DuckDB-first:
+
+| Component | Baseline environment | State |
+| --- | --- | --- |
+| Orchestrator and evaluators | Linux, Python 3.11+, repository revision pinned | Runner skeleton present; orchestration planned |
+| Database | DuckDB 1.4.0, SF1 database file mounted read-only | Schema, loader, and read-only adapter present |
+| MetricFlow | Pinned standalone source at commit `8750c1d`; DuckDB SQL renderer selected by adapter | Table semantics present; executable adapter planned |
+| Cube | Pinned Cube image, isolated service, official DuckDB data source, cache disabled for correctness runs | Native model and adapter planned |
+| Skill | Same reference-agent runtime; package mounted in a temporary repository skill location | Table and metric knowledge present; harness integration planned |
+| OKF | Same reference-agent runtime and shared deterministic retriever | Table and metric bundle present; retrieval adapter planned |
+| Ossie | Pinned schema validator and benchmark reference loader | Model present and schema-validated; runtime adapter planned |
+| Telemetry | OpenTelemetry-compatible collector with local trace artifacts; Phoenix is an optional viewer | Planned |
+
+Cube officially supports a local DuckDB database path. The pinned MetricFlow source contains a DuckDB SQL renderer, so the planned adapter can compile DuckDB SQL and let the shared runner execute it. This benchmark does not claim that every current dbt product deployment officially supports DuckDB. The executable compatibility gate must pass for the pinned benchmark version before results are published.
+
+The database contract remains pluggable through `BENCHMARK_DATABASE_URL`, catalog, schema, and dialect configuration. A different backend is valid only when every compared execution path uses the same data snapshot and logical relation contract. PostgreSQL reference SQL remains a formula and result oracle; PostgreSQL is not the default runtime.
+
+## Local setup
+
+TPC-DS data is generated locally with the official toolkit and is not committed.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[test]'
+```
+
+1. Download the TPC-DS v4.0.0 tools from the [official TPC download page](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY).
+2. Build the toolkit and run `dsdgen -scale 1`.
+3. Place the generated `.dat` files in `data/tpcds/sf1/generated/`.
+4. Create the database and reproducibility manifest:
+
+```bash
+python scripts/load_tpcds_sf1.py
+pytest -q
+```
+
+The default URL is `duckdb:///./data/tpcds/sf1/tpcds.duckdb`. See [`runner/config/README.md`](runner/config/README.md) and [`.env.example`](.env.example) for override rules. q01-q10 currently pass parse, bind, and empty-schema execution checks; SF1 result equivalence remains a separate gate until a generated-data manifest is available.
+
+## How these pieces are applied in practice
+
+The five targets are often complementary in a real system:
+
+```mermaid
+flowchart TB
+    G["Governed business definitions"] --> X["Ossie exchange model"]
+    G --> K["OKF knowledge bundle"]
+    K --> S["Agent Skill"]
+    S --> A["Analytics agent"]
+    X --> E["MetricFlow or Cube runtime"]
+    A --> E
+    E --> W["Warehouse"]
+    E --> U["BI, application, or API"]
+```
+
+- Choose MetricFlow or Cube when deterministic metric compilation and a governed serving interface are the main requirement.
+- Choose Ossie when model interchange, import/export, or migration is the main requirement; pair it with an execution engine.
+- Choose OKF when business context, provenance, and knowledge portability must be readable by humans and agents.
+- Choose a Skill when the agent needs repeatable instructions about when and how to discover and apply that knowledge.
+- A common production pattern is **engine + exchange model + knowledge bundle + Skill**, not one universal winner.
 
 ## Repository layout
 
 | Path | Purpose |
 | --- | --- |
 | `benchmark/tpcds/questions/canonical/` | Canonical questions and per-question provenance |
-| `benchmark/tpcds/sql/reference/postgres/` | Reviewable PostgreSQL reference SQL and its source chain |
-| `benchmark/tpcds/sql/generated/` | SQL produced by each benchmark target |
-| `data/tpcds/schema/postgres/` | PostgreSQL schema assets |
-| `data/tpcds/sf1/` | SF1 manifests and local generated-data location |
-| `semantic-models/` | Canonical contract and native models for each target |
-| `runner/adapters/` | Target-specific execution adapters |
-| `runner/config/database.yaml` | Pluggable database connection, namespace, dialect, and safety policy |
-| `evaluators/` | SQL, result, and semantic-structure evaluation |
-| `observability/` | OpenTelemetry, Phoenix, and trace artifacts |
-| `runs/` | Run configurations and local run output |
-| `reports/` | Benchmark reports and generated summaries |
+| `benchmark/tpcds/sql/reference/duckdb/` | DuckDB reference translations and validation state |
+| `benchmark/tpcds/sql/reference/postgres/` | Attributed PostgreSQL formula/reference SQL |
+| `benchmark/tpcds/sql/generated/` | SQL produced by each target and trial |
+| `data/tpcds/schema/duckdb/` | DuckDB physical schema |
+| `data/tpcds/sf1/` | Generated SF1 database, manifest, and local data location |
+| `semantic-models/canonical/` | System-neutral semantic and metric contract |
+| `semantic-models/{target}/` | Native representation for each target |
+| `runner/config/` | Pluggable database and future experiment configuration |
+| `runner/adapters/` | Planned target-specific adapter boundary |
+| `evaluators/` | Planned SQL, result, and structure evaluators |
+| `observability/` | Planned telemetry configuration and sanitized trace artifacts |
+| `runs/` | Run specifications and local run output |
+| `reports/` | Generated benchmark reports |
 
-Generated datasets, traces, run outputs, and generated reports are intentionally excluded from Git.
+Generated data, traces, run outputs, and reports are intentionally excluded from Git.
 
 ## Questions and SQL provenance
 
-Every record in [`questions.jsonl`](benchmark/tpcds/questions/canonical/questions.jsonl) contains:
+Every record in [`questions.jsonl`](benchmark/tpcds/questions/canonical/questions.jsonl) includes the canonical question, symbolic parameters, TPC-DS version and Appendix B section, official toolkit template path, local reference SQL, and pinned upstream source and licence.
 
-- the canonical question and symbolic parameters;
-- the TPC-DS version and Appendix B section;
-- the official toolkit template path;
-- the local PostgreSQL SQL file or files;
-- the pinned upstream repository, commit, path, URL, and licence.
+The source precedence is:
 
-The source chain is intentionally explicit:
+1. [TPC-DS v4.0.0 specification](https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf), Appendix B, for business intent and numbering.
+2. `query_templates/queryN.tpl` from the [official TPC-DS v4.0.0 toolkit](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY) for the functional definition.
+3. Pinned, Apache-2.0, TPC-DS-derived PostgreSQL SQL for a reviewable fixed-parameter reference.
+4. DuckDB translations validated against the same generated SF1 snapshot for executable result oracles.
 
-1. **Business intent and numbering:** [TPC-DS v4.0.0 specification](https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf), Appendix B.
-2. **Official functional definition:** `query_templates/queryN.tpl` from the [official TPC-DS v4.0.0 toolkit](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY).
-3. **Reviewable PostgreSQL SQL:** TPC-DS-derived, fixed-parameter qualification SQL from a pinned Apache-2.0 upstream, adapted for PostgreSQL.
-
-The official toolkit is distributed under the TPC EULA and is not vendored here. If the natural-language wording and SQL behavior differ, the official toolkit template is authoritative. See [`SOURCE.md`](benchmark/tpcds/sql/reference/postgres/SOURCE.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for details.
-
-## Data and toolkit
-
-TPC-DS data files are generated locally with `dsdgen`; they are not committed to this repository.
-
-1. Download the TPC-DS v4.0.0 tools from the [official TPC download page](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY).
-2. Build the toolkit according to its included documentation.
-3. Generate scale factor 1 data with `dsdgen -scale 1`.
-4. Place generated `.dat` files under `data/tpcds/sf1/generated/` and record checksums and generator details under `data/tpcds/sf1/manifests/`.
-
-The generated SF1 directory is Git-ignored because the data is reproducible and too large to review meaningfully in source control.
-
-## Planned benchmark phases
-
-1. **SQL evaluation:** give each system the same question and native semantic model, execute generated SQL on the configured database, and compare normalized results with its dialect-specific reference query.
-2. **Structure evaluation:** compare how completely and faithfully each system represents the canonical metrics, dimensions, entities, joins, and time semantics.
-3. **Operational evaluation:** compare latency, token usage, tool calls, retries, failures, trace completeness, and reproducibility.
+The official toolkit is governed by the TPC EULA and is linked rather than vendored. See [`SOURCE.md`](benchmark/tpcds/sql/reference/postgres/SOURCE.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Current progress
 
 - [x] SF1-only repository scaffold
-- [x] 99 canonical questions with source metadata
-- [x] 103 attributed PostgreSQL reference SQL files
-- [x] Skill, OKF, MetricFlow, and Ossie table semantics for 24 business tables
-- [x] DuckDB schema, deterministic loader, and pluggable read-only connection adapter
-- [ ] Generated SF1 manifest with table checksums and row counts
-- [x] Candidate canonical metric definitions derived from the question set
-- [ ] Reviewed canonical semantic contract with dimensions, grains, and joins
-- [ ] Native semantic models for all benchmark targets
-- [ ] Runner and target adapters
-- [ ] SQL/result/structure evaluators
-- [ ] Observability schema and trace capture
-- [ ] Reproducible benchmark report
+- [x] 99 canonical questions and 103 attributed PostgreSQL reference formulations
+- [x] Candidate canonical metrics and q01-q99 mappings
+- [x] Skill and OKF table and metric knowledge
+- [x] MetricFlow and Ossie table semantics and base metric coverage
+- [x] DuckDB schema, deterministic loader, and read-only pluggable adapter
+- [x] q01-q10 DuckDB SQL with explicit validation levels
+- [ ] Generated SF1 manifest with row counts and checksums
+- [ ] q11-q99 DuckDB reference SQL and SF1 result equivalence
+- [ ] Reviewed canonical dimensions, grains, joins, and metric semantics
+- [ ] Cube native semantic model
+- [ ] Native and controlled-context target adapters
+- [ ] SQL/result and structure evaluators
+- [ ] OpenTelemetry event schema and trace capture
+- [ ] Repeated-run benchmark report
+
+## Planned implementation order
+
+1. Freeze the experiment-run and observability schemas described above.
+2. Generate one SF1 manifest and validate reference results on DuckDB.
+3. Complete the DDL-only adapter as the control path.
+4. Add Cube and finish the MetricFlow, Skill, OKF, and Ossie adapters.
+5. Implement Phase 1 execution/result evaluation before Phase 2 structure scoring.
+6. Run a small q01-q10 pilot, review errors, then expand to all 99 questions.
+
+## Official format and runtime references
+
+- [MetricFlow overview](https://docs.getdbt.com/docs/build/about-metricflow) and [MetricFlow commands](https://docs.getdbt.com/docs/build/metricflow-commands)
+- [Cube semantic-layer architecture](https://docs.cube.dev/docs/introduction), [REST API](https://docs.cube.dev/reference/core-data-apis/rest-api), and [DuckDB data source](https://docs.cube.dev/admin/connect-to-data/data-sources/duckdb)
+- [Apache Ossie core semantic-model specification](https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md)
+- [Open Knowledge Format v0.2 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+- [OpenAI documentation for Agent Skills and progressive disclosure](https://developers.openai.com/codex/skills)
 
 ## Licence and benchmark naming
 
 The repository is licensed under [Apache License 2.0](LICENSE). Third-party material and attribution are documented in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
-TPC, TPC-DS, TPC-H, and QphDS are trademarks of the Transaction Processing Performance Council. Workloads and measurements produced by this project must be described as **TPC-DS-derived** and not as audited or officially published TPC benchmark results.
+TPC, TPC-DS, TPC-H, and QphDS are trademarks of the Transaction Processing Performance Council. Workloads and measurements produced by this project must be described as **TPC-DS-derived**, not as audited or officially published TPC benchmark results.
