@@ -6,7 +6,7 @@ A reproducible and observable benchmark for studying how semantic engines, inter
 
 The project compares **MetricFlow, Cube, Apache Ossie, Open Knowledge Format (OKF), and an Agent Skill**, with separate **blank-context** and **DDL-only** controls. It evaluates SQL and result quality first, semantic-model structure second, and operational behavior across both phases.
 
-> **Project status:** work in progress. TPC-DS-derived SF1 is the initial workload. The repository already contains 99 canonical questions, 103 attributed PostgreSQL reference SQL formulations, a DuckDB schema and loader, q01-q10 DuckDB reference SQL, a read-only database adapter, a candidate canonical metric contract, and initial Skill, OKF, MetricFlow, and Ossie representations. Cube, end-to-end target adapters, evaluators, and trace collection are still planned. Documentation below distinguishes implemented assets from the experimental design.
+> **Project status:** work in progress. TPC-DS-derived SF1 is the initial workload. The repository already contains 99 canonical questions, 103 attributed PostgreSQL reference SQL formulations, a DuckDB schema and loader, q01-q10 DuckDB reference SQL, a candidate canonical metric contract, initial Skill, OKF, MetricFlow, and Ossie representations, and an executable blank-context/DDL-only control harness. Cube, live Agent providers, semantic-target adapters, and full benchmark runs are still planned. Documentation below distinguishes implemented assets from the experimental design.
 
 ## What this benchmark is trying to answer
 
@@ -219,14 +219,14 @@ The first reproducible environment is local and DuckDB-first:
 
 | Component | Baseline environment | State |
 | --- | --- | --- |
-| Orchestrator and evaluators | Linux, Python 3.11+, repository revision pinned | Versioned contracts present; execution implementation planned |
+| Orchestrator and evaluators | Linux, Python 3.11+, repository revision pinned | q01 control runner, exact-result evaluator, and versioned artifacts present |
 | Database | DuckDB 1.4.0, SF1 database file mounted read-only | Schema, loader, and read-only adapter present |
 | MetricFlow | Pinned standalone source at commit `8750c1d`; DuckDB SQL renderer selected by adapter | Table semantics present; executable adapter planned |
 | Cube | Pinned Cube image, isolated service, official DuckDB data source, cache disabled for correctness runs | Native model and adapter planned |
 | Skill | Same reference-agent runtime; package mounted in a temporary repository skill location | Table and metric knowledge present; harness integration planned |
 | OKF | Same reference-agent runtime with direct allowlisted Markdown and link navigation | Table and metric bundle present; native consumer pending |
 | Ossie | Pinned schema validator and transparent original-document consumer | Model present and schema-validated; consumer pending |
-| Telemetry | OpenTelemetry-compatible collector with local trace artifacts; Phoenix is an optional viewer | Event contract present; capture pending |
+| Telemetry | OpenTelemetry-compatible collector with local trace artifacts; Phoenix is an optional viewer | Control runner emits validated local trace events; collector export pending |
 
 Cube officially supports a local DuckDB database path. The pinned MetricFlow source contains a DuckDB SQL renderer, so the planned self-hosted condition can execute its native metric query against DuckDB and expose compiled SQL for diagnosis. This benchmark does not claim that every current dbt product deployment officially supports DuckDB. The executable compatibility gate must pass for the pinned benchmark version before results are published.
 
@@ -290,6 +290,7 @@ flowchart TB
 | `semantic-models/canonical/` | System-neutral semantic and metric contract |
 | `semantic-models/{target}/` | Native representation for each target |
 | `runner/config/` | Pluggable database, native target registry, and experiment configurations |
+| `runner/core/` | Control orchestration, Agent protocol, tool dispatch, SQL policy, and result hashing |
 | `runner/contracts/` | Versioned experiment, question, trace, trial, and run JSON Schemas |
 | `runner/prompts/` | Frozen common Agent prompts and conversation protocol |
 | `runner/tools/` | Exact target-visible tool schemas, starting with the blank-context baseline |
@@ -330,19 +331,21 @@ The official toolkit is governed by the TPC EULA and is linked rather than vendo
 - [ ] Cube native semantic model
 - [x] Versioned experiment, question-instance, trial, run, and trace-event contracts
 - [x] Native target registry, blank-context prompt protocol, and q01 materialized pilot
-- [ ] Native target adapters and transparent observability wrappers
-- [ ] SQL/result and structure evaluators
-- [ ] OpenTelemetry event schema and trace capture
+- [x] Executable q01 blank-context and DDL-only control runner with fresh scripted Agent trials
+- [x] Read-only SQL policy, exact-result evaluator, and validated local trace capture for controls
+- [ ] Live Agent provider and semantic-target adapters
+- [ ] Full SQL/result and structure evaluators
+- [ ] OpenTelemetry collector export
 - [ ] Repeated-run benchmark report
 
 ## Planned implementation order
 
-1. Implement preflight and the blank-context q01 runner against the frozen contracts.
-2. Generate one SF1 manifest and validate the q01 reference result on DuckDB.
-3. Materialize and review q02-q10, then q11-q99, without exposing evaluator fields to targets.
-4. Implement DDL-only, Skill, OKF, Ossie, MetricFlow, and Cube native adapters without fallback.
-5. Implement native Phase 1 execution/result evaluation before Phase 2 structure scoring.
-6. Run the q01-q10 native pilot, review failures, then expand to all 99 questions. Run controlled-context ablations only as separate secondary experiments.
+1. Generate one SF1 manifest and validate the q01 reference result on DuckDB.
+2. Add one live Agent provider adapter with native tool calling and fresh conversations.
+3. Run the q01 blank-context and DDL-only pilot, then review traces and failure classifications.
+4. Materialize and review q02-q10, then q11-q99, without exposing evaluator fields to targets.
+5. Implement Skill, OKF, Ossie, MetricFlow, and Cube native adapters without fallback.
+6. Complete Phase 1 evaluation and the q01-q10 native pilot before Phase 2 structure scoring and all-99 expansion. Run controlled-context ablations only as separate secondary experiments.
 
 ## Official format and runtime references
 
