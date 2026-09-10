@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/trace-event.schema.json",
+  "title": "Sanitized benchmark trace event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "trial_id",
+    "sequence",
+    "timestamp",
+    "event_type",
+    "status",
+    "attributes"
+  ],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "trial_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "parent_sequence": {"type": ["integer", "null"], "minimum": 0},
+    "event_type": {
+      "enum": [
+        "trial.start",
+        "native.bootstrap",
+        "context.read",
+        "llm.request",
+        "llm.response",
+        "tool.call",
+        "tool.result",
+        "semantic.validate",
+        "semantic.compile",
+        "db.execute",
+        "answer.submit",
+        "evaluate.result",
+        "trial.end"
+      ]
+    },
+    "status": {"enum": ["started", "ok", "error", "timeout", "unsupported", "skipped"]},
+    "duration_ms": {"type": ["number", "null"], "minimum": 0},
+    "attributes": {
+      "type": "object",
+      "description": "Event-specific, sanitized attributes. Secret values and hidden reasoning are prohibited."
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "output_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "cached_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "reasoning_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "provider_reported": {"type": "boolean"}
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path", "sha256"],
+        "properties": {
+          "kind": {"enum": ["prompt", "conversation", "native_request", "sql", "result", "error"]},
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    },
+    "redaction_applied": {"type": "boolean"}
+  }
+}
