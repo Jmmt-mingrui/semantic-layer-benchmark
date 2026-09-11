@@ -36,12 +36,19 @@ def validate_serialized_files(root: Path) -> None:
         if not path.is_file() or any(part in ignored_parts for part in path.parts):
             continue
         suffix = path.suffix.lower()
-        if suffix == ".json":
-            json.loads(path.read_text(encoding="utf-8"))
-        elif suffix == ".jsonl":
-            _load_jsonl(path)
-        elif suffix in {".yaml", ".yml"}:
-            yaml.safe_load(path.read_text(encoding="utf-8"))
+        try:
+            if suffix == ".json":
+                json.loads(path.read_text(encoding="utf-8"))
+            elif suffix == ".jsonl":
+                _load_jsonl(path)
+            elif suffix in {".yaml", ".yml"}:
+                # MetricFlow assets legitimately use YAML streams with multiple
+                # documents separated by `---`, so validate the complete stream.
+                list(yaml.safe_load_all(path.read_text(encoding="utf-8")))
+        except ValidationError:
+            raise
+        except (json.JSONDecodeError, yaml.YAMLError) as exc:
+            raise ValidationError(f"{path}: invalid serialized asset: {exc}") from exc
 
 
 def validate_canonical_questions(root: Path) -> None:
