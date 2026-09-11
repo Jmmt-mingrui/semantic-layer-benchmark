@@ -21,7 +21,8 @@ test = [
 semantic-benchmark = "runner.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["runner*"]
+include = ["runner*", "scripts*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
