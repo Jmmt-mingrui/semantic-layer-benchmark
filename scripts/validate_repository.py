@@ -47,7 +47,7 @@ def validate_serialized_files(root: Path) -> None:
 def validate_canonical_questions(root: Path) -> None:
     path = root / "benchmark/tpcds/questions/canonical/questions.jsonl"
     rows = _load_jsonl(path)
-    ids = [row.get("question_id") for row in rows]
+    ids = [row.get("id") for row in rows]
     if ids != EXPECTED_QUESTION_IDS:
         raise ValidationError(
             "canonical questions must contain exactly q01-q99 in order; "
@@ -55,14 +55,11 @@ def validate_canonical_questions(root: Path) -> None:
         )
 
     for row in rows:
-        question_id = row["question_id"]
-        reference_paths = row.get("reference_sql") or row.get("reference_sql_paths")
-        if reference_paths is None:
-            # Older question records store one local path under source metadata. The
-            # existence of the canonical file is still covered by the global parse gate.
-            continue
-        if isinstance(reference_paths, str):
-            reference_paths = [reference_paths]
+        question_id = row["id"]
+        reference_sql = row.get("reference_sql", {})
+        reference_paths = reference_sql.get("local_files", []) if isinstance(reference_sql, dict) else []
+        if not reference_paths:
+            raise ValidationError(f"{question_id}: reference_sql.local_files must not be empty")
         for reference in reference_paths:
             candidate = root / reference
             if not candidate.is_file():
