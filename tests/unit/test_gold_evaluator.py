@@ -62,7 +62,7 @@ def _gold(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
 
 def test_evaluator_compares_identity_without_rows(tmp_path: Path) -> None:
     gold, manifest, questions, reference = _gold(tmp_path)
-    evaluator = FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=ROOT)
+    evaluator = FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=tmp_path)
     candidate = CandidateResultIdentity(
         columns=("c_customer_id",), row_count=2,
         sha256=result_sha256(QueryResult(columns=("c_customer_id",), rows=[(1,), (2,)], elapsed_ms=0.0)),
@@ -76,11 +76,11 @@ def test_evaluator_compares_identity_without_rows(tmp_path: Path) -> None:
 
 def test_evaluator_rejects_identity_or_normalization_mismatch(tmp_path: Path) -> None:
     gold, manifest, questions, reference = _gold(tmp_path)
-    evaluator = FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=ROOT)
+    evaluator = FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=tmp_path)
     with pytest.raises(GoldIdentityError, match="normalization"):
         evaluator.evaluate(CandidateResultIdentity(columns=("c_customer_id",), row_count=2, sha256="a" * 64, normalization_revision="other"))
     payload = json.loads(manifest.read_text())
     payload["dataset_sha256"] = "f" * 64
     manifest.write_text(json.dumps(payload))
     with pytest.raises(GoldIdentityError, match="logical dataset"):
-        FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=ROOT)
+        FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=tmp_path)
