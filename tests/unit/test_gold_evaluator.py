@@ -82,5 +82,5 @@ def test_evaluator_rejects_identity_or_normalization_mismatch(tmp_path: Path) ->
     payload = json.loads(manifest.read_text())
     payload["dataset_sha256"] = "f" * 64
     manifest.write_text(json.dumps(payload))
-    with pytest.raises(GoldIdentityError, match="logical dataset"):
+    with pytest.raises(GoldIdentityError, match="manifest SHA-256"):
         FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=tmp_path)
