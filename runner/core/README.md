@@ -23,3 +23,9 @@ Every production adapter must:
 
 The evaluator remains a separate component and is the only component allowed to
 read Gold-result identities.
+
+## Frozen Gold evaluator
+
+`FrozenGoldEvaluator` is evaluator-only code. It never accepts SQL, a database connection, or result rows. It verifies the frozen Gold artifact against the dataset manifest, question-instance file, and reference-SQL file identities, then compares only candidate columns, row count, result hash, and the fixed `canonical-json-v1` normalization revision.
+
+This component is intentionally separate from a target adapter. A production runner must load and validate it before creating a provider, and record its latency outside target-scored latency.
