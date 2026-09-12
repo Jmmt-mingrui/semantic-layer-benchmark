@@ -84,3 +84,19 @@ def test_evaluator_rejects_identity_or_normalization_mismatch(tmp_path: Path) ->
     manifest.write_text(json.dumps(payload))
     with pytest.raises(GoldIdentityError, match="manifest SHA-256"):
         FrozenGoldEvaluator(gold, manifest_path=manifest, question_instances_path=questions, reference_sql_path=reference, root=tmp_path)
+
+
+
+def test_evaluator_rejects_gold_with_mismatched_declared_reference_path(tmp_path: Path) -> None:
+    gold, manifest, questions, reference = _gold(tmp_path)
+    payload = json.loads(gold.read_text())
+    payload["reference_sql"]["path"] = str(tmp_path / "other.sql")
+    gold.write_text(json.dumps(payload))
+    with pytest.raises(GoldIdentityError, match="reference-SQL path"):
+        FrozenGoldEvaluator(
+            gold,
+            manifest_path=manifest,
+            question_instances_path=questions,
+            reference_sql_path=reference,
+            root=tmp_path,
+        )
