@@ -52,6 +52,8 @@ execution:
 
 isolation:
   gold_assets: evaluator_only
+  gold_results:
+    q01: benchmark/tpcds/results/gold/sf1/q01.json
   cross_trial_memory: disabled
   target_network: disabled
   secrets_in_prompts: false
