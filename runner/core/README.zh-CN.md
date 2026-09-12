@@ -1,6 +1,6 @@
-[English](README.md)
-
 # 原生 Adapter 边界
+
+[English](README.md) | [简体中文](README.zh-CN.md)
 
 原生语义目标通过 `NativeAdapter` 接入。这是一个刻意保持封闭、目标特定的内部边界：它不定义通用的语义查询 API，也不得静默替换为直接 SQL。
 
