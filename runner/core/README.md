@@ -1,3 +1,5 @@
+[中文](README.zh-CN.md)
+
 # Native adapter boundary
 
 Native semantic targets are integrated through `NativeAdapter`, a deliberately
