@@ -133,7 +133,13 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
 
     def factory(target: str, repetition: int, question: dict) -> ScriptedAgentProvider:
         assert repetition == 1
-        assert question["question_id"] == "q01"
+        assert question == {
+            "question_id": "q01",
+            "instance_id": "q01-control-test",
+            "question": "Return the available IDs in ascending order.",
+        }
+        assert "evaluator_only" not in question
+        assert "orchestrator_only" not in question
         provider = _provider(target)
         providers.append((target, provider))
         return provider

@@ -19,6 +19,7 @@ import yaml
 from runner.core.agent import AgentProvider
 from runner.core.control_tools import ControlToolDispatcher, ToolProtocolError, ToolTimeoutError, result_sha256
 from runner.core.database import DatabaseSettings, connect, duckdb_path_from_url, load_database_settings
+from runner.core.native_adapter import TargetQuestion
 
 
 ProviderFactory = Callable[[str, int, dict[str, Any]], AgentProvider]
@@ -247,7 +248,7 @@ def run_control_experiment(
                         trace.add("context.read", "ok", attributes={"kind": "physical_ddl", "sha256": artifact_sha})
                     rendered_user = _render_user_prompt(user_template, question["target_input"]["question"])
                     initial_messages.append({"role": "user", "content": rendered_user})
-                    provider = provider_factory(target, repetition, question)
+                    provider = provider_factory(target, repetition, TargetQuestion.from_instance(question).provider_context())
                     allowed = set(target_config["allowed_operations"])
                     dispatcher = ControlToolDispatcher(
                         database,
