@@ -138,6 +138,12 @@
       "required": ["gold_assets", "cross_trial_memory", "target_network"],
       "properties": {
         "gold_assets": {"const": "evaluator_only"},
+        "gold_results": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"pattern": "^q(?:0[1-9]|[1-9][0-9])$"},
+          "additionalProperties": {"$ref": "#/$defs/path"}
+        },
         "cross_trial_memory": {"const": "disabled"},
         "target_network": {"enum": ["disabled", "allowlisted_native_endpoint_only"]},
         "secrets_in_prompts": {"const": false},
