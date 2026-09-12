@@ -4,6 +4,8 @@
 
 第一条可执行 Harness 覆盖 `blank_context` 和 `ddl_only` 两个控制组。它不会通过共享文本 Adapter 假装实现某个语义目标。
 
+原生语义目标通过内部的[原生 Adapter 边界](core/README.zh-CN.md)接入：目标代码只能收到已实例化的 target question，保留已声明的原生操作，且不得读取 evaluator-only 资产或回退到未声明操作。
+
 ## 已强制执行的规则
 
 - 每个 Trial 都创建新的 Provider 实例和全新消息列表；
