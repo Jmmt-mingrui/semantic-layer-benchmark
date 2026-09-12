@@ -67,7 +67,7 @@ class FrozenGoldEvaluator:
         self.question_instances_path = self._within_root(question_instances_path, "question instances")
         self.reference_sql_path = self._within_root(reference_sql_path, "reference SQL")
         self.gold = _load_json(self.gold_path)
-        schema = _load_json(self.root / "runner/contracts/gold-result.schema.json")
+        schema = _load_json(Path(__file__).resolve().parents[1] / "contracts/gold-result.schema.json")
         Draft202012Validator(schema, format_checker=FormatChecker()).validate(self.gold)
         self._validate_identities()
 
