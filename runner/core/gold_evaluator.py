@@ -80,8 +80,17 @@ class FrozenGoldEvaluator:
             raise GoldIdentityError(f"{label} must remain inside the repository root")
         return resolved
 
+    def _declared_path(self, value: str) -> Path:
+        return self._within_root(value, "Gold-declared identity path")
+
     def _validate_identities(self) -> None:
         dataset = self.gold["dataset"]
+        if self._declared_path(dataset["manifest_path"]) != self.manifest_path:
+            raise GoldIdentityError("Gold manifest path does not match the evaluator manifest")
+        if self._declared_path(self.gold["question_instance"]["path"]) != self.question_instances_path:
+            raise GoldIdentityError("Gold question-instance path does not match the evaluator input")
+        if self._declared_path(self.gold["reference_sql"]["path"]) != self.reference_sql_path:
+            raise GoldIdentityError("Gold reference-SQL path does not match the evaluator input")
         if _checksum(self.manifest_path) != dataset["manifest_sha256"]:
             raise GoldIdentityError("Gold dataset manifest SHA-256 does not match")
         manifest = _load_json(self.manifest_path)
@@ -89,8 +98,21 @@ class FrozenGoldEvaluator:
             raise GoldIdentityError("Gold logical dataset SHA-256 does not match")
         if manifest["database"]["sha256"] != dataset["database_sha256"]:
             raise GoldIdentityError("Gold database SHA-256 does not match")
+        if manifest["scale_factor"] != self.gold["scale_factor"]:
+            raise GoldIdentityError("Gold scale factor does not match the manifest")
         if _checksum(self.question_instances_path) != self.gold["question_instance"]["sha256"]:
             raise GoldIdentityError("Gold question-instance SHA-256 does not match")
+        questions = [
+            item for item in self.question_instances_path.read_text(encoding="utf-8").splitlines() if item.strip()
+        ]
+        matching = [
+            json.loads(line)
+            for line in questions
+            if json.loads(line).get("question_id") == self.gold["question_id"]
+            and json.loads(line).get("instance_id") == self.gold["instance_id"]
+        ]
+        if len(matching) != 1:
+            raise GoldIdentityError("Gold question ID and instance ID do not resolve uniquely")
         if _checksum(self.reference_sql_path) != self.gold["reference_sql"]["sha256"]:
             raise GoldIdentityError("Gold reference SQL SHA-256 does not match")
 
