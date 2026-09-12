@@ -1,6 +1,6 @@
-[中文](README.zh-CN.md)
-
 # Native adapter boundary
+
+[English](README.md) | [简体中文](README.zh-CN.md)
 
 Native semantic targets are integrated through `NativeAdapter`, a deliberately
 closed target-specific boundary. It does **not** define a universal semantic
