@@ -15,3 +15,9 @@ Adapter 只能暴露 `runner/config/targets.native.yaml` 中为该目标声明�
 - 拒绝 evaluator-only 路径、未声明操作，以及该目标注册表禁止的直接 SQL。
 
 Evaluator 是独立组件，也是唯一可以读取 Gold-result identity 的组件。
+
+## 冻结 Gold Evaluator
+
+`FrozenGoldEvaluator` 是 evaluator-only 代码：它不接受 SQL、数据库连接或结果行。它会校验冻结 Gold 与数据集 manifest、question-instance 文件和 reference-SQL 文件的身份，然后只比较候选结果的列、行数、结果 hash，以及固定的 `canonical-json-v1` 归一化版本。
+
+该组件刻意独立于 target adapter。生产 Runner 必须在创建 Provider 前完成加载和校验，并将 evaluator 延迟排除在 target 的 scored latency 之外。
