@@ -224,6 +224,7 @@ def freeze_gold_result(
             ),
             "comparison": "exact_normalized",
             "order_sensitive": True,
+            "normalization_revision": "canonical-json-v1",
         },
         "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }
