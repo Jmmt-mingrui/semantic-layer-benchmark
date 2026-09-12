@@ -4,6 +4,8 @@
 
 The first executable harness covers the `blank_context` and `ddl_only` controls. It deliberately does not implement a semantic target through a shared text adapter.
 
+Native semantic targets use the internal [native adapter boundary](core/README.md): target code receives only a materialized target question, keeps its declared native operations, and cannot read evaluator-only assets or fall back to undeclared operations.
+
 ## What is enforced
 
 - a new provider instance and fresh message list for every trial;
