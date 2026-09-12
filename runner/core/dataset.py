@@ -89,8 +89,6 @@ def validate_sf1_snapshot(
     manifest_file = Path(manifest_path)
     if not manifest_file.is_absolute():
         manifest_file = root_path / manifest_file
-    if publication:
-        _require_repository_path(manifest_file, root_path, "manifest")
     manifest = json.loads(manifest_file.read_text())
     schema = json.loads((root_path / "runner/contracts/dataset-manifest.schema.json").read_text())
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(manifest)

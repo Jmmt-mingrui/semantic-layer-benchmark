@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e '.[test]'
+
+      - name: Compile Python sources
+        run: python -m compileall -q runner scripts tests
+
+      - name: Validate serialized assets
+        run: python -c "from pathlib import Path; from scripts.validate_repository import validate_serialized_files; validate_serialized_files(Path('.').resolve())"
+
+      - name: Validate canonical questions
+        run: python -c "from pathlib import Path; from scripts.validate_repository import validate_canonical_questions; validate_canonical_questions(Path('.').resolve())"
+
+      - name: Validate native target registry
+        run: python -c "from pathlib import Path; from scripts.validate_repository import validate_target_registry; validate_target_registry(Path('.').resolve())"
+
+      - name: Validate evaluator-only gold isolation
+        run: python -c "from pathlib import Path; from scripts.validate_repository import validate_gold_isolation; validate_gold_isolation(Path('.').resolve())"
+
+      - name: Run tests
+        run: pytest -q
