@@ -141,7 +141,7 @@
     "usage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tool_calls", "database_calls", "total_latency_ms"],
+      "required": ["tool_calls", "database_calls", "total_latency_ms", "scored_latency_ms", "evaluator_latency_ms"],
       "properties": {
         "input_tokens": {"type": ["integer", "null"], "minimum": 0},
         "output_tokens": {"type": ["integer", "null"], "minimum": 0},
@@ -150,6 +150,8 @@
         "database_calls": {"type": "integer", "minimum": 0},
         "native_service_calls": {"type": "integer", "minimum": 0},
         "total_latency_ms": {"type": "number", "minimum": 0},
+        "scored_latency_ms": {"type": "number", "minimum": 0},
+        "evaluator_latency_ms": {"type": "number", "minimum": 0},
         "estimated_cost_usd": {"type": ["number", "null"], "minimum": 0},
         "price_snapshot": {"type": ["string", "null"]}
       }
