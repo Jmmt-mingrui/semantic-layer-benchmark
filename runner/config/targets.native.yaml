@@ -90,13 +90,16 @@ targets:
   cube:
     role: executable_semantic_engine
     agent_required: true
-    readiness: native_model_and_runtime_adapter_pending
+    readiness: native_rest_adapter_available
     initial_semantic_context: native_discovery_only
     native_surface:
       name: cube_rest_api
+      adapter: runner.adapters.cube.CubeRestAdapter
+      api_variant: rest_query
       artifact_root: null
       result_origin: native_engine
       image_digest: {env: BENCHMARK_CUBE_IMAGE_DIGEST, required: true}
+      runtime_identity: {env: BENCHMARK_CUBE_RUNTIME_IDENTITY, required: true}
       source: https://docs.cube.dev/reference/core-data-apis/rest-api
     preflight_operations:
       - cube.readyz
