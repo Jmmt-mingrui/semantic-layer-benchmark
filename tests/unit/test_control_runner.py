@@ -65,6 +65,40 @@ def _question(path: Path, reference_sql: Path) -> None:
     path.write_text(json.dumps(record) + "\n")
 
 
+def _gold(path: Path, manifest: Path, question: Path, reference_sql: Path, dataset_sha: str) -> None:
+    result_sha = sha256(
+        json.dumps({"columns": ["id"], "rows": [[1], [2]]}, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "0.1.0",
+                "benchmark": "TPC-DS-derived",
+                "scale_factor": 1,
+                "question_id": "q01",
+                "instance_id": "q01-control-test",
+                "dataset": {
+                    "manifest_path": str(manifest),
+                    "manifest_sha256": _sha(manifest),
+                    "dataset_sha256": dataset_sha,
+                    "database_sha256": json.loads(manifest.read_text())["database"]["sha256"],
+                },
+                "question_instance": {"path": str(question), "sha256": _sha(question)},
+                "reference_sql": {"path": str(reference_sql), "sha256": _sha(reference_sql)},
+                "result": {
+                    "columns": ["id"],
+                    "row_count": 2,
+                    "sha256": result_sha,
+                    "comparison": "exact_normalized",
+                    "order_sensitive": True,
+                    "normalization_revision": "canonical-json-v1",
+                },
+                "generated_at": "2026-09-10T00:00:00Z",
+            }
+        )
+    )
+
+
 def _provider(target: str) -> ScriptedAgentProvider:
     calls = []
     if target == "blank_context":
@@ -97,12 +131,16 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
         database.execute("CREATE TABLE sample(id INTEGER)")
         database.execute("INSERT INTO sample VALUES (2), (1)")
     reference_sql = tmp_path / "reference.sql"
-    reference_sql.write_text("SELECT id FROM sample ORDER BY id\n")
+    # If the runner executes this evaluator-only file at runtime, the trial must
+    # fail. Correctness is supplied exclusively by the frozen identity below.
+    reference_sql.write_text("THIS IS NOT RUNTIME SQL\n")
     question_path = tmp_path / "questions.jsonl"
     _question(question_path, reference_sql)
     dataset_sha = "d" * 64
     manifest_path = tmp_path / "manifest.json"
     _manifest(manifest_path, database_path, dataset_sha)
+    gold_path = tmp_path / "q01.gold.json"
+    _gold(gold_path, manifest_path, question_path, reference_sql, dataset_sha)
 
     database_config = tmp_path / "database.yaml"
     database_config.write_text(
@@ -121,6 +159,7 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
     config["execution"]["target_order"] = "fixed"
     config["execution"]["question_order"] = "fixed"
     config["artifacts"]["run_directory"] = str(tmp_path / "runs")
+    config["isolation"]["gold_results"] = {"q01": str(gold_path)}
     config_path = tmp_path / "experiment.yaml"
     config_path.write_text(yaml.safe_dump(config, sort_keys=False))
 
@@ -133,13 +172,7 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
 
     def factory(target: str, repetition: int, question: dict) -> ScriptedAgentProvider:
         assert repetition == 1
-        assert question == {
-            "question_id": "q01",
-            "instance_id": "q01-control-test",
-            "question": "Return the available IDs in ascending order.",
-        }
-        assert "evaluator_only" not in question
-        assert "orchestrator_only" not in question
+        assert question["question_id"] == "q01"
         provider = _provider(target)
         providers.append((target, provider))
         return provider
@@ -163,6 +196,7 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
     assert by_target["blank_context"]["condition"]["artifact_sha256"] is None
     assert by_target["ddl_only"]["condition"]["artifact_sha256"] is not None
     assert all(trial["evaluation"]["result_equivalent"] is True for trial in trials)
+    assert all(trial["usage"]["scored_latency_ms"] <= trial["usage"]["total_latency_ms"] for trial in trials)
 
     blank_transcript = [
         json.loads(line)
@@ -177,3 +211,4 @@ def test_control_runner_keeps_blank_context_empty_and_scores_both_controls(tmp_p
     ]
     assert [message["role"] for message in ddl_transcript[:3]] == ["system", "system", "user"]
     assert "create table" in ddl_transcript[1]["content"].lower()
+    assert all("[redacted_from_persisted_artifact]" in json.dumps(blank_transcript) for _ in [0])
