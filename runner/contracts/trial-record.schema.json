@@ -141,7 +141,7 @@
     "usage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tool_calls", "database_calls", "total_latency_ms", "scored_latency_ms", "evaluator_latency_ms"],
+      "required": ["tool_calls", "database_calls", "total_latency_ms"],
       "properties": {
         "input_tokens": {"type": ["integer", "null"], "minimum": 0},
         "output_tokens": {"type": ["integer", "null"], "minimum": 0},
