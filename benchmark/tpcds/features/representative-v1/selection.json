@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0.0",
+  "selection_id": "tpcds-representative-semantic-v1",
+  "status": "manual_selection",
+  "official_tpcds_selection": false,
+  "publication_scope": "sampling metadata only; not a benchmark score, Gold result, generated dataset, or executable question-instance set",
+  "selection_policy": {
+    "target_size": 12,
+    "selection_method": "manual review of canonical question wording and each record's mapped PostgreSQL reference SQL",
+    "selection_criterion": "Cover each declared semantic capability at least once while retaining independent examples of simple aggregation, cross-fact composition, semi-additive inventory, analytic windows, derived measures, entity-detail retrieval, nested queries, and multiple reference formulations.",
+    "non_goals": [
+      "This selection does not modify canonical q01-q99 records.",
+      "This selection does not supply parameter values, Gold results, result rows, scores, or engine-specific models.",
+      "This selection is not an official TPC-DS query classification or an audited TPC benchmark workload."
+    ]
+  },
+  "provenance": {
+    "canonical_questions": {
+      "path": "benchmark/tpcds/questions/canonical/questions.jsonl",
+      "blob_sha": "915ccef4eea843765211304a8e891ee4455fdf86"
+    },
+    "reference_sql_resolution": "Each row copies source_template, source_multi_statement, and reference_sql_files from the canonical record. The paths are evidence pointers, not target-visible context.",
+    "reviewed_utc": "2026-09-13"
+  },
+  "capabilities": {
+    "aggregation": "Aggregate functions, grouping, or aggregate predicates.",
+    "temporal_logic": "Date/time filtering, bucketing, or period comparison.",
+    "relational_join": "Multiple relational inputs joined through predicates or JOIN syntax.",
+    "nested_query": "A SELECT nested in another query block, including CTE/derived-table/EXISTS forms.",
+    "cross_fact": "Two or more transactional TPC-DS fact tables are composed.",
+    "semi_additive": "Inventory snapshot quantities require explicit time semantics.",
+    "analytic_window": "An SQL OVER clause provides partition-relative or ranking logic.",
+    "derived_metric": "The mapped SQL derives a measure from arithmetic over base measures, for example a ratio, margin, delta, or net-of-return amount.",
+    "entity_detail": "The result returns business-entity identifiers or attributes at detail grain.",
+    "multi_formulation": "One canonical question maps to more than one reference SQL formulation."
+  },
+  "questions": [
+    {"id":"q01","source_template":"query1.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query01.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","entity_detail","derived_metric"],"rationale_en":"Customer-level returns above a store-average threshold; establishes the first reviewed qualification pilot.","rationale_zh_cn":"客户级退货高于门店平均阈值；也是首个已审查的 qualification pilot。"},
+    {"id":"q02","source_template":"query2.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query02.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","cross_fact","derived_metric"],"rationale_en":"Weekly web-plus-catalog comparison with day-level year-over-year ratios.","rationale_zh_cn":"按周比较 Web 与目录销售，并计算日粒度同比比率。"},
+    {"id":"q03","source_template":"query3.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query03.sql"],"capabilities":["aggregation","temporal_logic","relational_join"],"rationale_en":"Compact grouped sales-by-brand query; the basic aggregation and dimensional-join anchor.","rationale_zh_cn":"紧凑的按品牌销售聚合查询；作为基础聚合和维度连接锚点。"},
+    {"id":"q05","source_template":"query5.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query05.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","cross_fact","derived_metric"],"rationale_en":"Cross-channel sales/returns composition with net-loss and profit-derived measures.","rationale_zh_cn":"跨渠道销售/退货组合，并包含净损失和利润派生指标。"},
+    {"id":"q12","source_template":"query12.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query12.sql"],"capabilities":["aggregation","temporal_logic","relational_join","analytic_window","derived_metric","entity_detail"],"rationale_en":"Item revenue share uses a partitioned window denominator and returns item attributes.","rationale_zh_cn":"商品收入占比使用分区窗口分母，并返回商品属性。"},
+    {"id":"q14","source_template":"query14.tpl","source_multi_statement":true,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query14_1.sql","benchmark/tpcds/sql/reference/postgres/query14_2.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","cross_fact","multi_formulation"],"rationale_en":"Two canonical reference formulations exercise equivalent multi-channel composition without choosing one as privileged.","rationale_zh_cn":"两条 canonical 参考表述用于等价的多渠道组合，不把其中任何一条视为优先表述。"},
+    {"id":"q21","source_template":"query21.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query21.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","semi_additive","derived_metric","entity_detail"],"rationale_en":"Inventory before/after comparison makes snapshot time semantics and a derived ratio explicit.","rationale_zh_cn":"库存前后对比显式覆盖快照时间语义及派生比率。"},
+    {"id":"q36","source_template":"query36.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query36.sql"],"capabilities":["aggregation","temporal_logic","relational_join","analytic_window","derived_metric"],"rationale_en":"Gross-margin rollup plus rank-within-parent couples derived measures, hierarchy, and a window function.","rationale_zh_cn":"毛利率 rollup 加父级内排名，组合派生指标、层级和窗口函数。"},
+    {"id":"q39","source_template":"query39.tpl","source_multi_statement":true,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query39_1.sql","benchmark/tpcds/sql/reference/postgres/query39_2.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","semi_additive","entity_detail","multi_formulation"],"rationale_en":"The second multi-formulation case adds inventory detail, so formulation parity is tested under semi-additive semantics.","rationale_zh_cn":"第二个多表述案例加入库存明细，使表述等价性在半可加语义下得到覆盖。"},
+    {"id":"q49","source_template":"query49.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query49.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","cross_fact","analytic_window","derived_metric"],"rationale_en":"Cross-channel return and currency ratios with independent rankings stress derived metrics and windows.","rationale_zh_cn":"跨渠道退货和金额比率配合独立排名，覆盖派生指标和窗口压力点。"},
+    {"id":"q75","source_template":"query75.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query75.sql"],"capabilities":["aggregation","temporal_logic","relational_join","nested_query","cross_fact","derived_metric"],"rationale_en":"Net sales and quantity differences combine three sales channels with their returns over adjacent years.","rationale_zh_cn":"净销售额和数量差异组合三类销售渠道及其退货，并比较相邻年份。"},
+    {"id":"q84","source_template":"query84.tpl","source_multi_statement":false,"reference_sql_files":["benchmark/tpcds/sql/reference/postgres/query84.sql"],"capabilities":["relational_join","entity_detail"],"rationale_en":"Customer-detail retrieval keeps a non-aggregate entity lookup in the suite.","rationale_zh_cn":"客户明细检索保证题集中包含非聚合的实体查找。"}
+  ],
+  "coverage_requirements": ["aggregation","temporal_logic","relational_join","nested_query","cross_fact","semi_additive","analytic_window","derived_metric","entity_detail","multi_formulation"]
+}
