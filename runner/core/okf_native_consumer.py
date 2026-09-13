@@ -31,8 +31,8 @@ class OkfBundleError(NativeAdapterError):
     """Raised when an OKF bundle is malformed or attempts to escape its root."""
 
 
-_FRONTMATTER = re.compile(r"\\A---[ \\t]*\\r?\\n(.*?)\\r?\\n---[ \\t]*\\r?\\n", re.DOTALL)
-_MARKDOWN_LINK = re.compile(r"(?<!!)\\[[^]]*\\]\\(([^)]+)\\)")
+_FRONTMATTER = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*\r?\n", re.DOTALL)
+_MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]*\]\(([^)]+)\)")
 _MAX_SEARCH_RESULTS = 100
 
 
@@ -245,7 +245,8 @@ class OkfNativeConsumer:
         files: list[Path] = []
         for candidate in sorted(self._resolved_root.rglob("*.md")):
             if candidate.is_symlink():
-                raise OkfBundleError(f"Symlinked bundle files are forbidden: {self._relative(candidate)}")
+                relative = candidate.relative_to(self._resolved_root).as_posix()
+                raise OkfBundleError(f"Symlinked bundle files are forbidden: {relative}")
             if candidate.is_file():
                 files.append(candidate)
         return files
