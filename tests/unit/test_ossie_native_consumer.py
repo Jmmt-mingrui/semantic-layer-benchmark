@@ -129,7 +129,8 @@ def test_read_returns_exact_slice_from_original_yaml() -> None:
     assert whole.output["content"] == original
     assert field.output["content"] in original
     parsed = yaml.safe_load(field.output["content"])
-    assert parsed["name"] == "ss_item_sk"
+    assert isinstance(parsed, list)
+    assert parsed[0]["name"] == "ss_item_sk"
     assert field.output["byte_count"] == len(field.output["content"].encode("utf-8"))
     assert field.output["artifact_sha256"]
 
