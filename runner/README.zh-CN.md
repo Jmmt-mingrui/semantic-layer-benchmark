@@ -28,6 +28,25 @@ Smoke 只输出 Hash 与 Usage 元数据，不生成 Benchmark 分数。
 
 `publication_orchestrator.py` 是从已关闭的原生 Candidate 到正式发布产物的 Evaluator-side 桥梁。它拒绝 Scripted Provider、缺失 Provider Response ID 的运行，以及尚未关闭 Provider/Runtime 的 Candidate；通过这些门禁后才读取冻结的代表性 Gold，按顺序比较 Result Hash，分配 Harness 自有的 Conversation ID，并写出经过 Schema 校验的 `trial.json`、`trace.jsonl` 与 `conversation.sanitized.jsonl`。原始结果行和密钥不会被复制。
 
+## 18-Trial 真实 Pilot
+
+第一个端到端门禁明确不可发布：q01 × 当前六个目标 × 三次全新重复。运行前必须准备冻结的本地 SF1 Gold、只读 DuckDB 快照、可执行的 MetricFlow Runtime Project、不可变 Skill Host Revision，以及一个真实 Provider 配置。
+
+```bash
+export BENCHMARK_AGENT_PROVIDER=...
+export BENCHMARK_AGENT_MODEL=...
+export BENCHMARK_AGENT_ENDPOINT=https://...
+export BENCHMARK_AGENT_API_KEY_ENV=PROVIDER_API_KEY
+export PROVIDER_API_KEY=...
+export BENCHMARK_SKILL_HOST_REVISION=...
+
+semantic-benchmark run-pilot \\
+  --metricflow-runtime path/to/prepared/metricflow-runtime \\
+  --output runs/pilot-q01
+```
+
+命令拒绝覆盖已有输出目录，并生成恰好 18 份经过 Schema 校验的 Trial 产物及 `pilot-manifest.json`。该 Manifest 固定为 `publishable: false`，不能冒充满足 216-Trial 契约的正式结果。
+
 ## 旧控制组 Runner
 
 早期 q01 Blank/DDL 契约测试仍可使用 `run-control`。新的语义目标实验应使用 `runner/core/native_factory.py`、`runner/core/native_runner.py` 和 `runner/core/live_provider.py`。Candidate 生成与 Gold 评测保持物理生命周期分离：Target 和 Provider 关闭之后，Evaluator 才允许加载 Gold。
