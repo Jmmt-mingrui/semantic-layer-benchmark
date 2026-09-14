@@ -38,8 +38,9 @@ def _write_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, str]]:
                 "benchmark": "TPC-DS-derived",
                 "scale_factor": 1,
                 "dataset_sha256": "d" * 64,
-                "generator": {"toolkit_version": "4.0.0", "binary_sha256": "b" * 64},
-                "database": {"duckdb_version": "1.4.0", "sha256": "e" * 64},
+                "generator": {"name": "dsdgen", "version": "4.0.0", "binary_sha256": "b" * 64},
+                "engine": {"name": "duckdb", "version": "1.4.0"},
+                "database": {"sha256": "e" * 64},
             }
         ),
         encoding="utf-8",
