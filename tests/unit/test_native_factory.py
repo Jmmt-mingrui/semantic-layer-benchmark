@@ -87,7 +87,7 @@ def test_factory_preserves_each_targets_native_allowlist(tmp_path: Path) -> None
         "db.execute_readonly",
         "benchmark.submit_result",
     }
-    assert "instruction" not in (skill.initial_context or "").lower()
+    assert "skill_md_sha256" in (skill.initial_context or "")
     assert "SKILL.md" not in (skill.initial_context or "")
 
     for runtime in (blank, ddl, metricflow, ossie, okf, skill):
