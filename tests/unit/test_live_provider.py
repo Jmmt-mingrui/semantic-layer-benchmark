@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 
-from runner.core.live_provider import LiveAgentProvider, LiveProviderSettings
+import pytest
+
+from runner.core.live_provider import LiveAgentProvider, LiveProviderError, LiveProviderSettings
 
 
 def test_live_provider_is_stateless_and_preserves_missing_usage() -> None:
@@ -92,3 +94,27 @@ def test_live_provider_counts_retry_without_logging_reasoning() -> None:
     assert turn.usage.output_tokens == 4
     assert turn.usage.cached_input_tokens == 2
     assert "reasoning" not in repr(turn).lower()
+
+
+def test_remote_credentials_require_https_including_extra_headers() -> None:
+    with pytest.raises(LiveProviderError, match="must use HTTPS"):
+        LiveAgentProvider(
+            LiveProviderSettings(
+                provider="test", model="m", endpoint="http://provider.example/v1/chat", api_key="secret"
+            )
+        )
+    with pytest.raises(LiveProviderError, match="must use HTTPS"):
+        LiveAgentProvider(
+            LiveProviderSettings(
+                provider="test", model="m", endpoint="http://provider.example/v1/chat",
+                extra_headers={"X-API-Key": "secret"},
+            )
+        )
+    local = LiveAgentProvider(
+        LiveProviderSettings(
+            provider="test", model="m", endpoint="http://127.0.0.1:8000/v1/chat",
+            extra_headers={"Authorization": "local-only"},
+        ),
+        transport=lambda *args: (200, b'{"choices":[{"message":{"content":"ok"}}]}'),
+    )
+    assert local.settings.endpoint.startswith("http://127.0.0.1")
