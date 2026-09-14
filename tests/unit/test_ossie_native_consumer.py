@@ -8,6 +8,7 @@ import yaml
 from runner.adapters.ossie import (
     OSSIE_SCHEMA_BLOB_SHA,
     OSSIE_SCHEMA_COMMIT,
+    OSSIE_SCHEMA_FILE,
     OssieAdapter,
     OssieConfigurationError,
     OssieValidationError,
@@ -86,6 +87,7 @@ def test_pinned_official_schema_and_full_tpcds_inventory_are_valid() -> None:
     assert response.status == "succeeded"
     assert response.output["schema_commit"] == OSSIE_SCHEMA_COMMIT
     assert response.output["schema_blob_sha"] == OSSIE_SCHEMA_BLOB_SHA
+    assert response.output["schema_sha256"]
     assert response.output["counts"] == {
         "dataset": 24,
         "field": 425,
@@ -93,6 +95,17 @@ def test_pinned_official_schema_and_full_tpcds_inventory_are_valid() -> None:
         "metric": 64,
     }
     assert inventory.output["counts"] == response.output["counts"]
+
+
+def test_mutated_vendored_schema_fails_closed(tmp_path: Path) -> None:
+    schema = tmp_path / "ossie-schema.json"
+    original = OSSIE_SCHEMA_FILE.read_bytes()
+    schema.write_bytes(original + b"\n")
+
+    adapter = OssieAdapter(target_config=_target(), model_root=MODEL_ROOT, schema_path=schema)
+
+    with pytest.raises(OssieValidationError, match="do not match the pinned upstream Git blob"):
+        adapter.preflight(10)
 
 
 def test_inspect_filters_by_native_object_type_and_id() -> None:
