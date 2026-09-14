@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import csv
 from decimal import Decimal, InvalidOperation
+from hashlib import sha256
+import json
 from pathlib import Path
 import re
 import shutil
@@ -17,6 +19,8 @@ import tempfile
 from typing import Any, Mapping
 
 from runner.adapters.metricflow import MetricFlowAdapter
+from runner.core.control_tools import result_sha256
+from runner.core.database import QueryResult
 from runner.core.native_adapter import NativeResponse
 
 _INTEGER = re.compile(r"^[+-]?(?:0|[1-9][0-9]*)$")
@@ -37,6 +41,11 @@ def _coerce_csv_value(value: str) -> Any:
         except InvalidOperation:
             return value
     return value
+
+
+def _artifact_id(payload: Mapping[str, Any]) -> str:
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return f"sha256:{sha256(encoded).hexdigest()}"
 
 
 class MetricFlowResultAdapter(MetricFlowAdapter):
@@ -78,14 +87,31 @@ class MetricFlowResultAdapter(MetricFlowAdapter):
             values = [[_coerce_csv_value(cell) for cell in row] for row in rows[1:]]
             if any(len(row) != len(columns) for row in values):
                 return self._local_failure("metricflow.query", "malformed_native_csv_output")
+
+        result = QueryResult(
+            columns=tuple(columns),
+            rows=[tuple(row) for row in values],
+            elapsed_ms=response.duration_ms,
+        )
+        native_result_identity = {
+            "columns": columns,
+            "row_count": len(values),
+            "result_sha256": result_sha256(result),
+        }
         output = dict(response.output)
         output["native_result"] = {"columns": columns, "rows": values}
+        output["native_result_identity"] = native_result_identity
         return NativeResponse(
             status=response.status,
             duration_ms=response.duration_ms,
             output=output,
             request_artifact=response.request_artifact,
-            response_artifact=response.response_artifact,
+            response_artifact=_artifact_id(
+                {
+                    "parent_response_artifact": response.response_artifact,
+                    "native_result_identity": native_result_identity,
+                }
+            ),
         )
 
     def close(self) -> None:
