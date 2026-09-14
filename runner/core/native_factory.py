@@ -1,10 +1,9 @@
 """Factory for the six native benchmark target surfaces.
 
-The factory unifies lifecycle mechanics only.  It does not normalize semantic
-content: MetricFlow remains CLI-shaped, Ossie returns native YAML, OKF returns
-original Markdown, and Skill retains progressive disclosure.  Database and
-submission operations stay harness-owned and are added only when the registry
-explicitly allows them.
+The factory unifies lifecycle mechanics only. MetricFlow remains CLI-shaped,
+Ossie returns native YAML, OKF returns original Markdown, and Skill retains
+progressive disclosure. Database and submission operations stay harness-owned
+and are added only when the registry explicitly allows them.
 """
 
 from __future__ import annotations
@@ -13,12 +12,13 @@ from dataclasses import dataclass
 from hashlib import sha256
 import json
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping
 
-from runner.adapters.metricflow import MetricFlowAdapter
+from runner.adapters.metricflow_result import MetricFlowResultAdapter
 from runner.adapters.ossie import OssieAdapter
 from runner.adapters.skill_host import SkillHostAdapter
-from runner.core.control_tools import ControlToolDispatcher
+from runner.core.control_tools import ControlToolDispatcher, result_payload, result_sha256
+from runner.core.database import QueryResult
 from runner.core.native_adapter import NativeAdapter, NativeRequest, NativeResponse
 from runner.core.okf_native_consumer import OkfNativeConsumer
 
@@ -40,9 +40,6 @@ _HARNESS_OPERATIONS = frozenset(
     {"db.list_relations", "db.describe_relations", "db.execute_readonly", "benchmark.submit_result"}
 )
 
-# Some existing native adapters predate JSON-schema tool publication.  These
-# schemas describe only their original argument shapes; they do not create a
-# shared semantic request format.
 _NATIVE_ARGUMENT_SCHEMAS: dict[str, dict[str, Any]] = {
     "okf.list_files": {
         "type": "object",
@@ -171,13 +168,48 @@ class NativeRuntime:
             raise NativeFactoryError(f"Runtime exposed undeclared tools: {sorted(undeclared)}")
         return tuple(tools)
 
+    def _register_metricflow_result(self, response: NativeResponse) -> NativeResponse:
+        native_result = response.output.get("native_result")
+        if not isinstance(native_result, Mapping):
+            raise NativeFactoryError("MetricFlow query succeeded without a structured native result")
+        columns = native_result.get("columns")
+        rows = native_result.get("rows")
+        if not isinstance(columns, list) or not all(isinstance(item, str) for item in columns):
+            raise NativeFactoryError("MetricFlow native result has invalid columns")
+        if not isinstance(rows, list) or not all(isinstance(row, list) for row in rows):
+            raise NativeFactoryError("MetricFlow native result has invalid rows")
+        result = QueryResult(
+            columns=tuple(columns),
+            rows=tuple(tuple(row) for row in rows),
+            elapsed_ms=response.duration_ms,
+        )
+        handle = f"result-{len(self.harness.results) + 1:03d}"
+        self.harness.results[handle] = result
+        output = {key: value for key, value in response.output.items() if key != "native_result"}
+        output.update(
+            {
+                "result_handle": handle,
+                "columns": list(result.columns),
+                "row_count": len(result.rows),
+                "result_sha256": result_sha256(result),
+                "elapsed_ms": result.elapsed_ms,
+                "preview_rows": result_payload(result)["rows"][: self.harness.preview_rows],
+                "result_source": "metricflow_native_cli",
+            }
+        )
+        return NativeResponse(
+            status=response.status,
+            duration_ms=response.duration_ms,
+            output=output,
+            request_artifact=response.request_artifact,
+            response_artifact=response.response_artifact,
+        )
+
     def dispatch(self, request: NativeRequest) -> NativeResponse:
         if self._closed:
             raise NativeFactoryError("Native runtime is closed")
         allowed = set(self.target_config.get("allowed_operations", ()))
         if request.operation not in allowed:
-            # Let the shared native assertion machinery classify Gold separately
-            # when a native adapter exists; otherwise fail closed here.
             from runner.core.native_adapter import assert_declared_operation
 
             assert_declared_operation(self.target_config, request.operation)
@@ -194,7 +226,10 @@ class NativeRuntime:
             )
         if self.native_adapter is None:
             raise NativeFactoryError(f"No native adapter owns operation {request.operation}")
-        return self.native_adapter.dispatch(request)
+        response = self.native_adapter.dispatch(request)
+        if self.target == "metricflow" and request.operation == "metricflow.query" and response.status == "succeeded":
+            return self._register_metricflow_result(response)
+        return response
 
     @property
     def database_calls(self) -> int:
@@ -255,11 +290,10 @@ class NativeAdapterFactory:
         except (KeyError, TypeError) as error:
             raise NativeFactoryError(f"Target is missing from registry: {target}") from error
         allowed = set(config.get("allowed_operations", ()))
-        harness_allowed = allowed & _HARNESS_OPERATIONS
         harness = ControlToolDispatcher(
             self.database,
             self.tool_catalog,
-            harness_allowed,
+            allowed & _HARNESS_OPERATIONS,
             max_database_attempts=self.max_database_attempts,
             database_timeout_seconds=self.database_timeout_seconds,
         )
@@ -275,7 +309,7 @@ class NativeAdapterFactory:
                 raise NativeFactoryError("DDL-only target requires an artifact root")
             ddl, artifact_hash = _ddl_context(artifact_root)
             initial_context = "Physical database DDL for this trial:\n\n" + ddl
-        elif target not in {"blank_context"}:
+        elif target != "blank_context":
             if artifact_root is None:
                 raise NativeFactoryError(f"{target} requires a native artifact root")
             override = self.adapter_overrides.get(target)
@@ -285,7 +319,7 @@ class NativeAdapterFactory:
                 runtime = self.settings.metricflow_runtime_project_dir
                 if runtime is None:
                     raise NativeFactoryError("MetricFlow requires metricflow_runtime_project_dir")
-                adapter = MetricFlowAdapter(
+                adapter = MetricFlowResultAdapter(
                     target_config=config,
                     model_root=artifact_root,
                     runtime_project_dir=runtime,
