@@ -19,6 +19,7 @@ import yaml
 from runner.core.agent import AgentProvider
 from runner.core.control_tools import ControlToolDispatcher, ToolProtocolError, ToolTimeoutError, result_sha256
 from runner.core.database import DatabaseSettings, connect, duckdb_path_from_url, load_database_settings
+from runner.core.frozen_gold import FrozenGoldEvaluator
 from runner.core.native_adapter import TargetQuestion
 
 
@@ -52,6 +53,18 @@ def _json_dump(path: Path, value: Any) -> None:
 def _jsonl_dump(path: Path, values: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n" for value in values))
+
+
+def _redact_persisted_transcript(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep protocol metadata while never persisting candidate preview rows."""
+    sanitized: list[dict[str, Any]] = []
+    for message in messages:
+        copied = dict(message)
+        content = copied.get("content")
+        if copied.get("role") == "tool" and isinstance(content, dict) and "preview_rows" in content:
+            copied["content"] = {**content, "preview_rows": "[redacted_from_persisted_artifact]"}
+        sanitized.append(copied)
+    return sanitized
 
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -191,6 +204,18 @@ def run_control_experiment(
     if expected_dataset_sha != manifest["dataset_sha256"]:
         raise ValueError("Configured dataset SHA does not match the manifest")
 
+    # Fail closed before opening the snapshot, constructing a provider, or
+    # creating artifacts. Gold is an evaluator input, never a runtime fallback.
+    gold_evaluator = FrozenGoldEvaluator.preflight(
+        root=root_path,
+        gold_paths=dict(config["isolation"].get("gold_results", {})),
+        manifest_path=manifest_path,
+        manifest=manifest,
+        questions_path=questions_path,
+        selected_questions=selected,
+        scale_factor=int(config["workload"]["scale_factor"]),
+    )
+
     system_path = root_path / config["agent"]["system_prompt"]
     user_template_path = root_path / config["agent"]["user_prompt_template"]
     system_prompt = system_path.read_text().rstrip()
@@ -269,6 +294,7 @@ def run_control_experiment(
                         trace,
                         trial_dir,
                         artifact_sha,
+                        gold_evaluator,
                     )
                     relative_trial = _path_ref(trial_dir / "trial.json", root_path)
                     _json_dump(trial_dir / "trial.json", trial)
@@ -329,6 +355,7 @@ def _run_trial(
     trace: TraceRecorder,
     trial_dir: Path,
     artifact_sha: str | None,
+    gold_evaluator: FrozenGoldEvaluator,
 ) -> dict[str, Any]:
     started = perf_counter()
     transcript = list(messages)
@@ -420,7 +447,7 @@ def _run_trial(
             break
 
     transcript_path = trial_dir / "conversation.jsonl"
-    _jsonl_dump(transcript_path, transcript)
+    _jsonl_dump(transcript_path, _redact_persisted_transcript(transcript))
     sql_paths: list[str] = []
     result_paths: list[str] = []
     for index, (handle, result) in enumerate(dispatcher.results.items(), start=1):
@@ -433,16 +460,38 @@ def _run_trial(
         result_paths.append(_path_ref(result_path, root_path))
 
     submitted_handles = dispatcher.submission.get("result_handles", []) if dispatcher.submission else []
-    candidate_hash = result_sha256(dispatcher.results[submitted_handles[0]]) if submitted_handles else None
+    candidate_hash: str | None = None
     reference_hash: str | None = None
     result_equivalent: bool | None = None
-    if dispatcher.submission and dispatcher.submission["status"] == "success" and submitted_handles:
-        reference_path = root_path / question["evaluator_only"]["reference_sql"][0]
-        reference_sql = reference_path.read_text()
-        reference_result = dispatcher.database.execute(reference_sql)
-        reference_hash = result_sha256(reference_result)
-        result_equivalent = candidate_hash == reference_hash
-        error_category = None if result_equivalent else "wrong_result"
+    evaluator_latency_ms = 0.0
+    if dispatcher.submission and dispatcher.submission["status"] == "success":
+        # A Gold identity describes a single normalized result.  Multiple or
+        # missing handles are incomplete, not a permissive best-of comparison.
+        if len(submitted_handles) != 1:
+            error_category = "incomplete_result"
+        else:
+            candidate = dispatcher.results[submitted_handles[0]]
+            candidate_hash = result_sha256(candidate)
+            evaluation = gold_evaluator.evaluate(
+                question["question_id"],
+                columns=list(candidate.columns),
+                row_count=len(candidate.rows),
+                result_sha256=candidate_hash,
+            )
+            evaluator_latency_ms = evaluation.duration_ms
+            reference_hash = evaluation.reference_result_sha256
+            result_equivalent = evaluation.result_equivalent
+            error_category = None if result_equivalent else "wrong_result"
+            trace.add(
+                "evaluate.result",
+                "ok" if result_equivalent else "error",
+                duration_ms=evaluator_latency_ms,
+                attributes={
+                    "result_equivalent": result_equivalent,
+                    "mode": "frozen_gold_identity",
+                    "candidate_has_rows": False,
+                },
+            )
     elif dispatcher.submission and dispatcher.submission["status"] == "unsupported":
         error_category = "unsupported_semantics"
 
@@ -454,11 +503,25 @@ def _run_trial(
     elif dispatcher.submission["status"] == "failed":
         status = "failed"
         error_category = error_category or "agent_protocol"
+    elif error_category == "incomplete_result":
+        status = "failed"
     else:
         status = "passed" if result_equivalent else "failed"
-    trace.add("evaluate.result", "ok" if status == "passed" else "error", attributes={"result_equivalent": result_equivalent})
+    if evaluator_latency_ms == 0.0:
+        trace.add(
+            "evaluate.result",
+            "ok" if status == "passed" else "error",
+            attributes={"result_equivalent": result_equivalent, "mode": "not_evaluated"},
+        )
     trace_status = "ok" if status == "passed" else "unsupported" if status == "unsupported" else "timeout" if status == "timeout" else "error"
-    trace.add("trial.end", trace_status, duration_ms=(perf_counter() - started) * 1000, attributes={"status": status})
+    total_latency_ms = (perf_counter() - started) * 1000
+    scored_latency_ms = total_latency_ms - evaluator_latency_ms
+    trace.add(
+        "trial.end",
+        trace_status,
+        duration_ms=total_latency_ms,
+        attributes={"status": status, "scored_latency_ms": scored_latency_ms, "evaluator_latency_ms": evaluator_latency_ms},
+    )
 
     return {
         "schema_version": "0.1.0",
@@ -513,7 +576,9 @@ def _run_trial(
             "tool_calls": len(native_requests),
             "database_calls": dispatcher.database_attempts,
             "native_service_calls": 0,
-            "total_latency_ms": (perf_counter() - started) * 1000,
+            "total_latency_ms": total_latency_ms,
+            "scored_latency_ms": scored_latency_ms,
+            "evaluator_latency_ms": evaluator_latency_ms,
             "estimated_cost_usd": None,
             "price_snapshot": None,
         },

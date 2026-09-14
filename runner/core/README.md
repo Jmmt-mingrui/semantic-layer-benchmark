@@ -2,30 +2,23 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Native semantic targets are integrated through `NativeAdapter`, a deliberately
-closed target-specific boundary. It does **not** define a universal semantic
-query API and it must never silently substitute direct SQL.
+Native targets use a closed, target-specific adapter boundary. The benchmark
+does not define a universal semantic query API and must never substitute direct
+SQL when a native capability is unavailable.
 
-An adapter may expose only operations declared for its target in
-`runner/config/targets.native.yaml`. The target receives a `TargetQuestion`
-made solely from `target_input.question`; `orchestrator_only`,
-`evaluator_only`, Gold-result identities, reference SQL, and canonical
-mappings do not cross this boundary.
+## Frozen Gold runner integration
 
-Every production adapter must:
+`FrozenGoldEvaluator` is evaluator-only code. Before a runner opens the
+database, creates a provider, or writes a run artifact, it validates the exact
+Gold map for every selected question: dataset manifest, snapshot identity,
+question-instance, reference-SQL identity, scale factor, result contract, and
+normalization revision.
 
-- run target-specific preflight before the trial;
-- expose original native tool names and request payloads;
-- record sanitized request/response artifacts and durations;
-- return `unsupported` rather than fallback when semantics are unavailable;
-- reject evaluator-only paths, undeclared operations, and direct SQL where
-  prohibited by the target registry.
+The target never receives a Gold path, reference SQL, result rows, or expected
+hash. It submits exactly one result handle; the runner passes only its columns,
+row count, and `canonical-json-v1` hash to the evaluator. Missing or multiple
+handles are `incomplete_result`; a non-matching identity is `wrong_result`.
+No runner path executes reference SQL to derive a fallback answer.
 
-The evaluator remains a separate component and is the only component allowed to
-read Gold-result identities.
-
-## Frozen Gold evaluator
-
-`FrozenGoldEvaluator` is evaluator-only code. It never accepts SQL, a database connection, or result rows. It verifies the frozen Gold artifact against the dataset manifest, question-instance file, and reference-SQL file identities, then compares only candidate columns, row count, result hash, and the fixed `canonical-json-v1` normalization revision.
-
-This component is intentionally separate from a target adapter. A production runner must load and validate it before creating a provider, and record its latency outside target-scored latency.
+Persisted conversations redact preview rows. Evaluation duration is recorded as
+evaluator telemetry and excluded from `usage.scored_latency_ms`.
