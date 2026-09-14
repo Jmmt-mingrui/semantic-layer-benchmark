@@ -33,6 +33,13 @@ def _load_trials(run_dir: Path) -> list[dict[str, Any]]:
     return records
 
 
+def _load_run_manifest(path: Path) -> dict[str, Any]:
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise ValueError("Run manifest must be a JSON object")
+    return manifest
+
+
 def _coverage(structure: dict[str, Any]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for target, counts in structure["status_counts"].items():
@@ -54,17 +61,41 @@ def _render(report: dict[str, Any], *, zh: bool) -> str:
     lines = [f"# {title}", "", "TPC-DS-derived SF1 · representative-v1", ""]
     lines.append("## 执行结果" if zh else "## Execution results")
     lines.append("")
-    lines.append("| Target | Accuracy | SQL execution | Completeness | Consistency | p95 ms |" )
+    lines.append("| Target | Accuracy | SQL execution | Completeness | Consistency | p95 ms |")
     lines.append("|---|---:|---:|---:|---:|---:|")
     for target, row in execution["targets"].items():
         def pct(value: Any) -> str:
             return "n/a" if value is None else f"{100 * value:.1f}%"
         p95 = row["latency_ms"]["p95"]
         lines.append(f"| {target} | {pct(row['execution_accuracy'])} | {pct(row['sql_execution_rate'])} | {pct(row['answer_completeness'])} | {pct(row['three_run_consistency'])} | {p95 if p95 is not None else 'n/a'} |")
-    lines += ["", "## 结构保真" if zh else "## Structure fidelity", "", "| Target | Represented / applicable | Unsupported | N/A |", "|---|---:|---:|---:|"]
+
+    lines += [
+        "",
+        "## 人工维护的结构能力清单" if zh else "## Manually curated structure capability inventory",
+        "",
+        (
+            "以下状态是人工维护的能力声明；evidence hash 仅用于审计来源，不代表程序已验证该 evidence 能证明对应状态。"
+            if zh
+            else "These statuses are manually curated capability declarations. Evidence hashes audit provenance; they do not mean the program has verified that the evidence proves the declared status."
+        ),
+        "",
+        "| Target | Declared represented / applicable | Unsupported | N/A |",
+        "|---|---:|---:|---:|",
+    ]
     for target, row in report["structure_coverage"].items():
         lines.append(f"| {target} | {row['represented']} / {row['denominator']} | {row['unsupported']} | {row['not_applicable']} |")
-    lines += ["", "## 配对比较" if zh else "## Paired comparisons", "", "配对比较以问题为单位；q14/q39 的多个 formulation 不增加分母。" if zh else "Paired comparisons use one denominator per question; multiple formulations for q14/q39 do not add denominator weight.", ""]
+
+    lines += [
+        "",
+        "## 配对比较" if zh else "## Paired comparisons",
+        "",
+        (
+            "配对比较以问题为分析单位；q14/q39 的多个 formulation 不增加分母。95% CI 使用固定 seed 的问题级 paired percentile bootstrap。"
+            if zh
+            else "Paired comparisons use the question as the unit of analysis; multiple formulations for q14/q39 do not add denominator weight. The 95% CI is a fixed-seed paired percentile bootstrap over question-level deltas."
+        ),
+        "",
+    ]
     lines.append("| Pair | Δ accuracy | 95% CI | p |")
     lines.append("|---|---:|---:|---:|")
     for pair, row in execution["paired_comparisons"].items():
@@ -72,12 +103,13 @@ def _render(report: dict[str, Any], *, zh: bool) -> str:
         ci = row["paired_95pct_ci"]
         p = row["two_sided_sign_test_p"]
         lines.append(f"| {pair} | {delta if delta is not None else 'n/a'} | {ci if ci is not None else 'n/a'} | {p if p is not None else 'n/a'} |")
+
     lines += ["", "## 边界" if zh else "## Boundaries", ""]
     boundaries = [
-        "不生成单一总冠军；结构 coverage 与 Execution Accuracy 分开。" if zh else "No single overall winner is produced; structure coverage is separate from Execution Accuracy.",
+        "不生成单一总冠军；人工结构能力清单与 Execution Accuracy 分开。" if zh else "No single overall winner is produced; the manually curated structure capability inventory is separate from Execution Accuracy.",
         "`not_applicable` 不进入结构分母，`unsupported` 单独保留。" if zh else "`not_applicable` is excluded from structure denominators and `unsupported` remains explicit.",
         "Token 未返回时保持 unavailable，不按零统计。" if zh else "Missing provider token usage remains unavailable rather than being counted as zero.",
-        "报告只从冻结 Trial Record 与可审计 Structure Inventory 生成。" if zh else "The report is generated only from frozen Trial Records and the auditable Structure Inventory.",
+        "Publication 模式要求完整 run manifest，并校验 run/experiment、conversation/response 唯一性、tool-schema 与冻结 Gold 绑定。" if zh else "Publication mode requires a complete run manifest and validates run/experiment identity, unique conversation/response identities, tool-schema bindings, and frozen Gold bindings.",
     ]
     lines.extend(f"- {item}" for item in boundaries)
     return "\n".join(lines) + "\n"
@@ -88,13 +120,18 @@ def main() -> None:
     parser.add_argument("run_dir", type=Path)
     parser.add_argument("--structure", type=Path, default=Path("evaluators/structure_inventory.yaml"))
     parser.add_argument("--output", type=Path, default=Path("reports/generated/representative-v1"))
-    parser.add_argument("--publication", action="store_true", help="Require the exact 216-trial matrix")
+    parser.add_argument("--publication", action="store_true", help="Require the exact 216-trial matrix and publication invariants")
+    parser.add_argument("--run-manifest", type=Path, help="Publication manifest binding run identity, dataset/Gold, provider/model, and tool schemas")
     args = parser.parse_args()
 
     records = _load_trials(args.run_dir)
     if args.publication and len(records) != EXPECTED_TRIALS:
         raise SystemExit(f"Publication requires exactly {EXPECTED_TRIALS} validated trial records; found {len(records)}")
-    execution = evaluate_execution(records, publication=args.publication)
+    if args.publication and args.run_manifest is None:
+        raise SystemExit("Publication requires --run-manifest")
+
+    run_manifest = _load_run_manifest(args.run_manifest) if args.run_manifest is not None else None
+    execution = evaluate_execution(records, publication=args.publication, run_manifest=run_manifest)
     structure = evaluate_structure_inventory(args.structure, root=ROOT)
     report = {
         "schema_version": "0.1.0",
@@ -102,6 +139,12 @@ def main() -> None:
         "suite": "representative-v1",
         "source": {
             "trial_count": len(records),
+            "run_manifest": str(args.run_manifest) if args.run_manifest is not None else None,
+            "run_manifest_sha256": _sha(args.run_manifest) if args.run_manifest is not None else None,
+            "dataset_manifest_sha256": run_manifest.get("dataset_manifest_sha256") if run_manifest else None,
+            "gold_pack_sha256": run_manifest.get("gold_pack_sha256") if run_manifest else None,
+            "provider": run_manifest.get("provider") if run_manifest else None,
+            "model": run_manifest.get("model") if run_manifest else None,
             "structure_inventory": str(args.structure),
             "structure_inventory_sha256": _sha(ROOT / args.structure if not args.structure.is_absolute() else args.structure),
         },
