@@ -102,7 +102,7 @@ def test_freeze_writes_only_result_identities_and_verification_fails_on_sql_chan
     monkeypatch.setattr("runner.core.representative_gold.connect", fake_connect)
 
     output = tmp_path / "gold"
-    pack = freeze_representative_pack(
+    first_pack = freeze_representative_pack(
         manifest_path=manifest,
         instances_path=instances,
         output_dir=output,
@@ -110,13 +110,27 @@ def test_freeze_writes_only_result_identities_and_verification_fails_on_sql_chan
         publication=False,
         require_sources=False,
     )
-    assert pack["question_count"] == 12
-    assert pack["statement_count"] == 14
+    assert first_pack["question_count"] == 12
+    assert first_pack["statement_count"] == 14
+    assert all(entry["identity_sha256"] for entry in first_pack["gold"])
     for question_id in REPRESENTATIVE_QUESTION_IDS:
         text = (output / f"{question_id}.json").read_text(encoding="utf-8")
         assert "secret-row" not in text
         document = json.loads(text)
         assert all("rows" not in statement["result"] for statement in document["statements"])
+
+    second_pack = freeze_representative_pack(
+        manifest_path=manifest,
+        instances_path=instances,
+        output_dir=output,
+        root=ROOT,
+        publication=False,
+        require_sources=False,
+    )
+    assert second_pack["pack_identity_sha256"] == first_pack["pack_identity_sha256"]
+    assert [entry["identity_sha256"] for entry in second_pack["gold"]] == [
+        entry["identity_sha256"] for entry in first_pack["gold"]
+    ]
 
     verified = verify_representative_pack(
         pack_path=output / "pack.json",
@@ -125,6 +139,7 @@ def test_freeze_writes_only_result_identities_and_verification_fails_on_sql_chan
         require_sources=False,
     )
     assert verified["question_count"] == 12
+    assert verified["pack_identity_sha256"] == first_pack["pack_identity_sha256"]
 
     changed = Path(sql_paths["q84-1"])
     changed.write_text(changed.read_text() + "-- changed\n", encoding="utf-8")
