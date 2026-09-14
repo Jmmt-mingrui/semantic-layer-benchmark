@@ -69,7 +69,7 @@ def test_credentialed_remote_endpoint_requires_https() -> None:
             )
         )
 
-    provider = LiveAgentProvider(
+    local = LiveAgentProvider(
         LiveProviderSettings(
             provider="test",
             model="m",
@@ -78,7 +78,20 @@ def test_credentialed_remote_endpoint_requires_https() -> None:
         ),
         transport=lambda *args: (200, b'{"choices":[{"message":{"content":"ok"}}]}'),
     )
-    assert provider.settings.endpoint.startswith("http://127.0.0.1")
+    assert local.settings.endpoint.startswith("http://127.0.0.1")
+
+    # The transport guard is intentionally about credential exposure: an
+    # explicitly configured non-credentialed HTTP endpoint remains available
+    # for local/dev-compatible proxy setups.
+    uncredentialed = LiveAgentProvider(
+        LiveProviderSettings(
+            provider="test",
+            model="m",
+            endpoint="http://provider.example/v1/chat",
+        ),
+        transport=lambda *args: (200, b'{"choices":[{"message":{"content":"ok"}}]}'),
+    )
+    assert uncredentialed.settings.resolved_api_key() is None
 
 
 def test_live_provider_counts_retry_without_logging_reasoning() -> None:
