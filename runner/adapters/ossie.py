@@ -14,7 +14,7 @@ read-only DuckDB tool.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 from pathlib import Path, PurePosixPath
 import re
@@ -103,6 +103,19 @@ class _ObjectRef:
 
 def _sha256_text(text: str) -> str:
     return sha256(text.encode("utf-8")).hexdigest()
+
+
+def _git_blob_sha(data: bytes) -> str:
+    """Return the Git blob object id for exact bytes.
+
+    OSSIE_SCHEMA_BLOB_SHA is the object id of the upstream schema blob at the
+    pinned commit. Recomputing it from the vendored bytes proves that the local
+    file is byte-for-byte identical to that upstream object instead of merely
+    trusting telemetry metadata.
+    """
+
+    header = f"blob {len(data)}\0".encode("ascii")
+    return sha1(header + data).hexdigest()
 
 
 def _artifact_id(payload: Mapping[str, Any]) -> str:
@@ -304,12 +317,19 @@ class OssieAdapter:
         if not isinstance(document, dict) or not isinstance(yaml_root, MappingNode):
             raise OssieValidationError("Ossie document must be a top-level mapping")
 
-        schema_text = self._schema_path.read_text(encoding="utf-8")
+        schema_bytes = self._schema_path.read_bytes()
+        actual_blob_sha = _git_blob_sha(schema_bytes)
+        if actual_blob_sha != OSSIE_SCHEMA_BLOB_SHA:
+            raise OssieValidationError(
+                "Vendored Ossie schema bytes do not match the pinned upstream Git blob: "
+                f"expected {OSSIE_SCHEMA_BLOB_SHA}, found {actual_blob_sha}"
+            )
+        schema_text = schema_bytes.decode("utf-8")
         try:
             schema = json.loads(schema_text)
             Draft202012Validator.check_schema(schema)
             Draft202012Validator(schema).validate(document)
-        except (json.JSONDecodeError, JsonSchemaValidationError) as error:
+        except (UnicodeDecodeError, json.JSONDecodeError, JsonSchemaValidationError) as error:
             raise OssieValidationError(f"Official Ossie schema validation failed: {error}") from error
         except Exception as error:
             if error.__class__.__module__.startswith("jsonschema"):
@@ -340,8 +360,8 @@ class OssieAdapter:
             "version": OSSIE_DOCUMENT_VERSION,
             "schema_commit": OSSIE_SCHEMA_COMMIT,
             "schema_path": OSSIE_SCHEMA_RELATIVE_PATH,
-            "schema_blob_sha": OSSIE_SCHEMA_BLOB_SHA,
-            "schema_sha256": _sha256_text(schema_text),
+            "schema_blob_sha": actual_blob_sha,
+            "schema_sha256": sha256(schema_bytes).hexdigest(),
             "artifact_sha256": _sha256_text(text),
             "byte_count": len(text.encode("utf-8")),
             "counts": counts,
