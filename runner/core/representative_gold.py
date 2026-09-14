@@ -49,6 +49,37 @@ def _canonical_json_sha256(value: Any) -> str:
     return _sha256_bytes(encoded)
 
 
+def _gold_identity_sha256(artifact: dict[str, Any]) -> str:
+    """Hash only immutable Gold content, excluding provenance timestamps."""
+
+    return _canonical_json_sha256({key: value for key, value in artifact.items() if key != "generated_at"})
+
+
+def _pack_identity_payload(pack: dict[str, Any]) -> dict[str, Any]:
+    """Return the immutable pack identity payload.
+
+    File SHA-256 values intentionally remain provenance/tamper checks. They hash
+    the serialized file, which contains ``generated_at`` and can therefore vary
+    between equivalent freezes. Pack identity instead binds each Gold artifact's
+    timestamp-free ``identity_sha256``.
+    """
+
+    payload = {
+        key: value
+        for key, value in pack.items()
+        if key not in {"generated_at", "pack_identity_sha256", "gold"}
+    }
+    payload["gold"] = [
+        {
+            "question_id": entry["question_id"],
+            "path": entry["path"],
+            "identity_sha256": entry["identity_sha256"],
+        }
+        for entry in pack.get("gold", [])
+    ]
+    return payload
+
+
 def _repo_relative(path: Path, root: Path, *, publication: bool) -> str:
     resolved = path.resolve()
     try:
@@ -220,12 +251,13 @@ def freeze_representative_pack(
                 "question_id": item["question_id"],
                 "path": _repo_relative(destination / f"{item['question_id']}.json", root_path, publication=publication),
                 "sha256": _sha256_file(destination / f"{item['question_id']}.json"),
+                "identity_sha256": _gold_identity_sha256(item),
             }
             for item in frozen
         ],
         "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }
-    pack["pack_identity_sha256"] = _canonical_json_sha256({key: value for key, value in pack.items() if key != "generated_at"})
+    pack["pack_identity_sha256"] = _canonical_json_sha256(_pack_identity_payload(pack))
     (destination / "pack.json").write_text(json.dumps(pack, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return pack
 
@@ -273,6 +305,8 @@ def verify_representative_pack(
         if _sha256_file(gold_path) != entry["sha256"]:
             raise RepresentativeGoldError(f"Frozen Gold file changed for {question_id}")
         gold = json.loads(gold_path.read_text(encoding="utf-8"))
+        if _gold_identity_sha256(gold) != entry.get("identity_sha256"):
+            raise RepresentativeGoldError(f"Frozen Gold identity changed for {question_id}")
         errors = sorted(validator.iter_errors(gold), key=str)
         if errors:
             raise RepresentativeGoldError(f"Invalid Gold artifact for {question_id}: {errors[0].message}")
@@ -294,9 +328,7 @@ def verify_representative_pack(
         statement_count += len(gold["statements"])
     if statement_count != pack["statement_count"]:
         raise RepresentativeGoldError("Representative statement count changed")
-    expected_identity = _canonical_json_sha256(
-        {key: value for key, value in pack.items() if key not in {"generated_at", "pack_identity_sha256"}}
-    )
+    expected_identity = _canonical_json_sha256(_pack_identity_payload(pack))
     if expected_identity != pack["pack_identity_sha256"]:
         raise RepresentativeGoldError("Representative pack identity does not match its frozen inputs")
     return {
