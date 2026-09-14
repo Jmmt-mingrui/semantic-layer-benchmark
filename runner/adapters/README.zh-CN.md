@@ -34,6 +34,37 @@ Adapter 不打开数据库、不生成 SQL、不调用 `db.execute_readonly`，�
 Gold artifact。可识别的缺失语义成员记录为 `unsupported`，其他非零退出记录为
 `failed`。单元测试只使用 fake subprocess boundary，不声称 CI 已执行 MetricFlow。
 
+## Apache Ossie 原生 Consumer
+
+[`ossie.py`](ossie.py) 直接读取 Ossie 原生 YAML，不会把模型转换成 Skill、OKF、
+normalized chunks 或共享的 `SemanticEvidence`。Benchmark 固定到 Apache Ossie
+commit [`c109cf5`](https://github.com/apache/ossie/tree/c109cf5b0a06970a97599e8f7c2a72859822a3a4)，
+并固定 `core-spec/ossie-schema.json` 的 blob
+`4e50f1eeafd3c56c700e6c5482f9b356b34e1fee`。CI 使用的 schema 副本位于
+[`schemas/ossie-c109cf5-schema.json`](schemas/ossie-c109cf5-schema.json)。
+
+Consumer 实现三个 Ossie 操作：
+
+| 操作 | 行为 |
+| --- | --- |
+| `ossie.validate` | 使用固定的官方 JSON Schema 校验原始 YAML，并校验 Dataset、Field、Relationship、Metric 的本地引用。 |
+| `ossie.inspect_model` | 按对象类型和可选原生 ID 发现对象，不返回统一化后的语义内容。 |
+| `ossie.read_native_yaml` | 返回完整原始 YAML，或某个 Dataset、Field、Relationship、Metric、semantic model 在原文件中的精确源码片段。 |
+
+对象索引只会在校验成功后建立，而且只记录原始 YAML 中的位置。Field 可以使用
+类似 `tpcds_sf1_retail/store_sales/ss_item_sk` 的 fully-qualified native ID；只有
+在短 ID 唯一时才允许直接使用短 ID。返回内容直接截取自原始 YAML 文本，不进行
+重序列化或跨格式转换。
+
+访问 telemetry 仅记录 operation、对象类型/ID、读取字节数、耗时和 SHA-256；
+绝不记录 YAML 内容、SQL、查询结果、Benchmark Gold 或 question-to-metric mapping。
+Consumer 会拒绝路径穿越、symlink、evaluator/Gold 路径、未声明操作、共享语义
+转换、Embedding 和 Vector Index。
+
+Ossie 不被当成 SQL Runtime。`db.execute_readonly` 仍然是独立的 harness 操作：
+SQL 由 Agent 编写，再通过只读 DuckDB 边界执行。Ossie Consumer 自身不会打开
+DuckDB，也不会伪造一个不存在的 Ossie query engine。
+
 ## Skill Host Adapter
 
 `SkillHostAdapter` 将
