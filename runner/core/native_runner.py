@@ -24,6 +24,10 @@ class NativeRunnerError(RuntimeError):
     pass
 
 
+class _PreflightFailure(RuntimeError):
+    """Internal control-flow signal used so finalization happens after close()."""
+
+
 ProviderFactory = Callable[[str, int, Mapping[str, str]], AgentProvider]
 TokenValue = int | str
 
@@ -155,12 +159,20 @@ def run_native_trial(
     error_detail: str | None = None
     completion_status = "invalid"
     provider_closed = False
+    tools: Sequence[dict[str, Any]] = ()
+    tool_schema_sha256 = _hash_json([])
 
     def add_event(event_type: str, status: str, **kwargs: Any) -> None:
         trace.append(_trace_event(len(trace), event_type, status, **kwargs))
 
     try:
         add_event("trial.start", "started", attributes={"target": target, "repetition": repetition})
+
+        # Capture the declared tool surface while the runtime is open.  The
+        # identity is immutable for the trial and must not depend on close().
+        tools = tuple(runtime.public_tools())
+        tool_schema_sha256 = _hash_json(tools)
+
         preflight_started = perf_counter()
         preflight = runtime.preflight(settings.tool_timeout_seconds)
         preflight_ms = (perf_counter() - preflight_started) * 1000
@@ -179,27 +191,7 @@ def run_native_trial(
             error_category = "preflight"
             error_detail = "native preflight did not succeed"
             add_event("target.preflight", "error", duration_ms=preflight_ms)
-            return _finalize(
-                trial_id,
-                target,
-                repetition,
-                question,
-                runtime,
-                provider,
-                settings,
-                system_prompt,
-                messages,
-                usages,
-                response_ids,
-                native_requests,
-                tool_call_count,
-                completion_status,
-                error_category,
-                error_detail,
-                started,
-                trace,
-                provider_closed,
-            )
+            raise _PreflightFailure(error_detail)
         add_event("target.preflight", "ok", duration_ms=preflight_ms, attributes={"checks": len(preflight)})
 
         # Conversation is constructed here, after preflight, from scratch.  No
@@ -214,7 +206,6 @@ def run_native_trial(
             )
         rendered_question = user_prompt_template.replace("{{question}}", question.prompt)
         messages.append({"role": "user", "content": rendered_question})
-        tools = runtime.public_tools()
         tool_names = [str(tool["name"]) for tool in tools]
         declared = set(runtime.target_config.get("allowed_operations", ()))
         if not set(tool_names).issubset(declared):
@@ -360,6 +351,10 @@ def run_native_trial(
                 error_category = "agent_reported_failure"
                 error_detail = str(submitted.get("reason") or "Agent reported failure")
 
+    except _PreflightFailure:
+        # State is already recorded above; continue through finally so lifecycle
+        # closure is reflected in the returned record.
+        pass
     except (NativeIsolationError, NativeOperationError):
         if error_category is None:
             error_category = "protocol_violation"
@@ -393,6 +388,7 @@ def run_native_trial(
         provider,
         settings,
         system_prompt,
+        tool_schema_sha256,
         messages,
         usages,
         response_ids,
@@ -416,6 +412,7 @@ def _finalize(
     provider: AgentProvider | None,
     settings: NativeRunnerSettings,
     system_prompt: str,
+    tool_schema_sha256: str,
     messages: Sequence[Mapping[str, Any]],
     usages: Sequence[AgentUsage],
     response_ids: Sequence[str],
@@ -472,7 +469,7 @@ def _finalize(
             "fresh": True,
             "provider_closed_before_evaluation": provider_closed,
             "system_prompt_sha256": _hash_text(system_prompt),
-            "tool_schema_sha256": _hash_json(runtime.public_tools()) if not getattr(runtime, "_closed", False) else _hash_json([]),
+            "tool_schema_sha256": tool_schema_sha256,
             "message_manifest": message_manifest,
             "message_count": len(messages),
             "provider_response_ids": list(response_ids),
