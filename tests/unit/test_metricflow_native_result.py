@@ -31,6 +31,7 @@ def test_metricflow_query_registers_native_result_handle_without_sql_fallback(tm
     runtime_project = tmp_path / "runtime"
     runtime_project.mkdir()
     (runtime_project / "dbt_project.yml").write_text("name: fixture\n", encoding="utf-8")
+    revenue = ["12.50"]
 
     def command_runner(argv, cwd, timeout_seconds):
         del cwd, timeout_seconds
@@ -40,7 +41,10 @@ def test_metricflow_query_registers_native_result_handle_without_sql_fallback(tm
             return CommandResult(0, "ok\n", "")
         if argv[1] == "query":
             csv_path = Path(argv[argv.index("--csv") + 1])
-            csv_path.write_text("metric_time,revenue,count\n2001-01-01,12.50,3\n", encoding="utf-8")
+            csv_path.write_text(
+                f"metric_time,revenue,count\n2001-01-01,{revenue[0]},3\n",
+                encoding="utf-8",
+            )
             return CommandResult(0, "", "")
         raise AssertionError(argv)
 
@@ -72,6 +76,16 @@ def test_metricflow_query_registers_native_result_handle_without_sql_fallback(tm
     assert response.output["columns"] == ["metric_time", "revenue", "count"]
     assert response.output["row_count"] == 1
     assert response.output["preview_rows"] == [["2001-01-01", "12.50", 3]]
+    first_result_sha = response.output["result_sha256"]
+    first_response_artifact = response.response_artifact
+
+    revenue[0] = "13.50"
+    changed = native.dispatch(
+        NativeRequest(operation="metricflow.query", arguments={"metrics": ["revenue"]}, deadline_seconds=5)
+    )
+    assert changed.output["result_handle"] == "result-002"
+    assert changed.output["result_sha256"] != first_result_sha
+    assert changed.response_artifact != first_response_artifact
 
     submitted = native.dispatch(
         NativeRequest(
