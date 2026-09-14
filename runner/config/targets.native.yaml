@@ -118,13 +118,17 @@ targets:
   ossie:
     role: semantic_interchange_specification
     agent_required: true
-    readiness: native_consumer_adapter_pending
+    readiness: native_consumer_ready
     initial_semantic_context: native_artifact_discovery
     native_surface:
       name: ossie_yaml_spec_consumer
       artifact_root: semantic-models/ossie/tpcds-sf1
+      model_file: tpcds-sf1.yaml
       result_origin: agent_authored_sql
-      spec_revision: c109cf5b0a06970a97599e8f7c2a72859822a3a4
+      schema_commit: c109cf5b0a06970a97599e8f7c2a72859822a3a4
+      schema_path: core-spec/ossie-schema.json
+      schema_blob_sha: 4e50f1eeafd3c56c700e6c5482f9b356b34e1fee
+      vendored_schema: runner/adapters/schemas/ossie-c109cf5-schema.json
       source: https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md
     preflight_operations:
       - ossie.validate
@@ -137,9 +141,13 @@ targets:
       - semantic.normalized_chunks
       - benchmark.read_gold
     notes: >-
-      Ossie is evaluated as its native model specification, not represented as a
-      standalone query engine. The consumer exposes the original validated YAML and
-      does not translate it into OKF, Skill, or shared evidence before the trial.
+      Ossie is evaluated as its native model specification, not as a standalone query
+      engine. The pinned consumer validates the original YAML with Apache Ossie's
+      official schema, validates Dataset/Field/Relationship/Metric references, and
+      discovers or reads objects directly from the original source document. It never
+      converts Ossie into Skill, OKF, shared SemanticEvidence, embeddings, or a vector
+      index. SQL remains agent-authored and is executed only through the separately
+      declared read-only DuckDB operation.
 
   okf:
     role: agent_knowledge_representation

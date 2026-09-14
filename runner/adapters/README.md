@@ -38,6 +38,40 @@ Recognized missing semantic members are reported as `unsupported`; other
 non-zero exits are `failed`. Unit tests use a fake subprocess boundary and do
 not claim that MetricFlow runs in CI.
 
+## Apache Ossie native consumer
+
+[`ossie.py`](ossie.py) reads the Ossie model as native YAML and does not
+translate it into Skill, OKF, normalized chunks, or a shared `SemanticEvidence`
+representation. The benchmark target is pinned to Apache Ossie commit
+[`c109cf5`](https://github.com/apache/ossie/tree/c109cf5b0a06970a97599e8f7c2a72859822a3a4)
+and to `core-spec/ossie-schema.json` at blob
+`4e50f1eeafd3c56c700e6c5482f9b356b34e1fee`. A vendored copy used by CI lives
+under [`schemas/ossie-c109cf5-schema.json`](schemas/ossie-c109cf5-schema.json).
+
+The consumer implements three Ossie operations:
+
+| Operation | Behavior |
+| --- | --- |
+| `ossie.validate` | Validate the original YAML with the pinned official JSON Schema and validate Dataset/Field/Relationship/Metric references. |
+| `ossie.inspect_model` | Discover native objects by type and optional native ID without returning normalized semantic content. |
+| `ossie.read_native_yaml` | Return the complete original YAML or the exact source slice for one Dataset, Field, Relationship, Metric, or semantic model. |
+
+Object discovery indexes source locations only after successful validation. A
+Field can be addressed by its fully qualified native ID such as
+`tpcds_sf1_retail/store_sales/ss_item_sk`; short IDs are accepted only when
+unambiguous. Returned YAML is taken directly from the original source text.
+
+Access telemetry contains operation, object type/ID, byte count, duration, and
+SHA-256 identity. It never records YAML content, SQL, query results, benchmark
+Gold, or question-to-metric mappings. The consumer rejects traversal, symlinks,
+evaluator/Gold roots, undeclared operations, shared semantic conversion,
+embeddings, and vector indexes.
+
+Ossie is not treated as a SQL runtime. `db.execute_readonly` remains a separate
+harness operation: the Agent authors SQL and the benchmark executes it through
+the read-only DuckDB boundary. The Ossie consumer itself never opens DuckDB or
+implements a synthetic Ossie query engine.
+
 ## Skill host adapter
 
 `SkillHostAdapter` hosts
