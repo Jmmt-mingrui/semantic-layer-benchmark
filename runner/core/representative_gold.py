@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from hashlib import sha256
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -117,12 +117,7 @@ def freeze_representative_pack(
     publication: bool = True,
     require_sources: bool = True,
 ) -> dict[str, Any]:
-    """Execute and freeze the twelve representative question identities.
-
-    Publication mode requires the dataset validator to prove the locally generated
-    snapshot originates from TPC-DS 4.0.0, has all expected SF1 row counts, has an
-    immutable dsdgen binary hash, and matches the recorded DuckDB database hash.
-    """
+    """Execute and freeze the twelve representative question identities."""
 
     root_path = Path(root).resolve()
     manifest = Path(manifest_path)
@@ -145,9 +140,10 @@ def freeze_representative_pack(
     if manifest_document.get("benchmark") != "TPC-DS-derived" or manifest_document.get("scale_factor") != 1:
         raise RepresentativeGoldError("Dataset manifest must identify TPC-DS-derived SF1")
     generator = manifest_document.get("generator", {})
-    if generator.get("toolkit_version") != "4.0.0" or not generator.get("binary_sha256"):
-        raise RepresentativeGoldError("Publication requires official TPC-DS 4.0.0 dsdgen identity")
-    if not manifest_document.get("database", {}).get("duckdb_version"):
+    if generator.get("version") != "4.0.0" or not generator.get("binary_sha256"):
+        raise RepresentativeGoldError("Publication requires TPC-DS 4.0.0 dsdgen identity")
+    engine = manifest_document.get("engine", {})
+    if engine.get("name") != "duckdb" or not engine.get("version"):
         raise RepresentativeGoldError("Dataset manifest must record DuckDB version")
 
     rows = load_representative_instances(instances)
@@ -161,7 +157,9 @@ def freeze_representative_pack(
         for instance in rows:
             statement_artifacts: list[dict[str, Any]] = []
             for statement_index, reference in enumerate(instance["evaluator_only"]["reference_sql"], start=1):
-                reference_path = root_path / reference
+                reference_path = Path(reference)
+                if not reference_path.is_absolute():
+                    reference_path = root_path / reference_path
                 if not reference_path.is_file():
                     raise RepresentativeGoldError(f"Missing DuckDB reference SQL for {instance['question_id']}: {reference}")
                 sql = reference_path.read_text(encoding="utf-8")
@@ -205,8 +203,6 @@ def freeze_representative_pack(
             path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             frozen.append(artifact)
 
-    # One question-level denominator is preserved even for q14/q39, whose two
-    # required statements remain inside one question artifact.
     pack = {
         "schema_version": GOLD_SCHEMA_VERSION,
         "benchmark": "TPC-DS-derived",
@@ -253,11 +249,15 @@ def verify_representative_pack(
     if tuple(pack.get("question_ids", ())) != REPRESENTATIVE_QUESTION_IDS or pack.get("question_count") != 12:
         raise RepresentativeGoldError("Representative pack must contain exactly the twelve selected questions")
 
-    manifest = root_path / pack["manifest_path"]
+    manifest = Path(pack["manifest_path"])
+    if not manifest.is_absolute():
+        manifest = root_path / manifest
     snapshot = validate_sf1_snapshot(manifest, root=root_path, publication=publication, require_sources=require_sources)
     if snapshot["manifest_sha256"] != pack["manifest_sha256"]:
         raise RepresentativeGoldError("Dataset manifest changed after Gold freeze")
-    instances = root_path / pack["instances_path"]
+    instances = Path(pack["instances_path"])
+    if not instances.is_absolute():
+        instances = root_path / instances
     if _sha256_file(instances) != pack["instances_sha256"]:
         raise RepresentativeGoldError("Representative question-instance file changed after Gold freeze")
     rows = {row["question_id"]: row for row in load_representative_instances(instances)}
@@ -267,7 +267,9 @@ def verify_representative_pack(
     statement_count = 0
     for entry in pack["gold"]:
         question_id = entry["question_id"]
-        gold_path = root_path / entry["path"]
+        gold_path = Path(entry["path"])
+        if not gold_path.is_absolute():
+            gold_path = root_path / gold_path
         if _sha256_file(gold_path) != entry["sha256"]:
             raise RepresentativeGoldError(f"Frozen Gold file changed for {question_id}")
         gold = json.loads(gold_path.read_text(encoding="utf-8"))
@@ -283,8 +285,11 @@ def verify_representative_pack(
         if len(references) != len(gold["statements"]):
             raise RepresentativeGoldError(f"Reference statement count changed for {question_id}")
         for reference, statement in zip(references, gold["statements"], strict=True):
-            reference_path = root_path / reference
-            if statement["reference_sql"]["path"] != reference or statement["reference_sql"]["sha256"] != _sha256_file(reference_path):
+            reference_path = Path(reference)
+            if not reference_path.is_absolute():
+                reference_path = root_path / reference_path
+            expected_ref = _repo_relative(reference_path, root_path, publication=publication)
+            if statement["reference_sql"]["path"] != expected_ref or statement["reference_sql"]["sha256"] != _sha256_file(reference_path):
                 raise RepresentativeGoldError(f"Reference SQL changed for {question_id}")
         statement_count += len(gold["statements"])
     if statement_count != pack["statement_count"]:
