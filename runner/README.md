@@ -28,6 +28,25 @@ The smoke prints hashes and usage metadata only. It is not a benchmark score.
 
 `publication_orchestrator.py` is the evaluator-side bridge from a closed native candidate to durable publication artifacts. It refuses scripted providers, missing provider response identities, and any candidate whose provider/runtime was not closed. Only then does it compare ordered candidate result hashes with the frozen representative Gold, assign a harness-owned conversation identity, and write schema-validated `trial.json`, `trace.jsonl`, and `conversation.sanitized.jsonl`. Raw result rows and secrets are never copied.
 
+## 18-trial live pilot
+
+The first end-to-end gate is deliberately non-publishable: q01 × six current targets × three fresh repetitions. It requires a frozen local SF1 Gold pack, a read-only DuckDB snapshot, a prepared MetricFlow runtime project, an immutable Skill host revision, and one live provider configuration.
+
+```bash
+export BENCHMARK_AGENT_PROVIDER=...
+export BENCHMARK_AGENT_MODEL=...
+export BENCHMARK_AGENT_ENDPOINT=https://...
+export BENCHMARK_AGENT_API_KEY_ENV=PROVIDER_API_KEY
+export PROVIDER_API_KEY=...
+export BENCHMARK_SKILL_HOST_REVISION=...
+
+semantic-benchmark run-pilot \\
+  --metricflow-runtime path/to/prepared/metricflow-runtime \\
+  --output runs/pilot-q01
+```
+
+The command refuses an existing output directory and emits exactly 18 schema-validated Trial artifacts plus `pilot-manifest.json`. That manifest has `publishable: false`; it cannot satisfy the 216-Trial publication contract.
+
 ## Legacy control runner
 
 `run-control` remains available for the earlier q01 Blank/DDL contract tests. New semantic-target work should use `runner/core/native_factory.py`, `runner/core/native_runner.py`, and `runner/core/live_provider.py`. Candidate production remains separate from Gold evaluation: target/provider shutdown occurs before an evaluator is allowed to load Gold.
