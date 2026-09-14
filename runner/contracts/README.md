@@ -14,11 +14,11 @@ These versioned contracts separate orchestration, target-visible inputs, native 
 | [`gold-result.schema.json`](gold-result.schema.json) | Dataset freeze tool | Evaluator preflight | Dataset-bound reference result identity without persisted result rows |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner and adapters | Trace store and report builder | Ordered, sanitized lifecycle and usage events |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial orchestrator and evaluator | Run aggregator | One question × target × repetition outcome |
-| [`run-record.schema.json`](run-record.schema.json) | Run aggregator | Report builder | Reproducibility envelope and trial summary |
+| [`run-record.schema.json`](run-record.schema.json) | Run aggregator | Report builder | Reproducibility envelope and trial summary |\n| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication orchestrator | Representative evaluator | Closed run identity plus dataset, Gold, provider/model, tool-schema, and per-question result bindings |
 
 All contracts use JSON Schema Draft 2020-12 and start at schema version `0.1.0`. A schema version changes only with a documented migration; the experiment's `protocol_revision` changes whenever behavior changes without altering the record shape.
 
-## Native-first invariant
+## Publication boundary\n\nThe publication orchestrator consumes only a candidate returned after native runtime and provider closure. It then opens evaluator-only Gold, compares ordered result identities, emits contract-valid artifacts, and binds the complete 216-trial matrix in `publication-run-manifest.schema.json`. A harness-owned conversation ID identifies the fresh local conversation; provider response IDs remain separately preserved.\n\n## Native-first invariant
 
 The primary lane is `native_end_to_end`. The runner may wrap a native call to add IDs, timeouts, sanitization, and telemetry, but it may not flatten target artifacts into a common evidence representation.
 

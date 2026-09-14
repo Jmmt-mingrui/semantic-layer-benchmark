@@ -1,0 +1,110 @@
+version: 0.1.0
+benchmark: TPC-DS-derived
+canonical_contract: semantic-models/canonical/tpcds-sf1
+allowed_statuses: [native, adapter, query_layer, unsupported, not_applicable]
+categories:
+  - dataset_field
+  - dimension
+  - entity_relationship
+  - role_playing_join
+  - fact_grain
+  - metric_base
+  - metric_derived
+  - metric_ratio
+  - metric_cumulative
+  - time_role
+  - additivity_semi_additivity
+  - null_divide_by_zero
+  - provenance
+  - native_validation
+targets:
+  blank_context:
+    dataset_field: {status: query_layer, evidence: runner/tools/blank-context.tools.json, note: Physical catalog discovery only; no business semantics are preloaded.}
+    dimension: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    entity_relationship: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    role_playing_join: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    fact_grain: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_base: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_derived: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_ratio: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_cumulative: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    time_role: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    additivity_semi_additivity: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    null_divide_by_zero: {status: query_layer, evidence: runner/config/targets.native.yaml, note: Any rule must be authored by the agent in SQL.}
+    provenance: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    native_validation: {status: query_layer, evidence: runner/core/control_tools.py, note: Read-only SQL validation belongs to the benchmark harness.}
+  ddl_only:
+    dataset_field: {status: query_layer, evidence: data/tpcds/schema/duckdb/schema.sql, note: Physical tables and columns only.}
+    dimension: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    entity_relationship: {status: query_layer, evidence: data/tpcds/schema/duckdb/schema.sql, note: Only relationships physically declared in DDL are available.}
+    role_playing_join: {status: query_layer, evidence: data/tpcds/schema/duckdb/schema.sql}
+    fact_grain: {status: query_layer, evidence: data/tpcds/schema/duckdb/schema.sql}
+    metric_base: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_derived: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_ratio: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    metric_cumulative: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    time_role: {status: query_layer, evidence: data/tpcds/schema/duckdb/schema.sql}
+    additivity_semi_additivity: {status: unsupported, evidence: data/tpcds/schema/duckdb/schema.sql}
+    null_divide_by_zero: {status: query_layer, evidence: runner/config/targets.native.yaml}
+    provenance: {status: not_applicable, evidence: runner/config/targets.native.yaml}
+    native_validation: {status: query_layer, evidence: runner/core/control_tools.py}
+  metricflow:
+    dataset_field: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    dimension: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    entity_relationship: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    role_playing_join: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    fact_grain: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    metric_base: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_derived: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_ratio: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_cumulative: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml}
+    time_role: {status: native, evidence: semantic-models/metricflow/tpcds-sf1/semantic_models}
+    additivity_semi_additivity: {status: adapter, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml, note: Canonical additivity distinctions not expressible one-for-one are audited outside execution accuracy.}
+    null_divide_by_zero: {status: query_layer, evidence: semantic-models/metricflow/tpcds-sf1/canonical-metric-coverage.yaml}
+    provenance: {status: adapter, evidence: semantic-models/metricflow/tpcds-sf1/README.md}
+    native_validation: {status: native, evidence: runner/adapters/metricflow.py}
+  ossie:
+    dataset_field: {status: native, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    dimension: {status: native, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    entity_relationship: {status: native, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    role_playing_join: {status: native, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    fact_grain: {status: adapter, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    metric_base: {status: native, evidence: semantic-models/ossie/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_derived: {status: query_layer, evidence: semantic-models/ossie/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_ratio: {status: query_layer, evidence: semantic-models/ossie/tpcds-sf1/canonical-metric-coverage.yaml}
+    metric_cumulative: {status: query_layer, evidence: semantic-models/ossie/tpcds-sf1/canonical-metric-coverage.yaml}
+    time_role: {status: native, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    additivity_semi_additivity: {status: adapter, evidence: semantic-models/ossie/tpcds-sf1/tpcds-sf1.yaml}
+    null_divide_by_zero: {status: query_layer, evidence: semantic-models/ossie/tpcds-sf1/canonical-metric-coverage.yaml}
+    provenance: {status: adapter, evidence: semantic-models/ossie/tpcds-sf1/README.md}
+    native_validation: {status: native, evidence: runner/adapters/ossie.py}
+  okf:
+    dataset_field: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    dimension: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    entity_relationship: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    role_playing_join: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    fact_grain: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    metric_base: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    metric_derived: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    metric_ratio: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    metric_cumulative: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    time_role: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    additivity_semi_additivity: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    null_divide_by_zero: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    provenance: {status: native, evidence: semantic-models/okf/tpcds-sf1}
+    native_validation: {status: adapter, evidence: runner/core/okf_native_consumer.py}
+  skill:
+    dataset_field: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    dimension: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    entity_relationship: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    role_playing_join: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    fact_grain: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    metric_base: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    metric_derived: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    metric_ratio: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    metric_cumulative: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    time_role: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    additivity_semi_additivity: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    null_divide_by_zero: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    provenance: {status: native, evidence: semantic-models/skill/tpcds-sf1-table-semantics}
+    native_validation: {status: adapter, evidence: runner/adapters/skill_host.py}

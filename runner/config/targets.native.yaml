@@ -1,4 +1,4 @@
-version: 0.1.0
+version: 0.2.0
 policy:
   primary_lane: native_end_to_end
   preserve_native_artifacts: true
@@ -13,12 +13,13 @@ common:
   raw_gold_access: forbidden
   mutating_database_operations: forbidden
   secret_logging: forbidden
+  hidden_reasoning_collection: forbidden
 
 targets:
   blank_context:
     role: baseline
     agent_required: true
-    readiness: ready_for_runner_implementation
+    readiness: native_runner_ready
     initial_semantic_context: none
     native_surface:
       name: duckdb_catalog_and_read_only_sql
@@ -42,24 +43,26 @@ targets:
   ddl_only:
     role: baseline
     agent_required: true
-    readiness: ready_for_runner_implementation
+    readiness: native_runner_ready
     initial_semantic_context: physical_ddl_only
     native_surface:
       name: duckdb_ddl_and_read_only_sql
       artifact_root: data/tpcds/schema/duckdb
       result_origin: agent_authored_sql
     allowed_operations:
-      - artifact.read_ddl
       - db.execute_readonly
       - benchmark.submit_result
     prohibited_operations:
       - semantic.search
       - benchmark.read_gold
+    notes: >-
+      The runner preloads the exact physical DuckDB DDL into this target's fresh
+      conversation. No semantic descriptions or Gold material are added.
 
   metricflow:
     role: executable_semantic_engine
     agent_required: true
-    readiness: native_runtime_adapter_pending
+    readiness: native_runner_ready_requires_runtime
     initial_semantic_context: native_discovery_only
     native_surface:
       name: self_hosted_metricflow_cli
@@ -85,12 +88,13 @@ targets:
     notes: >-
       The agent selects native metrics, dimensions, filters, time bounds, order, and
       limit. MetricFlow must compile and execute the request. Direct SQL fallback is
-      not permitted in this condition.
+      not permitted in this condition. A compatible runtime project is injected by
+      configuration at run time and is never synthesized by the runner.
 
   cube:
     role: executable_semantic_engine
     agent_required: true
-    readiness: native_model_and_runtime_adapter_pending
+    readiness: outside_current_six_target_runner
     initial_semantic_context: native_discovery_only
     native_surface:
       name: cube_rest_api
@@ -112,13 +116,13 @@ targets:
       - db.execute_readonly
       - benchmark.read_gold
     notes: >-
-      This registry defines the REST Query API variant. Semantic SQL is a separate
-      native variant and must not be mixed into the same condition.
+      Cube remains registered for a later native service condition but is not part of
+      the six-target runner introduced in this revision.
 
   ossie:
     role: semantic_interchange_specification
     agent_required: true
-    readiness: native_consumer_ready
+    readiness: native_runner_ready
     initial_semantic_context: native_artifact_discovery
     native_surface:
       name: ossie_yaml_spec_consumer
@@ -142,18 +146,15 @@ targets:
       - benchmark.read_gold
     notes: >-
       Ossie is evaluated as its native model specification, not as a standalone query
-      engine. The pinned consumer validates the original YAML with Apache Ossie's
-      official schema, validates Dataset/Field/Relationship/Metric references, and
-      discovers or reads objects directly from the original source document. It never
-      converts Ossie into Skill, OKF, shared SemanticEvidence, embeddings, or a vector
-      index. SQL remains agent-authored and is executed only through the separately
-      declared read-only DuckDB operation.
+      engine. The pinned consumer validates and exposes the original YAML directly.
+      SQL remains agent-authored and can execute only through the declared read-only
+      DuckDB operation.
 
   okf:
     role: agent_knowledge_representation
     agent_required: true
-    readiness: native_consumer_adapter_pending
-    initial_semantic_context: bundle_index_only
+    readiness: native_runner_ready
+    initial_semantic_context: native_bundle_discovery
     native_surface:
       name: okf_markdown_bundle
       artifact_root: semantic-models/okf/tpcds-sf1
@@ -175,14 +176,14 @@ targets:
       - semantic.normalized_chunks
       - benchmark.read_gold
     notes: >-
-      OKF v0.2 intentionally requires no bespoke runtime. Native use therefore means
-      reading the original Markdown, YAML frontmatter, indexes, and links directly;
-      no embedding index or shared chunk conversion is used in the primary lane.
+      The runner exposes only the original Markdown/frontmatter/link consumer plus
+      separately declared read-only SQL. No embedding index, vector search, or shared
+      SemanticEvidence conversion is used in the primary lane.
 
   skill:
     role: agent_workflow_and_knowledge_package
     agent_required: true
-    readiness: native_host_adapter_pending
+    readiness: native_runner_ready_requires_host_revision
     initial_semantic_context: skill_metadata_only
     native_surface:
       name: host_skill_activation
@@ -205,6 +206,6 @@ targets:
       - semantic.normalized_chunks
       - benchmark.read_gold
     notes: >-
-      The host initially exposes only skill discovery metadata. It loads the complete
-      SKILL.md when activated and reads referenced files on demand. Preloading every
-      reference would invalidate the native Skill condition.
+      Only discoverable Skill metadata is injected initially. The agent must activate
+      the Skill before complete instructions are loaded and may then read references
+      on demand. The immutable host revision is a required run-time configuration.

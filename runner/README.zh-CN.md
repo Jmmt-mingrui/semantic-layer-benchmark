@@ -1,39 +1,33 @@
-# 控制组 Runner
+# 原生 Benchmark Runner
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-第一条可执行 Harness 覆盖 `blank_context` 和 `ddl_only` 两个控制组。它不会通过共享文本 Adapter 假装实现某个语义目标。
+当前 Runner 已为六个实验条件提供统一生命周期：`blank_context`、`ddl_only`、`metricflow`、`ossie`、`okf` 和 `skill`。统一的是 Trial 生命周期，不是语义内容；每个条件仍严格保留 `targets.native.yaml` 声明的原生操作与上下文。
 
-原生语义目标通过内部的[原生 Adapter 边界](core/README.zh-CN.md)接入：目标代码只能收到已实例化的 target question，保留已声明的原生操作，且不得读取 evaluator-only 资产或回退到未声明操作。
+## 隔离与公平性
 
-## 已强制执行的规则
+每个 `question × target × repetition` 都创建新的 Provider 对象和新的消息列表。不同 Trial 之间不复用 Provider thread、response chain、消息历史、Tool 结果或 Target Adapter。目标代码只能拿到实例化后的问题及自身原生 Surface；`native_runner.py` 不导入 Gold、参考 SQL、Evaluator 规则或隐藏的 question-to-metric 映射。
 
-- 每个 Trial 都创建新的 Provider 实例和全新消息列表；
-- 空白上下文初始消息不包含 DDL 或表名；
-- 物理 DuckDB DDL 只在 DDL-only 条件中预加载；
-- 严格使用 `targets.native.yaml` 中声明的操作 Allowlist；
-- 使用 JSON Schema 校验 Tool 输入输出、问题、实验、Trace、Trial 和 Run；
-- 执行 DuckDB Parse 检查、只读语句 Allowlist、外部 I/O 禁止规则、语句数和尝试次数预算；
-- Agent 不再接收 Turn 后，才执行 Evaluator-only 参考 SQL；
-- 记录结果 Hash、q01 精确比较、脱敏 Transcript、Tool Event、Token 字段和延迟字段；
-- 校验数据集、数据库文件、配置、Prompt、问题、目标注册表和仓库身份。
+Blank 可以发现 DuckDB Catalog 并执行只读 SQL；DDL-only 获得物理 DDL 和只读 SQL；MetricFlow 只暴露固定版本 CLI 的发现与 Query 接口，禁止直接 SQL fallback；Ossie 暴露校验后的原始 YAML，再通过单独声明的只读 SQL 执行；OKF 暴露原始 Markdown、Frontmatter 与链接操作，再通过只读 SQL 执行；Skill 初始只暴露发现元数据，激活后加载指令并按需读取 Reference，再通过只读 SQL 执行。
 
-数据库和 Trial Deadline 当前采用协作式执行：已经完成但超时的调用会被拒绝，Provider Adapter 必须遵守传给 `AgentProvider.complete` 的 Timeout。对不可信的真实 Provider，仍需使用进程或容器隔离。
+Provider、模型、Temperature、最大输出 Token、Seed、Turn Budget、Provider Timeout 和 Tool Timeout 都是实验配置输入。`LiveAgentProvider` 是无会话状态的 HTTP Provider 边界，可连接配置注入的 Chat-Completions-compatible Endpoint。它不会请求、采集或推断隐藏推理过程。Provider 未返回 Token 计数时，Trial 中明确记录为 `unavailable`，绝不记为 0。同时记录 Provider Retry、Tool Call、数据库调用、错误和端到端延迟。
 
-## Scripted 协议运行
-
-CLI 提供确定性的 Scripted Provider，使 CI 能验证完整协议，同时不会产生误导性的模型 Benchmark 分数：
+`ScriptedAgentProvider` 只用于确定性的 CI 协议测试，始终标记为 `ranking_eligible: false`。真实 Provider 连通性 Smoke Test 为显式启用、非发布型测试：
 
 ```bash
-pip install -e '.[test]'
-semantic-benchmark run-control \
-  --config runner/config/control-sf1-q01.yaml \
-  --provider scripted \
-  --script /path/to/local-q01-script.json
+BENCHMARK_AGENT_PROVIDER=... \
+BENCHMARK_AGENT_MODEL=... \
+BENCHMARK_AGENT_ENDPOINT=... \
+BENCHMARK_AGENT_API_KEY_ENV=MY_PROVIDER_KEY \
+python scripts/smoke_live_provider.py
 ```
 
-Script 是本地输入，必须为每个计划 Trial 提供 Turn 列表。Key 格式为 `<instance_id>:<target>:r<两位 repetition>`。每个 Turn 可包含 `content`、`response_id`、Provider `usage`，以及带 `id`、`name` 和 `arguments` 的 `tool_calls`。
+Smoke 只输出 Hash 与 Usage 元数据，不生成 Benchmark 分数。
 
-Scripted Run 只能证明 Orchestration 和 Evaluator 行为，必须标记为协议测试，并排除在公开模型排名之外。下一条集成边界是真实 Provider Adapter；它必须映射 Provider 的原生 Tool-calling 消息，并禁止跨 Trial 复用对话状态。
+## Publication 产物生成
 
-运行产物写入配置中的 `artifacts.run_directory`。完整结果行只在内存中用于评测；持久化的 Candidate Result Artifact 仅包含列名、行数和 SHA-256。
+`publication_orchestrator.py` 是从已关闭的原生 Candidate 到正式发布产物的 Evaluator-side 桥梁。它拒绝 Scripted Provider、缺失 Provider Response ID 的运行，以及尚未关闭 Provider/Runtime 的 Candidate；通过这些门禁后才读取冻结的代表性 Gold，按顺序比较 Result Hash，分配 Harness 自有的 Conversation ID，并写出经过 Schema 校验的 `trial.json`、`trace.jsonl` 与 `conversation.sanitized.jsonl`。原始结果行和密钥不会被复制。
+
+## 旧控制组 Runner
+
+早期 q01 Blank/DDL 契约测试仍可使用 `run-control`。新的语义目标实验应使用 `runner/core/native_factory.py`、`runner/core/native_runner.py` 和 `runner/core/live_provider.py`。Candidate 生成与 Gold 评测保持物理生命周期分离：Target 和 Provider 关闭之后，Evaluator 才允许加载 Gold。
