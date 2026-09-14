@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from hashlib import sha256
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -45,13 +46,21 @@ class FakeNativeAdapter:
         self.closed = True
 
 
-def _factory(tmp_path: Path) -> NativeAdapterFactory:
+class FailingPreflightAdapter(FakeNativeAdapter):
+    def preflight(self, deadline_seconds):
+        assert deadline_seconds > 0
+        return (NativeResponse("error", 0.0, {"native_operation": "fake.preflight"}),)
+
+
+def _factory(tmp_path: Path, *, failing_target: str | None = None) -> NativeAdapterFactory:
     runtime = tmp_path / "mf"
-    runtime.mkdir()
-    overrides = {
-        name: (lambda config, root, settings: FakeNativeAdapter(config))
-        for name in ("metricflow", "ossie", "okf", "skill")
-    }
+    runtime.mkdir(exist_ok=True)
+
+    def build(name):
+        adapter_type = FailingPreflightAdapter if name == failing_target else FakeNativeAdapter
+        return lambda config, root, settings: adapter_type(config)
+
+    overrides = {name: build(name) for name in ("metricflow", "ossie", "okf", "skill")}
     return NativeAdapterFactory(
         root=ROOT,
         registry=REGISTRY,
@@ -130,11 +139,35 @@ def test_all_six_targets_share_one_lifecycle_and_scripted_is_not_ranked(tmp_path
     assert all(item.record["usage"]["output_tokens"] == "unavailable" for item in outcomes)
     assert all(item.record["status"] == "unsupported" for item in outcomes)
 
+    empty_tools_sha = sha256(b"[]").hexdigest()
+    assert all(item.record["conversation"]["tool_schema_sha256"] != empty_tools_sha for item in outcomes)
+
     for provider in providers:
         assert len(provider.calls) == 1
         first_messages = provider.calls[0][0]
         assert sum(message.get("role") == "user" for message in first_messages) == 1
         assert not any("previous" in str(message.get("content", "")).lower() for message in first_messages)
+
+
+def test_preflight_failure_is_finalized_after_runtime_closure(tmp_path: Path) -> None:
+    def provider_factory(target, repetition, context):  # pragma: no cover - preflight must stop first
+        raise AssertionError((target, repetition, context))
+
+    outcome = run_native_trial(
+        target="ossie",
+        question_instance=_question(),
+        repetition=1,
+        adapter_factory=_factory(tmp_path, failing_target="ossie"),
+        provider_factory=provider_factory,
+        settings=_settings(),
+        system_prompt="isolated",
+    )
+
+    assert outcome.record["status"] == "failed"
+    assert outcome.record["error"]["category"] == "preflight"
+    assert outcome.record["conversation"]["provider_closed_before_evaluation"] is True
+    assert outcome.trace[-2]["event_type"] == "conversation.close"
+    assert outcome.trace[-1]["event_type"] == "trial.finish"
 
 
 def test_gold_and_tool_overreach_fail_closed(tmp_path: Path) -> None:
