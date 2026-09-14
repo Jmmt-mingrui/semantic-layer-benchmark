@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from math import ceil, comb
+from random import Random
 from statistics import mean
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -10,6 +11,8 @@ QUESTION_IDS = ("q01", "q02", "q03", "q05", "q12", "q14", "q21", "q36", "q39", "
 TARGETS = ("blank_context", "ddl_only", "metricflow", "ossie", "okf", "skill")
 REPETITIONS = (1, 2, 3)
 EXPECTED_TRIALS = len(QUESTION_IDS) * len(TARGETS) * len(REPETITIONS)
+BOOTSTRAP_SEED = 20260914
+BOOTSTRAP_SAMPLES = 20_000
 
 
 class ExecutionEvaluationError(RuntimeError):
@@ -48,10 +51,69 @@ def _sign_test_p_value(wins: int, losses: int) -> float | None:
     return min(1.0, 2.0 * tail)
 
 
-def validate_publication_trials(records: Sequence[Mapping[str, Any]]) -> None:
+def _percentile(sorted_values: Sequence[float], probability: float) -> float:
+    if not sorted_values:
+        raise ValueError("percentile requires values")
+    index = probability * (len(sorted_values) - 1)
+    lower = int(index)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    fraction = index - lower
+    return sorted_values[lower] * (1.0 - fraction) + sorted_values[upper] * fraction
+
+
+def _paired_bootstrap_ci(deltas: Sequence[float]) -> list[float] | None:
+    """Question-level paired percentile bootstrap CI with a fixed seed.
+
+    The resampling unit is one benchmark question, never an individual repetition.
+    """
+
+    if len(deltas) < 2:
+        return None
+    rng = Random(BOOTSTRAP_SEED)
+    size = len(deltas)
+    samples = sorted(mean(deltas[rng.randrange(size)] for _ in range(size)) for _ in range(BOOTSTRAP_SAMPLES))
+    return [round(_percentile(samples, 0.025), 6), round(_percentile(samples, 0.975), 6)]
+
+
+def validate_publication_trials(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    run_manifest: Mapping[str, Any] | None,
+) -> None:
     if len(records) != EXPECTED_TRIALS:
         raise ExecutionEvaluationError(f"Representative publication requires exactly {EXPECTED_TRIALS} trials")
+    if not isinstance(run_manifest, Mapping):
+        raise ExecutionEvaluationError("Publication requires a validated run manifest")
+
+    required_manifest_fields = (
+        "run_id",
+        "experiment_id",
+        "status",
+        "finished_at",
+        "dataset_manifest_sha256",
+        "gold_pack_sha256",
+        "provider",
+        "model",
+        "tool_schema_sha256_by_target",
+        "gold_result_sha256_by_question",
+    )
+    missing = [field for field in required_manifest_fields if not run_manifest.get(field)]
+    if missing:
+        raise ExecutionEvaluationError(f"Publication run manifest is incomplete: {', '.join(missing)}")
+    if run_manifest["status"] not in {"completed", "completed_with_failures"}:
+        raise ExecutionEvaluationError("Publication run manifest is not lifecycle-closed")
+
+    tool_schemas = run_manifest["tool_schema_sha256_by_target"]
+    gold_results = run_manifest["gold_result_sha256_by_question"]
+    if set(tool_schemas) != set(TARGETS):
+        raise ExecutionEvaluationError("Publication run manifest must bind every target tool schema")
+    if set(gold_results) != set(QUESTION_IDS):
+        raise ExecutionEvaluationError("Publication run manifest must bind every question Gold result")
+
     seen: set[tuple[str, str, int]] = set()
+    conversation_ids: set[str] = set()
+    response_ids: set[str] = set()
+    trial_ids: set[str] = set()
     for record in records:
         key = (
             str(record["question"]["question_id"]),
@@ -64,20 +126,51 @@ def validate_publication_trials(records: Sequence[Mapping[str, Any]]) -> None:
         question, target, repetition = key
         if question not in QUESTION_IDS or target not in TARGETS or repetition not in REPETITIONS:
             raise ExecutionEvaluationError(f"Unexpected representative trial: {key}")
-        if record["conversation"].get("fresh") is not True:
+        if record.get("run_id") != run_manifest["run_id"] or record.get("experiment_id") != run_manifest["experiment_id"]:
+            raise ExecutionEvaluationError(f"Run identity invariant failed: {key}")
+
+        trial_id = str(record.get("trial_id") or "")
+        if not trial_id or trial_id in trial_ids:
+            raise ExecutionEvaluationError(f"Unique trial identity invariant failed: {key}")
+        trial_ids.add(trial_id)
+
+        conversation = record["conversation"]
+        if conversation.get("fresh") is not True:
             raise ExecutionEvaluationError(f"Fresh-context invariant failed: {key}")
+        conversation_id = conversation.get("provider_conversation_id")
+        if not isinstance(conversation_id, str) or not conversation_id or conversation_id in conversation_ids:
+            raise ExecutionEvaluationError(f"Unique conversation identity invariant failed: {key}")
+        conversation_ids.add(conversation_id)
+        provider_response_ids = conversation.get("provider_response_ids")
+        if not isinstance(provider_response_ids, list) or not provider_response_ids:
+            raise ExecutionEvaluationError(f"Conversation lifecycle closure invariant failed: {key}")
+        for response_id in provider_response_ids:
+            if not isinstance(response_id, str) or not response_id or response_id in response_ids:
+                raise ExecutionEvaluationError(f"Unique provider response identity invariant failed: {key}")
+            response_ids.add(response_id)
+        if conversation.get("tool_schema_sha256") != tool_schemas[target]:
+            raise ExecutionEvaluationError(f"Tool-schema identity invariant failed: {key}")
+
+        if record["evaluation"].get("reference_result_sha256") != gold_results[question]:
+            raise ExecutionEvaluationError(f"Frozen Gold binding invariant failed: {key}")
         if record["native_execution"].get("used_only_declared_surface") is not True:
             raise ExecutionEvaluationError(f"Tool allowlist invariant failed: {key}")
         if record["native_execution"].get("fallback_used") is not False:
             raise ExecutionEvaluationError(f"Fallback invariant failed: {key}")
+
     expected = {(q, t, r) for q in QUESTION_IDS for t in TARGETS for r in REPETITIONS}
     if seen != expected:
         raise ExecutionEvaluationError("Representative trial matrix is incomplete")
 
 
-def evaluate_execution(records: Sequence[Mapping[str, Any]], *, publication: bool = True) -> dict[str, Any]:
+def evaluate_execution(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    publication: bool = True,
+    run_manifest: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     if publication:
-        validate_publication_trials(records)
+        validate_publication_trials(records, run_manifest=run_manifest)
 
     by_target: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for record in records:
@@ -125,19 +218,15 @@ def evaluate_execution(records: Sequence[Mapping[str, Any]], *, publication: boo
                 wins += delta > 0
                 losses += delta < 0
                 ties += delta == 0
-            # Question-level paired interval: normal approximation around the 12
-            # question deltas. It is descriptive and kept separate from rankings.
-            if len(deltas) >= 2:
-                avg = mean(deltas)
-                variance = sum((value - avg) ** 2 for value in deltas) / (len(deltas) - 1)
-                margin = 1.96 * (variance / len(deltas)) ** 0.5
-                ci = [round(avg - margin, 6), round(avg + margin, 6)]
-            else:
-                avg, ci = None, None
+            avg = mean(deltas) if deltas else None
             paired[f"{left}__vs__{right}"] = {
                 "question_pairs": len(deltas),
+                "unit_of_analysis": "question",
                 "accuracy_delta": round(avg, 6) if avg is not None else None,
-                "paired_95pct_ci": ci,
+                "paired_95pct_ci": _paired_bootstrap_ci(deltas),
+                "paired_95pct_ci_method": "paired percentile bootstrap over question-level deltas",
+                "bootstrap_samples": BOOTSTRAP_SAMPLES if len(deltas) >= 2 else None,
+                "bootstrap_seed": BOOTSTRAP_SEED if len(deltas) >= 2 else None,
                 "wins": wins,
                 "losses": losses,
                 "ties": ties,
