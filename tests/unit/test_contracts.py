@@ -33,6 +33,7 @@ def test_contracts_are_unique_draft_2020_12_schemas() -> None:
         "Evaluator-only gold result identity",
         "TPC-DS-derived SF1 representative question Gold identity",
         "Representative benchmark publication run manifest",
+        "Non-publishable representative pilot run manifest",
         "Benchmark run record",
         "Benchmark trial record",
         "Sanitized benchmark trace event",

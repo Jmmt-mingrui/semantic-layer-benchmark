@@ -194,7 +194,29 @@ class NativeRuntime:
             )
         if self.native_adapter is None:
             raise NativeFactoryError(f"No native adapter owns operation {request.operation}")
-        return self.native_adapter.dispatch(request)
+        response = self.native_adapter.dispatch(request)
+        native_result = response.output.get("native_result")
+        if isinstance(native_result, Mapping):
+            columns = native_result.get("columns")
+            rows = native_result.get("rows")
+            if not isinstance(columns, list) or not isinstance(rows, list):
+                raise NativeFactoryError("Native result must contain column and row arrays")
+            registered = self.harness.register_native_result(
+                columns=columns,
+                rows=rows,
+                elapsed_ms=response.duration_ms,
+            )
+            output = dict(response.output)
+            output.pop("native_result", None)
+            output.update(registered)
+            return NativeResponse(
+                status=response.status,
+                duration_ms=response.duration_ms,
+                output=output,
+                request_artifact=response.request_artifact,
+                response_artifact=response.response_artifact,
+            )
+        return response
 
     @property
     def database_calls(self) -> int:

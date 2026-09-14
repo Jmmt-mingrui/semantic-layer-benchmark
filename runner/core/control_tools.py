@@ -230,6 +230,31 @@ class ControlToolDispatcher:
             "preview_rows": result_payload(result)["rows"][: self.preview_rows],
         }
 
+    def register_native_result(
+        self,
+        *,
+        columns: list[str],
+        rows: list[list[Any]],
+        elapsed_ms: float,
+    ) -> dict[str, Any]:
+        """Register an executable engine result without a direct-SQL fallback."""
+
+        result = QueryResult(
+            columns=tuple(str(column) for column in columns),
+            rows=[tuple(row) for row in rows],
+            elapsed_ms=float(elapsed_ms),
+        )
+        handle = f"result-{len(self.results) + 1:03d}"
+        self.results[handle] = result
+        return {
+            "result_handle": handle,
+            "columns": list(result.columns),
+            "row_count": len(result.rows),
+            "result_sha256": result_sha256(result),
+            "elapsed_ms": result.elapsed_ms,
+            "preview_rows": result_payload(result)["rows"][: self.preview_rows],
+        }
+
     def _submit(self, arguments: dict[str, Any]) -> dict[str, Any]:
         if self.submission is not None:
             raise ToolProtocolError("Result has already been submitted")

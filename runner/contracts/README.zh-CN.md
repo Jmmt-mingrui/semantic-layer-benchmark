@@ -14,7 +14,7 @@
 | [`gold-result.schema.json`](gold-result.schema.json) | 数据冻结工具 | Evaluator Preflight | 与数据集绑定且不持久化结果行的参考结果身份 |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner 与 Adapter | Trace Store 与报告生成器 | 有序且脱敏的生命周期与用量事件 |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial Orchestrator 与 Evaluator | Run Aggregator | 一个问题 × 一个目标 × 一次重复的结果 |
-| [`run-record.schema.json`](run-record.schema.json) | Run Aggregator | 报告生成器 | 可复现性 Envelope 与 Trial 汇总 |\n| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication Orchestrator | 代表性 Evaluator | 绑定已关闭运行、数据集、Gold、Provider/Model、Tool Schema 与逐题结果身份 |
+| [`run-record.schema.json`](run-record.schema.json) | Run Aggregator | 报告生成器 | 可复现性 Envelope 与 Trial 汇总 |\n| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication Orchestrator | 代表性 Evaluator | 绑定已关闭运行、数据集、Gold、Provider/Model、Tool Schema 与逐题结果身份 |\n| [`pilot-run-manifest.schema.json`](pilot-run-manifest.schema.json) | Pilot Orchestrator | 实验操作者 | 固定 18-Trial Smoke 身份并强制 `publishable: false` |
 
 全部契约使用 JSON Schema Draft 2020-12，初始 Schema 版本为 `0.1.0`。只有提供迁移说明时才能变更 Schema 版本；如果行为发生变化但记录结构不变，则更新实验的 `protocol_revision`。
 

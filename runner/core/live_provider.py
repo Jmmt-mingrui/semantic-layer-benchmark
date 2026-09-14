@@ -15,6 +15,7 @@ import os
 import time
 from typing import Any, Callable, Mapping, Sequence
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from runner.core.agent import AgentTurn, AgentUsage, ToolCall
@@ -55,6 +56,19 @@ def _http_transport(url: str, body: bytes, headers: Mapping[str, str], timeout_s
     request = Request(url, data=body, headers=dict(headers), method="POST")
     with urlopen(request, timeout=timeout_seconds) as response:  # noqa: S310 - endpoint is explicit benchmark config
         return int(response.status), response.read()
+
+
+def _validate_endpoint(endpoint: str, *, credentialed: bool) -> None:
+    parsed = urlparse(endpoint)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise LiveProviderError("endpoint must be an absolute http(s) URL")
+    if not credentialed or parsed.scheme == "https":
+        return
+    if parsed.scheme == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"}:
+        return
+    raise LiveProviderError(
+        "credentialed provider endpoints must use HTTPS; plain HTTP is allowed only for localhost development"
+    )
 
 
 def _tool_for_provider(tool: Mapping[str, Any]) -> dict[str, Any]:
@@ -112,6 +126,10 @@ class LiveAgentProvider:
             raise LiveProviderError("provider, model, and endpoint are required")
         if settings.max_retries < 0:
             raise LiveProviderError("max_retries must be non-negative")
+        # Treat any caller-supplied header as potentially secret. This prevents
+        # Authorization or vendor-key headers from bypassing the HTTPS guard.
+        credentialed = settings.resolved_api_key() is not None or bool(settings.extra_headers)
+        _validate_endpoint(settings.endpoint, credentialed=credentialed)
         self.settings = settings
         self._transport = transport
         self._sleep = sleep

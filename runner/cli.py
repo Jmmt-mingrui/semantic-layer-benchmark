@@ -7,6 +7,7 @@ from typing import Any
 
 from runner.core.agent import AgentTurn, AgentUsage, ScriptedAgentProvider, ToolCall
 from runner.core.control_runner import run_control_experiment
+from runner.core.pilot import run_representative_pilot
 
 
 def _scripted_factory(script_path: Path):
@@ -55,6 +56,15 @@ def build_parser() -> argparse.ArgumentParser:
     control.add_argument("--provider", choices=("scripted",), default="scripted")
     control.add_argument("--script", type=Path, required=True)
     control.add_argument("--root", type=Path, default=Path("."))
+    pilot = subparsers.add_parser("run-pilot", help="Run the non-publishable q01 x 6 x 3 live pilot")
+    pilot.add_argument("--root", type=Path, default=Path("."))
+    pilot.add_argument("--output", type=Path, required=True)
+    pilot.add_argument("--database-config", default="runner/config/database.yaml")
+    pilot.add_argument("--instances", default="benchmark/tpcds/questions/instances/sf1-representative-v1.jsonl")
+    pilot.add_argument("--gold-pack", default="benchmark/tpcds/results/gold/sf1/representative-v1/pack.json")
+    pilot.add_argument("--metricflow-runtime", type=Path, required=True)
+    pilot.add_argument("--metricflow-executable", default="mf")
+    pilot.add_argument("--skill-host-revision")
     return parser
 
 
@@ -67,6 +77,19 @@ def main(argv: list[str] | None = None) -> int:
             root=args.root,
         )
         print(run_record)
+        return 0
+    if args.command == "run-pilot":
+        manifest = run_representative_pilot(
+            root=args.root,
+            output_dir=args.output,
+            database_config=args.database_config,
+            instances_path=args.instances,
+            gold_pack_path=args.gold_pack,
+            metricflow_runtime_project_dir=args.metricflow_runtime,
+            metricflow_executable=args.metricflow_executable,
+            skill_host_revision=args.skill_host_revision,
+        )
+        print(manifest)
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/pilot-run-manifest.schema.json",
+  "title": "Non-publishable representative pilot run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "experiment_id", "mode", "publishable", "question_ids", "targets", "repetitions", "trial_count", "dataset_config_sha256", "gold_pack_sha256", "provider", "model", "finished_at"],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "experiment_id": {"const": "representative-v1"},
+    "mode": {"const": "pilot"},
+    "publishable": {"const": false},
+    "question_ids": {"const": ["q01"]},
+    "targets": {"const": ["blank_context", "ddl_only", "metricflow", "ossie", "okf", "skill"]},
+    "repetitions": {"const": 3},
+    "trial_count": {"const": 18},
+    "dataset_config_sha256": {"$ref": "#/$defs/sha256"},
+    "gold_pack_sha256": {"$ref": "#/$defs/sha256"},
+    "provider": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "finished_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}
