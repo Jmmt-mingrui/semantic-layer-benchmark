@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 
-from runner.core.live_provider import LiveAgentProvider, LiveProviderSettings
+import pytest
+
+from runner.core.live_provider import LiveAgentProvider, LiveProviderError, LiveProviderSettings
 
 
 def test_live_provider_is_stateless_and_preserves_missing_usage() -> None:
@@ -54,6 +56,29 @@ def test_live_provider_is_stateless_and_preserves_missing_usage() -> None:
     assert captured[0]["max_tokens"] == 123
     assert captured[0]["seed"] == 7
     assert not hasattr(provider, "messages")
+
+
+def test_credentialed_remote_endpoint_requires_https() -> None:
+    with pytest.raises(LiveProviderError, match="must use HTTPS"):
+        LiveAgentProvider(
+            LiveProviderSettings(
+                provider="test",
+                model="m",
+                endpoint="http://provider.example/v1/chat",
+                api_key="secret",
+            )
+        )
+
+    provider = LiveAgentProvider(
+        LiveProviderSettings(
+            provider="test",
+            model="m",
+            endpoint="http://127.0.0.1:8000/v1/chat",
+            api_key="local-secret",
+        ),
+        transport=lambda *args: (200, b'{"choices":[{"message":{"content":"ok"}}]}'),
+    )
+    assert provider.settings.endpoint.startswith("http://127.0.0.1")
 
 
 def test_live_provider_counts_retry_without_logging_reasoning() -> None:
