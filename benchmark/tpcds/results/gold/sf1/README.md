@@ -1,15 +1,18 @@
-# Evaluator-only SF1 gold identities
+# Evaluator-only SF1 Gold identities
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-This directory stores result identities, not result rows. A gold artifact binds one materialized question and reference SQL file to one validated TPC-DS-derived SF1 dataset manifest and records the normalized result SHA-256, columns, and row count.
+This directory stores result identities, never raw result rows. Targets must never mount or read this directory. Gold is loaded only by evaluator code after the target/provider conversation has closed.
 
-Targets must never mount or read this directory. The evaluator opens a gold identity only after the target conversation has closed and a final result handle has been submitted.
+The publication target is `representative-v1/`, containing one question-level Gold artifact for each of q01, q02, q03, q05, q12, q14, q21, q36, q39, q49, q75, and q84 plus a pack manifest. q14 and q39 each bind two required reference statements inside one question artifact so they still contribute one question-level denominator.
 
-`q01.json` is intentionally absent until an official TPC-DS v4.0.0 `dsdgen` binary and all 25 generated SF1 inputs pass publication preflight. Generate it with:
+Every frozen artifact binds the exact TPC-DS-derived SF1 dataset manifest and database identity, the selected question-instance line hash, every reference SQL SHA-256, result columns, row count, and normalized result SHA-256. Changing any input makes `--verify` fail closed.
+
+The representative Gold files are intentionally absent from source control until an official TPC-DS v4.0.0 `dsdgen` binary and all generated SF1 inputs are available locally and pass publication preflight. Generate and verify them with:
 
 ```bash
-python -m scripts.freeze_tpcds_sf1 --require-sources
+python -m scripts.freeze_representative_sf1
+python -m scripts.freeze_representative_sf1 --verify
 ```
 
-Development mode exists only for tests and local diagnosis. Its output cannot be committed or reported as a benchmark result.
+Development mode exists only for tests/local diagnosis and must not be published as a benchmark result. The legacy q01-only freeze command remains for compatibility.
