@@ -45,7 +45,11 @@ def _hash_tree(root: Path) -> str:
 
 
 def evaluate_structure_inventory(path: str | Path, *, root: str | Path = ".") -> dict[str, Any]:
-    """Validate the auditable structure inventory without producing a global score."""
+    """Validate a manually curated capability inventory without claiming measured fidelity.
+
+    Evidence paths and hashes make the declarations auditable, but this evaluator does
+    not infer whether an evidence artifact semantically proves a declared status.
+    """
 
     root_path = Path(root).resolve()
     inventory_path = Path(path)
@@ -96,11 +100,12 @@ def evaluate_structure_inventory(path: str | Path, *, root: str | Path = ".") ->
                 }
             )
 
-    # No weighted or aggregate quality score is produced. not_applicable remains
-    # visible and is excluded only from optional coverage denominators in reports.
     return {
         "schema_version": "0.1.0",
         "benchmark": "TPC-DS-derived",
+        "assessment_kind": "manually_curated_capability_inventory",
+        "status_semantics": "declared_not_measured",
+        "evidence_semantics": "provenance_only_not_machine_verified_claim_support",
         "inventory_path": inventory_path.relative_to(root_path).as_posix(),
         "inventory_sha256": _hash_file(inventory_path),
         "categories": list(EXPECTED_CATEGORIES),
