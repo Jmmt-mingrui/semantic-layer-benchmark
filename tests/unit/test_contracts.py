@@ -31,6 +31,7 @@ def test_contracts_are_unique_draft_2020_12_schemas() -> None:
         "Materialized benchmark question instance",
         "TPC-DS-derived dataset manifest",
         "Evaluator-only gold result identity",
+        "TPC-DS-derived SF1 representative question Gold identity",
         "Benchmark run record",
         "Benchmark trial record",
         "Sanitized benchmark trace event",
