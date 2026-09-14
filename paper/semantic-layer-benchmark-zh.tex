@@ -1,0 +1,288 @@
+\documentclass[UTF8,a4paper,12pt]{ctexart}
+
+% 使用 XeLaTeX 编译；Overleaf 的 Compiler 请选择 XeLaTeX。
+\usepackage[a4paper,top=2.4cm,bottom=2.4cm,left=2.35cm,right=2.35cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usetikzlibrary{arrows.meta,positioning}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=green!45!black,
+  urlcolor=blue!60!black,
+  pdftitle={语义表示对企业 Text-to-SQL 的影响},
+  pdfauthor={Semantic Layer Benchmark 工作组}
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{#1}}
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\title{\heiti 语义表示对企业 Text-to-SQL 的影响\\
+\large 一项基于 TPC-DS 的阶段性实证研究}
+\author{Semantic Layer Benchmark 工作组}
+\date{版本 0.3（中文稿，\today）}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+企业 Text-to-SQL 不仅要求语言模型生成合法 SQL，还要求它理解业务术语、事实粒度、连接路径、时间角色和指标公式。语义层可以提供这些信息，但 MetricFlow、Cube、Apache Ossie、Open Knowledge Format（OKF）和 Agent Skill 的产品角色并不相同。本文以 TPC-DS 派生 SF1 为受控工作负载，建立包含 99 个问题、103 份参考 SQL formulation 和一份系统无关语义契约的跨表示基准。当前模型构建结果显示：统一契约包含 42 个基础指标族、25 个派生指标和 9 个题目级公式；各表示对齐同一组 24 张表和 425 个物理字段。MetricFlow 的 coverage 体现了类型化、可编译的指标边界，Ossie 的 coverage 体现了可交换的 SQL 表达能力，OKF 和 Skill 分别强调出处知识与 Agent 工作流。本文报告模型覆盖、表达能力和实验控制面的阶段性结果；完整 SF1 数据上的 Execution Accuracy、Token、延迟和成本比较将在原生运行时和 Gold 结果准备完成后补充。
+\end{abstract}
+
+\noindent\textbf{关键词：} 语义层；Text-to-SQL；MetricFlow；Cube；Apache Ossie；OKF；Agent Skill；TPC-DS
+
+\section{引言}
+
+\subsection{问题背景}
+
+现有 Text-to-SQL 基准通常把自然语言问题、物理 Schema 和参考 SQL 放在同一个评测闭环中。Spider 和 BIRD 建立了执行准确率的通用范式\cite{spider,bird}，但企业分析还包含缩写字段、隐含连接、快照粒度、业务时间和多阶段指标等信息。语言模型因此需要完成两次 grounding：先将问题映射为业务概念，再将业务概念映射为物理查询。
+
+语义层的作用是把这些事实从一次性的 Prompt 说明提升为可治理、可复用和可验证的表示。第一篇附加论文采用 paired baseline/treatment 设计，对比 DDL 与 DDL 加语义层，并把收益归因于业务词典、关系映射和指标定义三个组件\cite{ortiz2026}。另外两篇工作分别研究了语义层介导的 Agent 查询和通过执行反馈逐步构建语义层\cite{kim2026,lee2026}。这些工作说明，语义层值得测量；同时也说明，编译器、交换规范、知识文档和 Agent 工作流不能被当成同一种对象。
+
+\subsection{本文贡献}
+
+\begin{enumerate}[leftmargin=2em]
+\item 将 TPC-DS 规范、问题模板、参考 SQL 和业务规则组织为固定来源链，并建立 99 个问题的 Canonical 语义契约；
+\item 在同一 SF1 工作负载上，分别维护 MetricFlow、Cube、Ossie、OKF 和 Skill 的原生表示，比较它们的结构覆盖与能力边界；
+\item 采用 paired baseline/treatment 实验，并同时记录 SQL 结果、结构保真、工具调用、Token、延迟和错误，为后续端到端评测提供可复现实验接口。
+\end{enumerate}
+
+\section{语义层架构}
+
+\subsection{三组件架构}
+
+本文沿用第一篇论文的三组件视角。第一，\emph{业务语义}解释术语、字段和指标含义；第二，\emph{关系与粒度}说明实体、连接路径、时间角色和可加性；第三，\emph{指标定义}给出聚合、过滤、派生和题目级计算。三者共同决定语言模型是否能够从问题得到正确的查询计划。
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  node distance=7mm and 9mm,
+  box/.style={draw, rounded corners, align=center, minimum height=10mm, text width=3.0cm, fill=blue!5},
+  target/.style={draw, rounded corners, align=center, minimum height=9mm, text width=2.7cm, fill=green!6},
+  arrow/.style={-{Latex[length=2mm]}, thick}
+]
+\node[box] (source) {TPC-DS 规范、问题\\参考 SQL、数据};
+\node[box, right=of source] (canonical) {Canonical\\语义契约};
+\node[target, right=of canonical, yshift=12mm] (runtime) {MetricFlow / Cube\\可执行表示};
+\node[target, right=of canonical, yshift=-12mm] (knowledge) {Ossie / OKF / Skill\\交换、知识与工作流};
+\node[box, right=of runtime, yshift=-12mm] (agent) {全新上下文\\Agent};
+\node[box, right=of agent] (database) {只读 DuckDB\\目标数据库};
+\node[box, below=of database] (evaluator) {Evaluator\\结果与结构比较};
+\draw[arrow] (source) -- (canonical);
+\draw[arrow] (canonical) -- (runtime);
+\draw[arrow] (canonical) -- (knowledge);
+\draw[arrow] (runtime) -- (agent);
+\draw[arrow] (knowledge) -- (agent);
+\draw[arrow] (agent) -- (database);
+\draw[arrow] (database) -- (evaluator);
+\end{tikzpicture}
+\caption{语义表示基准的实验架构。所有目标从同一 Canonical 契约派生，但只以各自原生方式被 Agent 消费。}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{五类表示的比较对象}
+
+\begin{table}[ht]
+\centering
+\caption{五类对象的主要比较目标}
+\label{tab:roles}
+\small
+\begin{tabularx}{\linewidth}{p{2.0cm}p{3.1cm}Y}
+\toprule
+\textbf{对象} & \textbf{主要角色} & \textbf{适合回答的问题}\\
+\midrule
+MetricFlow & 类型化的 Metric 编译与查询 & 受治理的指标能否被稳定编译为 SQL？\\
+Cube & 语义服务与查询 API & 语义模型能否作为服务被多个客户端使用？\\
+Ossie & 语义模型交换规范 & 模型能否跨工具迁移并保留结构？\\
+OKF & 带出处的业务知识表示 & 业务定义和关系能否被人和 Agent 复用？\\
+Skill & Agent 工作流与渐进式上下文 & Agent 能否按规则发现并应用知识？\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+因此，本文不计算一个把五类对象强行相加的总分。MetricFlow 与 Cube 主要进入执行赛道，Ossie 进入结构和互操作赛道，OKF 与 Skill 进入知识消费和 Agent 行为赛道。
+
+\section{实验设置}
+
+\subsection{数据集与问题}
+
+工作负载由 TPC-DS v4.0.0 工具生成 SF1 数据，并在本文中称为 TPC-DS-derived，以区别于官方审计结果\cite{tpcds}。当前不使用 SF10。数据集包含 24 张逻辑表和 425 个物理字段。问题集合固定为 \code{q01}--\code{q99} 共 99 个问题；参考 SQL 保留 103 份 formulation，其中 q14、q23、q24 和 q39 各有两份可接受表达。问题、SQL 和语义模型都记录上游版本与本地出处。
+
+\subsection{语义表示}
+
+Canonical 契约包含 42 个基础指标族、25 个派生指标和 9 个 query-exact 公式，并为每个问题标注指标、维度、粒度、连接、时间和计算规则。该契约随后被翻译为五类目标表示：MetricFlow 的 semantic model 与 Metric，Cube 的模型和查询接口，Ossie 的完整 YAML 文档，OKF 的 Markdown/Frontmatter 知识 Bundle，以及 Skill 的 \code{SKILL.md} 与 Reference 文件。
+
+当前实现成熟度并不对称：MetricFlow、Ossie、OKF 和 Skill 的静态语义产物已建立；Cube 的原生模型和运行时适配器仍待完成。因此，本文把成熟度作为实验状态报告，不把缺失的运行时当作准确率为零。
+
+\subsection{实验协议}
+
+对每个问题和目标，采用同一模型、同一数据库和同一问题的 paired baseline/treatment 设计。对照条件为 blank context 和 DDL-only；处理条件只向 Agent 暴露目标的原生语义接口，不将所有表示预先转成统一文本。每次 Trial 使用全新 Conversation，Gold SQL、Gold result 和问题映射只在 Evaluator 中可见；Agent 只能执行只读操作并提交一次结果。
+
+\subsection{评测指标}
+
+主要指标是结果等价（Execution Accuracy）：候选结果按列、类型、Null、数值容差和顺序规则归一化后，与 Gold result 等价即为正确；SQL 文本相同只作为诊断信息。结构评测将每个 Canonical item 标记为 \code{native}、\code{adapter}、\code{query-layer}、\code{unsupported} 或 \code{not-applicable}。每次运行同时记录工具序列、输入/输出 Token、端到端延迟、重试和错误；Provider 未提供的 Token 保持缺失，不记为零。
+
+\section{结果}
+
+\subsection{Canonical 工作负载}
+
+\begin{table}[ht]
+\centering
+\caption{Canonical 工作负载的已验证规模}
+\label{tab:canonical}
+\small
+\begin{tabularx}{\linewidth}{p{4.4cm}rY}
+\toprule
+\textbf{项目} & \textbf{数量} & \textbf{说明}\\
+\midrule
+稳定问题 & 99 & q01--q99\\
+参考 SQL formulation & 103 & q14、q23、q24、q39 各有两份\\
+基础指标族 & 42 & 可复用的业务指标目录\\
+派生指标 & 25 & 由基础指标组合得到\\
+query-exact 公式 & 9 & 窗口、跨期、排名或多阶段逻辑\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{表结构与语义模型规模}
+
+\begin{table}[ht]
+\centering
+\caption{不同表示对齐后的结构规模}
+\label{tab:inventory}
+\small
+\begin{tabularx}{\linewidth}{p{4.4cm}rY}
+\toprule
+\textbf{项目} & \textbf{数量} & \textbf{主要证据}\\
+\midrule
+逻辑 Dataset & 24 & MetricFlow、Ossie、OKF 和 Skill 的共同边界\\
+物理字段 & 425 & Ossie Dataset fields 总数\\
+Ossie Relationship & 106 & 完整 Ossie YAML 中的显式关系\\
+Ossie Metric & 64 & 完整 Ossie YAML 中的指标条目\\
+MetricFlow Measure / Dimension / Entity & 64 / 257 / 178 & 24 个 semantic model 文件的聚合计数\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+这些数字描述模型构建规模，不是模型准确率。它们的用途是检查五类表示是否覆盖同一物理语义边界：Ossie 显式保存关系，MetricFlow 将关系拆成 Entity、Dimension 和 Measure，OKF 与 Skill 则通过可导航文档承载同一事实。
+
+\subsection{Metric 能力覆盖}
+
+\begin{table}[ht]
+\centering
+\caption{MetricFlow 与 Ossie 的 coverage manifest}
+\label{tab:coverage}
+\scriptsize
+\begin{tabularx}{\linewidth}{p{3.6cm}p{2.2cm}p{2.2cm}Y}
+\toprule
+\textbf{能力类别} & \textbf{MetricFlow} & \textbf{Ossie} & \textbf{解释}\\
+\midrule
+基础指标变体 & 113 & 113 & Canonical 变体展开后的共同分母\\
+已有简单能力 & 56 & 111 & 已有 Metric 可复用；或可记录 SQL expression candidate\\
+需要补充原生表达 & 31 & 2 & 需要新增 Measure；或需要题目上下文\\
+派生指标候选 & 21 native、1 cumulative & 25 expression candidate & Ossie 统一保存为表达式\\
+query-exact 公式 & 9 query-layer & 9 query-context & 不强行泛化为普通复用 Metric\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+MetricFlow 的优势是类型化和可编译边界，但它当前仍有需要新增 Measure 或 query-layer 的项目。Ossie 能在交换文档中保存更宽的 SQL 表达式，但 Join、Filter、Group 和执行上下文仍由 consumer 负责。因此，coverage 数字反映表达能力边界，不能直接当作端到端准确率排名。
+
+\subsection{校验状态}
+
+DuckDB 1.4.0 空 Schema 校验已覆盖 q01--q10：10 份 SQL 均通过 Parse、Bind 和 empty-table execution。SF1 数据上的结果等价仍等待数据 manifest 和 Gold result；Cube 原生模型与运行时适配器也尚未进入全量运行。由此，当前结果支持结构性结论，不支持五个目标的 Execution Accuracy 排名。
+
+\section{讨论}
+
+\subsection{语义层不是单一产品类别}
+
+当前结果首先表明，“哪个语义层最好”不是一个完整问题。若目标是受治理的指标执行，MetricFlow/Cube 是合适的比较对象；若目标是模型交换和结构审计，Ossie 更合适；若目标是带出处的业务知识，OKF 更合适；若目标是 Agent 的渐进式上下文和操作顺序，Skill 更合适。把这些对象压成一个总分，会把不同的责任边界混在一起。
+
+\subsection{MetricFlow 与 Ossie}
+
+MetricFlow 将语义图交给编译器，Measure、Dimension 和 Entity 为查询选择提供类型约束。它更适合可复用、受治理的指标，但不能把所有题目级窗口或跨期逻辑都伪装成普通 Metric。Ossie 将 Dataset、Field、Relationship 和 Metric expression 作为交换对象保存，结构覆盖更宽，但不替 consumer 决定跨数据集执行。两者是“执行治理”和“模型交换”的互补，而不是同一赛道上的简单替代。
+
+\subsection{OKF 与 Skill}
+
+OKF 和 Skill 的评测重点不是静态文件多少，而是 Agent 是否正确消费知识。OKF 的优势是 Markdown、Frontmatter、索引和链接带来的 provenance；Skill 的优势是按需激活和渐进式读取。二者必须在同一个 Agent、同一问题集合和同一观测协议下比较，不能从文件数量推断 SQL 准确率。
+
+\subsection{工程启示}
+
+当前最合理的组合是：用 MetricFlow 或 Cube 提供执行 Runtime，用 Ossie 保存可迁移的模型，用 OKF 保存业务定义和出处，用 Skill 约束 Agent 的读取与验证流程。这样的组合保留了原生边界，也能解释一个错误究竟来自语义缺口、Runtime 缺口还是 Agent 使用过程。
+
+\section{局限性与未来工作}
+
+本文仍处于模型构建和协议校验阶段。第一，SF1 的完整数据、Gold result 和真实 Provider 运行尚未冻结，因此没有端到端准确率或显著性结论。第二，Cube 原生模型尚未完成，MetricFlow/Ossie 的 coverage 也包含候选项，不能视为已通过运行时验证。第三，TPC-DS-derived SF1 只代表受控零售工作负载，后续需要在保持 Evaluator 不变的前提下加入独立领域，并补充冷启动、缓存、Token 和成本分析。
+
+\section{结论}
+
+本文按照语义层实证研究的结构，建立了一个基于 TPC-DS-derived SF1 的跨表示 benchmark。当前已经验证：99 个问题和 103 份参考 SQL 可以由统一 Canonical 契约组织；MetricFlow、Ossie、OKF 和 Skill 对齐同一组 24 张表和 425 个字段；MetricFlow 更接近类型化、可编译的执行模型，Ossie 更接近可交换的结构模型，OKF 和 Skill 分别服务于出处知识与 Agent 工作流。因而，当前最可靠的结论不是宣布一个全局冠军，而是根据执行、交换、知识和工作流目标选择或组合表示。待 SF1 Gold 和真实 Provider 运行完成后，本文的实验接口可以直接补充最终的准确率、成本和可观测性结果。
+
+\begin{thebibliography}{99}
+
+\bibitem{ortiz2026}
+Diego Ortiz, Rui Qing Zhang, Leonardo Gomez, Jose Romero, Nishchai JM.
+\newblock Evaluating the Impact of a Semantic Layer on LLM-Based Text-to-SQL Accuracy for Enterprise Data Querying: An Empirical Study.
+\newblock In \emph{2026 IEEE Cloud Summit}, 2026.
+\newblock DOI: \url{https://doi.org/10.1109/CloudSummit68932.2026.00049}.
+
+\bibitem{kim2026}
+Ha Jeong Kim, Saksonita Khoeurn, Ye Ji Yoon.
+\newblock A Semantic-Layer-Mediated Agent for Natural Language to SQL over Heterogeneous Enterprise Databases.
+\newblock arXiv preprint arXiv:2606.31041, version 1, 2026.
+\newblock \url{https://arxiv.org/abs/2606.31041}.
+
+\bibitem{lee2026}
+Youngwon Lee, Jaejin Kim, Seung-won Hwang.
+\newblock Bootstrapping Semantic Layer from Execution for Text-to-SQL.
+\newblock arXiv preprint arXiv:2606.05634, version 1, 2026.
+\newblock \url{https://arxiv.org/abs/2606.05634}.
+
+\bibitem{tpcds}
+Transaction Processing Performance Council.
+\newblock TPC-DS v4.0.0 specification and toolkit.
+\newblock \url{https://www.tpc.org/tpcds/}.
+
+\bibitem{spider}
+Tao Yu, Rui Zhang, Kai Yang et al.
+\newblock Spider: A large-scale human-labeled dataset for complex and cross-domain semantic parsing and text-to-SQL task.
+\newblock In \emph{Proceedings of EMNLP}, 2018.
+
+\bibitem{bird}
+Jinyang Li, Binyuan Hui, Ge Qu et al.
+\newblock Can LLM already serve as a database interface? A big bench for large-scale database grounded text-to-SQLs.
+\newblock In \emph{NeurIPS}, 2023.
+
+\bibitem{metricflow}
+dbt Labs.
+\newblock dbt Semantic Layer and MetricFlow documentation.
+\newblock \url{https://docs.getdbt.com/docs/build/about-metricflow}.
+
+\bibitem{cube}
+Cube Dev.
+\newblock Cube semantic layer, REST API and DuckDB data source documentation.
+\newblock \url{https://docs.cube.dev/docs/introduction}.
+
+\bibitem{ossie}
+Apache Software Foundation.
+\newblock Apache Ossie core semantic-model specification.
+\newblock \url{https://github.com/apache/ossie/blob/c109cf5b0a06970a97599e8f7c2a72859822a3a4/core-spec/spec.md}.
+
+\bibitem{skills}
+OpenAI.
+\newblock Agent Skills and progressive disclosure documentation.
+\newblock \url{https://developers.openai.com/codex/skills}.
+
+\end{thebibliography}
+
+\end{document}
