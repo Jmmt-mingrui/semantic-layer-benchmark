@@ -1,39 +1,29 @@
-# Control runner
+# Native benchmark runner
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-The first executable harness covers the `blank_context` and `ddl_only` controls. It deliberately does not implement a semantic target through a shared text adapter.
+The runner now has one lifecycle for the six current experiment conditions: `blank_context`, `ddl_only`, `metricflow`, `ossie`, `okf`, and `skill`. The lifecycle is shared, but semantic content is not normalized: every condition retains the native operations and context declared in `targets.native.yaml`.
 
-Native semantic targets use the internal [native adapter boundary](core/README.md): target code receives only a materialized target question, keeps its declared native operations, and cannot read evaluator-only assets or fall back to undeclared operations.
+## Isolation and fairness
 
-## What is enforced
+Every `question × target × repetition` creates a new provider object and a new message list. No provider thread, response chain, message history, tool result, or target adapter is reused across trials. Target code receives only the materialized question and its own native surface; Gold, reference SQL, evaluator rules, and hidden question mappings are not imported by `native_runner.py`.
 
-- a new provider instance and fresh message list for every trial;
-- no DDL or table names in the blank-context initial messages;
-- physical DuckDB DDL preloaded only for the DDL-only condition;
-- the exact operation allowlist from `targets.native.yaml`;
-- JSON Schema validation for tool inputs, tool outputs, questions, experiments, traces, trials, and runs;
-- DuckDB parse checks, a read-only statement allowlist, external-I/O denial, statement and attempt budgets;
-- evaluator-only reference SQL execution after the Agent stops receiving turns;
-- result hashing, exact q01 comparison, sanitized transcripts, tool events, token fields, and latency fields;
-- dataset, database-file, config, prompt, question, registry, and repository identity checks.
+Blank context can discover the DuckDB catalog and execute read-only SQL. DDL-only receives the physical DDL and read-only SQL. MetricFlow exposes only its pinned CLI discovery/query surface and has no direct-SQL fallback. Ossie exposes validated original YAML plus separately declared read-only SQL. OKF exposes original Markdown/frontmatter/link operations plus separately declared read-only SQL. Skill exposes discovery metadata, activation, progressive reference reads, and separately declared read-only SQL.
 
-The database and trial deadlines are currently cooperative: a completed call that exceeds its deadline is rejected, and provider adapters must honor the timeout passed to `AgentProvider.complete`. Process/container isolation remains required for untrusted live providers.
+Provider, model, temperature, maximum output tokens, seed, turn budget, provider timeout, and tool timeout are experiment inputs. `LiveAgentProvider` is a stateless HTTP boundary for configured Chat-Completions-compatible endpoints. It does not request, collect, or infer hidden reasoning. Missing provider token counters are persisted as `unavailable`, never as zero. Provider retries, tool calls, database calls, errors, and end-to-end latency are recorded.
 
-## Scripted protocol run
-
-The bundled CLI accepts a deterministic scripted provider so CI can exercise the complete protocol without producing a misleading model benchmark score:
+`ScriptedAgentProvider` exists only for deterministic CI protocol tests and is always marked `ranking_eligible: false`. A real-provider connectivity smoke is opt-in and deliberately non-publishing:
 
 ```bash
-pip install -e '.[test]'
-semantic-benchmark run-control \
-  --config runner/config/control-sf1-q01.yaml \
-  --provider scripted \
-  --script /path/to/local-q01-script.json
+BENCHMARK_AGENT_PROVIDER=... \
+BENCHMARK_AGENT_MODEL=... \
+BENCHMARK_AGENT_ENDPOINT=... \
+BENCHMARK_AGENT_API_KEY_ENV=MY_PROVIDER_KEY \
+python scripts/smoke_live_provider.py
 ```
 
-The script is local input and must contain one turn list for every planned trial. Keys use `<instance_id>:<target>:r<two-digit repetition>`. Each turn may contain `content`, `response_id`, provider `usage`, and `tool_calls` with `id`, `name`, and `arguments`.
+The smoke prints hashes and usage metadata only. It is not a benchmark score.
 
-Scripted runs prove orchestration and evaluator behavior only. They must be labeled as protocol tests and excluded from published model rankings. A live provider adapter is the next integration boundary; it must translate the provider's native tool-calling messages without reusing conversation state across trials.
+## Legacy control runner
 
-Run artifacts are written below the configured `artifacts.run_directory`. Full result rows remain in memory for evaluation; persisted candidate result artifacts contain columns, row count, and SHA-256 only.
+`run-control` remains available for the earlier q01 Blank/DDL contract tests. New semantic-target work should use `runner/core/native_factory.py`, `runner/core/native_runner.py`, and `runner/core/live_provider.py`. Candidate production remains separate from Gold evaluation: target/provider shutdown occurs before an evaluator is allowed to load Gold.
