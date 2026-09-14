@@ -24,6 +24,10 @@ python scripts/smoke_live_provider.py
 
 Smoke 只输出 Hash 与 Usage 元数据，不生成 Benchmark 分数。
 
+## Publication 产物生成
+
+`publication_orchestrator.py` 是从已关闭的原生 Candidate 到正式发布产物的 Evaluator-side 桥梁。它拒绝 Scripted Provider、缺失 Provider Response ID 的运行，以及尚未关闭 Provider/Runtime 的 Candidate；通过这些门禁后才读取冻结的代表性 Gold，按顺序比较 Result Hash，分配 Harness 自有的 Conversation ID，并写出经过 Schema 校验的 `trial.json`、`trace.jsonl` 与 `conversation.sanitized.jsonl`。原始结果行和密钥不会被复制。
+
 ## 旧控制组 Runner
 
 早期 q01 Blank/DDL 契约测试仍可使用 `run-control`。新的语义目标实验应使用 `runner/core/native_factory.py`、`runner/core/native_runner.py` 和 `runner/core/live_provider.py`。Candidate 生成与 Gold 评测保持物理生命周期分离：Target 和 Provider 关闭之后，Evaluator 才允许加载 Gold。

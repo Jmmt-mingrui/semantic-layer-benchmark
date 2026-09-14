@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/publication-run-manifest.schema.json",
+  "title": "Representative benchmark publication run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "experiment_id", "status", "finished_at", "dataset_manifest_sha256", "gold_pack_sha256", "provider", "model", "tool_schema_sha256_by_target", "gold_result_sha256_by_question", "trial_count"],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "experiment_id": {"const": "representative-v1"},
+    "status": {"enum": ["completed", "completed_with_failures"]},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "dataset_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "gold_pack_sha256": {"$ref": "#/$defs/sha256"},
+    "provider": {"type": "string", "minLength": 1},
+    "model": {"type": "string", "minLength": 1},
+    "trial_count": {"const": 216},
+    "tool_schema_sha256_by_target": {
+      "type": "object", "additionalProperties": false,
+      "required": ["blank_context", "ddl_only", "metricflow", "ossie", "okf", "skill"],
+      "properties": {
+        "blank_context": {"$ref": "#/$defs/sha256"}, "ddl_only": {"$ref": "#/$defs/sha256"},
+        "metricflow": {"$ref": "#/$defs/sha256"}, "ossie": {"$ref": "#/$defs/sha256"},
+        "okf": {"$ref": "#/$defs/sha256"}, "skill": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "gold_result_sha256_by_question": {
+      "type": "object", "additionalProperties": false,
+      "required": ["q01", "q02", "q03", "q05", "q12", "q14", "q21", "q36", "q39", "q49", "q75", "q84"],
+      "properties": {
+        "q01": {"$ref": "#/$defs/sha256"}, "q02": {"$ref": "#/$defs/sha256"},
+        "q03": {"$ref": "#/$defs/sha256"}, "q05": {"$ref": "#/$defs/sha256"},
+        "q12": {"$ref": "#/$defs/sha256"}, "q14": {"$ref": "#/$defs/sha256"},
+        "q21": {"$ref": "#/$defs/sha256"}, "q36": {"$ref": "#/$defs/sha256"},
+        "q39": {"$ref": "#/$defs/sha256"}, "q49": {"$ref": "#/$defs/sha256"},
+        "q75": {"$ref": "#/$defs/sha256"}, "q84": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}
+}

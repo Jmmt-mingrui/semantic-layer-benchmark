@@ -24,6 +24,10 @@ python scripts/smoke_live_provider.py
 
 The smoke prints hashes and usage metadata only. It is not a benchmark score.
 
+## Publication materialization
+
+`publication_orchestrator.py` is the evaluator-side bridge from a closed native candidate to durable publication artifacts. It refuses scripted providers, missing provider response identities, and any candidate whose provider/runtime was not closed. Only then does it compare ordered candidate result hashes with the frozen representative Gold, assign a harness-owned conversation identity, and write schema-validated `trial.json`, `trace.jsonl`, and `conversation.sanitized.jsonl`. Raw result rows and secrets are never copied.
+
 ## Legacy control runner
 
 `run-control` remains available for the earlier q01 Blank/DDL contract tests. New semantic-target work should use `runner/core/native_factory.py`, `runner/core/native_runner.py`, and `runner/core/live_provider.py`. Candidate production remains separate from Gold evaluation: target/provider shutdown occurs before an evaluator is allowed to load Gold.
