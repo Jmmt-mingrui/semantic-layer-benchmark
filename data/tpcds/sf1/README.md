@@ -52,7 +52,7 @@ python -m scripts.load_tpcds_sf1 \
   --generator-binary /path/to/TPC-DS-v4.0.0/tools/dsdgen
 ```
 
-The loader creates all 25 physical tables, handles the trailing delimiter in `dsdgen` output, and writes `manifests/duckdb-sf1.json` conforming to [`runner/contracts/dataset-manifest.schema.json`](../../../runner/contracts/dataset-manifest.schema.json). The manifest records the generator version and binary hash, DuckDB version, schema/database hashes, every generated input hash, per-table row counts, and the path-independent logical `dataset_sha256`. The 24-table semantic benchmark excludes `dbgen_version`, which remains generator metadata.
+The loader creates all 25 physical tables, handles the trailing delimiter in `dsdgen` output, and writes `manifests/duckdb-sf1.json` conforming to [`runner/contracts/dataset-manifest.schema.json`](../../../runner/contracts/dataset-manifest.schema.json). The manifest records the generator version and binary hash, DuckDB version, schema/database hashes, every generated input hash, per-table row counts, and the path-independent logical `dataset_sha256`. That logical identity covers the 24 semantic benchmark tables; `dbgen_version` remains validated generator metadata because its generated row contains the wall-clock time and local command path.
 
 Publication validation re-hashes the schema, database, and generated inputs, verifies the logical snapshot identity, checks the live DuckDB version, and checks every live table row count. A manifest without the `dsdgen` binary hash cannot pass publication preflight.
 

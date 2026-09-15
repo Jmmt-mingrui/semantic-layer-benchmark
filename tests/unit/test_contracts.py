@@ -48,13 +48,18 @@ def test_contracts_are_unique_draft_2020_12_schemas() -> None:
 def test_dataset_identity_is_stable_and_content_sensitive() -> None:
     schema_sha256 = "a" * 64
     first = {
-        "store": {"rows": 2, "sha256": "b" * 64},
-        "customer": {"rows": 1, "sha256": "c" * 64},
+        name: {"rows": index, "sha256": f"{index + 1:064x}"}
+        for index, name in enumerate(TABLES)
     }
-    reordered = {"customer": first["customer"], "store": first["store"]}
-    changed = {**first, "store": {"rows": 3, "sha256": "b" * 64}}
+    reordered = dict(reversed(first.items()))
+    changed = {**first, "store": {"rows": first["store"]["rows"] + 1, "sha256": first["store"]["sha256"]}}
+    changed_metadata = {
+        **first,
+        "dbgen_version": {"rows": 1, "sha256": "f" * 64},
+    }
     assert snapshot_checksum(schema_sha256, first) == snapshot_checksum(schema_sha256, reordered)
     assert snapshot_checksum(schema_sha256, first) != snapshot_checksum(schema_sha256, changed)
+    assert snapshot_checksum(schema_sha256, first) == snapshot_checksum(schema_sha256, changed_metadata)
 
 
 def test_dataset_manifest_shape_accepts_loader_output() -> None:

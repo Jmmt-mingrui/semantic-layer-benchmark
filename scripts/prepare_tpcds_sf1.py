@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from typing import Sequence
 
 
@@ -98,7 +99,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     run([python, "-m", "scripts.freeze_representative_sf1", "--verify"], root=root)
     if not args.skip_tests:
         run([python, "-m", "scripts.benchmark_lint"], root=root)
-        run([python, "-m", "pytest", "-q"], root=root)
+        # Keep pytest's generated fixtures outside the repository. Some managed
+        # environments redirect the system temporary directory into the current
+        # checkout, which changes the evaluator's path-identity semantics and
+        # also makes repository-wide validators inspect transient JSONL files.
+        with tempfile.TemporaryDirectory(
+            prefix="semantic-benchmark-pytest-", dir=root.parent
+        ) as test_directory:
+            run([python, "-m", "pytest", "-q", "--basetemp", test_directory], root=root)
 
     manifest = json.loads((root / DEFAULT_MANIFEST).read_text(encoding="utf-8"))
     pack = json.loads((root / DEFAULT_GOLD_DIR / "pack.json").read_text(encoding="utf-8"))

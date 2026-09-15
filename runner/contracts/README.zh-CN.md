@@ -84,7 +84,7 @@ Runner 按照以下状态顺序执行：
 
 缺少工具、实例化问题、数据库 Manifest、不可变版本引用或环境 Pin 时，必须在产生任何付费 Agent 调用前失败。Timeout、原生服务错误和结果错误需要分别统计。
 
-本地开发 Manifest 可以暂时不记录 `dsdgen` Binary Hash，但发布结果前的 Preflight 必须要求该字段。`dataset_sha256` 根据物理 Schema Hash、排序后的表行数和源文件 Hash 计算，因此时间戳、本地路径和数据库文件序列化不会改变逻辑快照身份。
+本地开发 Manifest 可以暂时不记录 `dsdgen` Binary Hash，但发布结果前的 Preflight 必须要求该字段。`dataset_sha256` 根据物理 Schema Hash，以及 24 张 Benchmark 表按名称排序后的行数和源文件 Hash 计算，因此时间戳、本地路径和数据库文件序列化不会改变逻辑快照身份。物理 `dbgen_version` 表仍保留在 Manifest 和数据库中用于 Provenance 校验，但其生成行包含墙钟时间和本地命令路径，因此不计入逻辑身份。
 
 Gold Result Identity 会把数据 Manifest、数据库 Hash、实例化问题和参考 SQL 绑定到标准化结果的列名、行数及 SHA-256。它不包含结果行，并且始终只对 Evaluator 可见；只有全部快照检查通过后才能重新生成。
 

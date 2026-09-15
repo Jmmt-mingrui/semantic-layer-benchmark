@@ -40,6 +40,7 @@ TPCDS_TABLES = (
     "web_sales",
     "web_site",
 )
+TPCDS_BENCHMARK_TABLES = tuple(name for name in TPCDS_TABLES if name != "dbgen_version")
 
 
 def checksum(path: Path) -> str:
@@ -51,11 +52,15 @@ def checksum(path: Path) -> str:
 
 
 def snapshot_checksum(schema_sha256: str, tables: dict[str, dict[str, Any]]) -> str:
+    missing = sorted(set(TPCDS_BENCHMARK_TABLES) - set(tables))
+    if missing:
+        raise ValueError("Logical dataset identity is missing benchmark tables: " + ", ".join(missing))
     identity = {
         "schema_sha256": schema_sha256,
         "tables": {
             table: {"rows": item["rows"], "sha256": item["sha256"]}
             for table, item in sorted(tables.items())
+            if table in TPCDS_BENCHMARK_TABLES
         },
     }
     encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()

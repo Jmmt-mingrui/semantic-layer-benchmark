@@ -52,7 +52,7 @@ def test_pipeline_uses_only_checked_in_stages(tmp_path: Path, monkeypatch, capsy
         "scripts.prepare_tpcds_sf1.run",
         lambda command, *, root: commands.append(list(command)),
     )
-    assert main(["--root", str(tmp_path), "--dsdgen", str(binary), "--skip-tests"]) == 0
+    assert main(["--root", str(tmp_path), "--dsdgen", str(binary)]) == 0
 
     modules = [command[2] for command in commands]
     assert modules == [
@@ -60,8 +60,14 @@ def test_pipeline_uses_only_checked_in_stages(tmp_path: Path, monkeypatch, capsy
         "scripts.load_tpcds_sf1",
         "scripts.freeze_representative_sf1",
         "scripts.freeze_representative_sf1",
+        "scripts.benchmark_lint",
+        "pytest",
     ]
-    assert "--verify" in commands[-1]
+    assert "--verify" in commands[3]
+    assert "--basetemp" in commands[-1]
+    basetemp = Path(commands[-1][commands[-1].index("--basetemp") + 1])
+    assert basetemp.parent == tmp_path.parent
+    assert not basetemp.exists()
     summary = json.loads(capsys.readouterr().out)
     assert summary["status"] == "ready"
     assert summary["gold_question_count"] == 12
