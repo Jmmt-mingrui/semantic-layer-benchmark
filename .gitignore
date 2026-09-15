@@ -2,12 +2,15 @@
 .venv/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 
 data/tpcds/sf1/generated/*
 !data/tpcds/sf1/generated/.gitkeep
 data/tpcds/sf1/*.duckdb
 data/tpcds/sf1/*.duckdb.wal
+data/tpcds/sf1/manifests/*.json
+!data/tpcds/sf1/manifests/.gitkeep
 
 runs/*
 !runs/.gitkeep

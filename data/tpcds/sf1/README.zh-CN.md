@@ -6,9 +6,30 @@ Benchmark 使用本地 TPC-DS-derived scale-factor-1 数据集。它不是经过
 
 生成的 `.dat` 文件和 DuckDB 数据库都是可复现的本地运行产物，Git 会显式忽略它们。
 
-## 1. 使用官方 4.0.0 Toolkit 生成 SF1
+## 前置条件：取得官方工具包
 
-从 TPC 官方发行渠道获取并构建 TPC-DS Tools v4.0.0，然后把生成的 `dsdgen` 传给仓库脚本：
+TPC 在[当前规范页面](https://www.tpc.org/tpc_documents_current_versions/current_specifications5.asp)列出了 TPC-DS Tools v4.0.0。下载页面要求每位用户阅读并接受 TPC Tools 许可证、登记邮箱，并使用 TPC 邮件发送的链接下载。因此，本仓库及其自动化不会下载、镜像或再分发该工具包。
+
+下载官方压缩包后，按照包内构建说明编译；在受支持的 Linux 目录结构中，通常是在 tools 目录运行 `make OS=LINUX`。发布级实验不得用 DuckDB 内置生成器、容器镜像或第三方镜像替代，因为这会改变被记录的 Generator Provenance。
+
+## 推荐：运行完整准备流水线
+
+在安装 `.[test]` 的全新 Checkout 中，一条命令会生成 SF1、构建 DuckDB Snapshot、冻结全部 12 个代表问题的 Gold Identity、完成验证，并运行 Benchmark Lint 和测试：
+
+```bash
+python -m scripts.prepare_tpcds_sf1 \
+  --dsdgen /path/to/TPC-DS-v4.0.0/tools/dsdgen
+```
+
+仅在明确要替换已有本地 Snapshot 时使用 `--overwrite`。成功后，命令会输出 Generator、逻辑 Dataset、数据库与 Gold Pack Hash，以及表数、总行数、问题数和 Statement 数；实验记录应保留这段终端输出。
+
+工具包、生成的 `.dat`、DuckDB 数据库和本地 Dataset Manifest 均不提交。Gold 文件只包含 Hash 和结果元数据，绝不包含结果行。
+
+## 分步执行
+
+### 1. 使用官方 4.0.0 Toolkit 生成 SF1
+
+若需分步执行，先运行仓库内的生成 Wrapper：
 
 ```bash
 python -m scripts.generate_tpcds_sf1 \
@@ -23,7 +44,7 @@ dsdgen -scale 1 -dir <local-output> -force
 
 并在本地记录 Generator Binary SHA-256 等生成信息；生成数据不会提交到仓库。
 
-## 2. 加载并固定 DuckDB Snapshot 身份
+### 2. 加载并固定 DuckDB Snapshot 身份
 
 ```bash
 python -m scripts.load_tpcds_sf1 \
@@ -35,7 +56,7 @@ Loader 创建全部 25 张物理表，处理 `dsdgen` 输出末尾分隔符，�
 
 发布前验证会重新 Hash Schema、数据库和生成输入，校验逻辑 Snapshot Identity、当前 DuckDB 版本和全部表实际行数。缺少 `dsdgen` Binary Hash 的 Manifest 不能通过发布 Gate。
 
-## 3. 冻结 representative-v1 Gold Pack
+### 3. 冻结 representative-v1 Gold Pack
 
 代表集包含 q01、q02、q03、q05、q12、q14、q21、q36、q39、q49、q75、q84。不可变 Question Instances 位于 `benchmark/tpcds/questions/instances/sf1-representative-v1.jsonl`。
 

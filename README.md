@@ -243,16 +243,14 @@ pip install -e '.[test]'
 ```
 
 1. Download the TPC-DS v4.0.0 tools from the [official TPC download page](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY).
-2. Build the toolkit and run `dsdgen -scale 1`.
-3. Place the generated `.dat` files in `data/tpcds/sf1/generated/`.
-4. Create the database and reproducibility manifest:
+2. Build `dsdgen` according to the toolkit instructions.
+3. Run the complete reproducible preparation pipeline:
 
 ```bash
-python -m scripts.load_tpcds_sf1 --generator-binary /path/to/dsdgen
-pytest -q
+python -m scripts.prepare_tpcds_sf1 --dsdgen /path/to/dsdgen
 ```
 
-The loader records the native `dsdgen` binary hash, DuckDB version, physical inputs, and logical snapshot identity. The default URL is `duckdb:///./data/tpcds/sf1/tpcds.duckdb`. See [`data/tpcds/sf1/README.md`](data/tpcds/sf1/README.md) and [`runner/config/README.md`](runner/config/README.md) for details. q01-q10 currently pass parse, bind, and empty-schema execution checks; SF1 result equivalence remains a separate gate until a generated-data manifest is available.
+TPC requires personal licence acceptance and registration before downloading the tools, so repository automation intentionally starts from a user-supplied official binary. The pipeline records its hash, generates the 25 physical inputs, creates DuckDB, freezes and verifies the 12-question representative Gold pack, and runs repository checks. The default URL is `duckdb:///./data/tpcds/sf1/tpcds.duckdb`. See [`data/tpcds/sf1/README.md`](data/tpcds/sf1/README.md) and [`runner/config/README.md`](runner/config/README.md) for details.
 
 ## How these pieces are applied in practice
 
