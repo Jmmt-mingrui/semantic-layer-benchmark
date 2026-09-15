@@ -88,7 +88,9 @@ def main() -> None:
         "database": {"path": str(args.database)},
         "tables": {},
     }
-    with duckdb.connect(str(args.database)) as connection:
+    connection = duckdb.connect(str(args.database))
+    try:
+        connection.begin()
         connection.execute(args.schema.read_text())
         for table in TABLES:
             source = sources[table]
@@ -97,6 +99,14 @@ def main() -> None:
                 "sha256": checksum(source),
                 "rows": load_table(connection, table, source),
             }
+        connection.commit()
+    except BaseException:
+        connection.rollback()
+        raise
+    finally:
+        # Close explicitly so all pages and WAL state are durable before the
+        # database file is hashed and the manifest is published.
+        connection.close()
     manifest["database"]["sha256"] = checksum(args.database)
     manifest["dataset_sha256"] = snapshot_checksum(schema_sha256, manifest["tables"])
     manifest["generated_at"] = datetime.now(UTC).isoformat().replace("+00:00", "Z")

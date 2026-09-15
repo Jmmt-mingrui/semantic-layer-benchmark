@@ -52,7 +52,7 @@ python -m scripts.load_tpcds_sf1 \
   --generator-binary /path/to/TPC-DS-v4.0.0/tools/dsdgen
 ```
 
-Loader 创建全部 25 张物理表，处理 `dsdgen` 输出末尾分隔符，并写出符合 [`runner/contracts/dataset-manifest.schema.json`](../../../runner/contracts/dataset-manifest.schema.json) 的 `manifests/duckdb-sf1.json`。Manifest 包含 Generator 版本与 Binary Hash、DuckDB 版本、Schema/数据库 Hash、所有输入文件 Hash、逐表行数，以及与本地路径无关的逻辑 `dataset_sha256`。24 表语义 Benchmark 不包含 `dbgen_version`，该表继续作为 Generator Metadata。
+Loader 创建全部 25 张物理表，处理 `dsdgen` 输出末尾分隔符，并写出符合 [`runner/contracts/dataset-manifest.schema.json`](../../../runner/contracts/dataset-manifest.schema.json) 的 `manifests/duckdb-sf1.json`。Manifest 包含 Generator 版本与 Binary Hash、DuckDB 版本、Schema/数据库 Hash、所有输入文件 Hash、逐表行数，以及与本地路径无关的逻辑 `dataset_sha256`。该逻辑身份覆盖 24 张语义 Benchmark 表；`dbgen_version` 的生成行包含墙钟时间和本地命令路径，因此只作为受校验的 Generator Metadata。
 
 发布前验证会重新 Hash Schema、数据库和生成输入，校验逻辑 Snapshot Identity、当前 DuckDB 版本和全部表实际行数。缺少 `dsdgen` Binary Hash 的 Manifest 不能通过发布 Gate。
 

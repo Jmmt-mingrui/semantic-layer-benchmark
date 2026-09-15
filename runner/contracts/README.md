@@ -84,7 +84,7 @@ Native limitations are results, not reasons to silently switch paths. If MetricF
 
 Missing tools, missing materialized questions, missing database manifests, mutable version references, and unresolved environment pins fail before any billable agent call. Timeouts and native service errors remain distinct from wrong results.
 
-A local development manifest may omit the `dsdgen` binary hash, but publication preflight requires it. `dataset_sha256` is derived from the physical schema hash plus sorted table row counts and source-file hashes, so timestamps, local paths, and database serialization do not change the logical snapshot identity.
+A local development manifest may omit the `dsdgen` binary hash, but publication preflight requires it. `dataset_sha256` is derived from the physical schema hash plus the sorted row counts and source-file hashes of the 24 benchmark tables, so timestamps, local paths, and database serialization do not change the logical snapshot identity. The physical `dbgen_version` table remains in the manifest and database for provenance validation but is excluded from this logical identity because its generated row contains the wall-clock generation time and local command path.
 
 A gold-result identity binds the dataset manifest, database hash, materialized question, and reference SQL to normalized result columns, row count, and SHA-256. It contains no result rows and remains evaluator-only. Recreating it requires all snapshot checks to pass first.
 
