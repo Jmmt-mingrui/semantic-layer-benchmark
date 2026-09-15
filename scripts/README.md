@@ -4,6 +4,16 @@
 
 Repository maintenance commands are Python modules so they work consistently from a clean checkout. Run them from the repository root after installing `.[test]`.
 
+## Reproduce the SF1 baseline
+
+After personally obtaining and building the official licensed TPC-DS Tools v4.0.0 package, run the complete generation, DuckDB load, representative Gold freeze/verification, lint, and test pipeline:
+
+```bash
+python -m scripts.prepare_tpcds_sf1 --dsdgen /path/to/dsdgen
+```
+
+The command never downloads the TPC toolkit and never sends data or credentials to an external service. See [`data/tpcds/sf1/README.md`](../data/tpcds/sf1/README.md) for provenance rules and individual stages.
+
 ## Benchmark lint
 
 ```bash

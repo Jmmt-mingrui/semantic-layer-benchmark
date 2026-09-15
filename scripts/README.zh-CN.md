@@ -4,6 +4,16 @@
 
 仓库维护命令以 Python 模块提供，从干净 Checkout 运行时行为保持一致。安装 `.[test]` 后，在仓库根目录执行。
 
+## 复现 SF1 Baseline
+
+本人从官方渠道取得并构建带许可证的 TPC-DS Tools v4.0.0 后，运行完整的数据生成、DuckDB 加载、代表集 Gold 冻结/验证、Lint 与测试流水线：
+
+```bash
+python -m scripts.prepare_tpcds_sf1 --dsdgen /path/to/dsdgen
+```
+
+该命令不会下载 TPC 工具包，也不会把数据或凭据发送给外部服务。Provenance 约束与分步命令见 [`data/tpcds/sf1/README.zh-CN.md`](../data/tpcds/sf1/README.zh-CN.md)。
+
 ## Benchmark lint
 
 ```bash

@@ -243,16 +243,14 @@ pip install -e '.[test]'
 ```
 
 1. 从 [TPC 官方下载页面](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY)下载 TPC-DS v4.0.0 工具包。
-2. 编译工具包并运行 `dsdgen -scale 1`。
-3. 将生成的 `.dat` 文件放到 `data/tpcds/sf1/generated/`。
-4. 创建数据库和可复现 Manifest：
+2. 按照工具包说明构建 `dsdgen`。
+3. 运行完整的可复现准备流水线：
 
 ```bash
-python -m scripts.load_tpcds_sf1 --generator-binary /path/to/dsdgen
-pytest -q
+python -m scripts.prepare_tpcds_sf1 --dsdgen /path/to/dsdgen
 ```
 
-Loader 会记录原生 `dsdgen` Binary Hash、DuckDB 版本、物理输入和逻辑快照身份。默认 URL 为 `duckdb:///./data/tpcds/sf1/tpcds.duckdb`。详情见 [`data/tpcds/sf1/README.zh-CN.md`](data/tpcds/sf1/README.zh-CN.md) 和 [`runner/config/README.zh-CN.md`](runner/config/README.zh-CN.md)。q01-q10 当前已通过 Parse、Bind 和空 Schema 执行检查；在生成数据 Manifest 之前，SF1 结果等价仍是独立的待完成 Gate。
+TPC 要求下载前由本人接受许可证并登记，因此仓库自动化有意从用户提供的官方 Binary 开始。流水线会记录其 Hash、生成 25 个物理输入、创建 DuckDB、冻结并验证 12 问题代表集 Gold Pack，并运行仓库检查。默认 URL 为 `duckdb:///./data/tpcds/sf1/tpcds.duckdb`。详情见 [`data/tpcds/sf1/README.zh-CN.md`](data/tpcds/sf1/README.zh-CN.md) 和 [`runner/config/README.zh-CN.md`](runner/config/README.zh-CN.md)。
 
 ## 实际应用方式
 
