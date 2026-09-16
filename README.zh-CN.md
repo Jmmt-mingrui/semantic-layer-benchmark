@@ -336,6 +336,7 @@ flowchart TB
 - [x] 真实 Agent Provider 和 Skill/OKF/Ossie/MetricFlow 适配器边界（MetricFlow 需 runtime）
 - [x] 代表题 Execution Evaluator 和人工维护的 Structure Inventory Evaluator
 - [x] 可配置探索性 live 入口，以及可选 SQL/结果预览
+- [x] 12 道代表题公开输出契约、SQL/lint/Gold 一致性校验，以及提交/API 失败分开统计（迁移后需重新冻结 Gold）
 - [ ] OpenTelemetry Collector 导出
 - [ ] 重复运行的基准报告
 
@@ -344,9 +345,8 @@ flowchart TB
 1. 生成本地 SF1 快照并校验 12 题 Gold pack。
 2. 用 `run-live` 运行所选题目及目标，查看 SQL 预览与 Gold 比对。
 3. 配置并验证固定版本 MetricFlow runtime，不使用 fallback 或更换快照。
-4. 先实例化并 Review q02-q10，再处理 q11-q99，同时确保 Evaluator 字段对目标不可见。
-5. 实现 Skill、OKF、Ossie、MetricFlow 和 Cube 原生 Adapter，禁止静默 Fallback。
-6. 先完成 Phase 1 评测和 q01-q10 原生 Pilot，再进行 Phase 2 结构评分及全部 99 题扩展；受控上下文消融仅作为独立次要实验运行。
+4. 完成 Cube、审核后的 Canonical 语义和全部 99 题参考结果验证。
+5. 完成完整重复试验矩阵后再发布结论；受控上下文消融保持独立。
 
 ## 官方格式和运行时资料
 

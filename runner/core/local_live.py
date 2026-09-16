@@ -50,9 +50,28 @@ def _write_json(path: Path, value: Any, secret: str | None) -> None:
     path.write_text(text + "\n", encoding="utf-8")
 
 
+def summarize_outcomes(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Keep submission-only matching separate from attempt-level availability."""
+    scored = sum(type(row.get("result_equivalent")) is bool for row in rows)
+    correct = sum(row.get("result_equivalent") is True for row in rows)
+    provider_errors = sum(row.get("result_equivalent") is None and
+                          str(row.get("error") or "").startswith("LiveProviderError:") for row in rows)
+    return {"attempted": len(rows), "scored_submissions": scored, "correct_submissions": correct,
+            "wrong_results": scored - correct, "unscored": len(rows) - scored,
+            "provider_errors": provider_errors,
+            "submitted_result_match_rate": correct / scored if scored else None,
+            "publishable_execution_accuracy": None}
+
+
 def render_report(rows: list[dict[str, Any]]) -> str:
+    counts = summarize_outcomes(rows)
     lines = ["# 本地探索评测", "", "仅为小规模探索结果，不是完整 216-trial 发布报告。",
         "结果正确性按提交的答案比对冻结 Gold，探索查询不计入答案。", "",
+        f"共尝试 {counts['attempted']} 次；提交并参与 Gold 比对 {counts['scored_submissions']} 次："
+        f"正确 {counts['correct_submissions']} 次，不一致 {counts['wrong_results']} 次。",
+        f"未评分 {counts['unscored']} 次，其中供应商/API 错误 {counts['provider_errors']} 次。",
+        "已提交答案的匹配比例只描述提交子集；供应商失败和未提交不是 wrong_result，"
+        "也不能把这个比例当作完整 benchmark 的 Execution Accuracy。", "",
         "| 问题 | 目标 | 运行状态 | Gold 比对 | 耗时（秒） | 工具调用 |",
         "|---|---|---|---|---:|---:|"]
     for row in rows:
@@ -151,6 +170,7 @@ def run_local_live(args: Any) -> int:
                     _write_json(output / (trial_name + ".diagnostic.json"), row, secret)
                 rows.append(row)
                 _write_json(output / "summary.json", {"publishable": False, "dataset": verified,
+                    "outcomes": summarize_outcomes(rows),
                     "provider": provider_settings.provider, "model": provider_settings.model, "trials": rows}, secret)
                 report = render_report(rows)
                 if secret:

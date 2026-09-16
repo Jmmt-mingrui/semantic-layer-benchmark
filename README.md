@@ -336,6 +336,7 @@ The official toolkit is governed by the TPC EULA and is linked rather than vendo
 - [x] Live Agent provider and Skill/OKF/Ossie/MetricFlow adapter boundaries (MetricFlow runtime required)
 - [x] Representative execution evaluator and curated structure-inventory evaluator
 - [x] Configurable exploratory live command with optional SQL and result previews
+- [x] Twelve public representative output contracts, SQL/lint/Gold consistency checks, and separated submission/API-failure summaries (re-freeze Gold after migration)
 - [ ] OpenTelemetry collector export
 - [ ] Repeated-run benchmark report
 

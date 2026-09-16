@@ -11,14 +11,21 @@ These versioned contracts separate orchestration, target-visible inputs, native 
 | [`experiment.schema.json`](experiment.schema.json) | Experiment author | Runner preflight | Immutable run plan, target set, budgets, isolation, and artifact policy |
 | [`dataset-manifest.schema.json`](dataset-manifest.schema.json) | SF1 loader | Runner preflight | Generator, schema, table, row-count, file-hash, and snapshot identity |
 | [`question-instance.schema.json`](question-instance.schema.json) | Workload curator | Prompt renderer and evaluator | Materialized user question separated from evaluator-only SQL and comparison rules |
+| [`representative-question-instance.schema.json`](representative-question-instance.schema.json) | Workload curator | Representative preflight/lint and evaluator | v0.3.0 public output requirements, typed parameters, and ordered per-statement contracts |
 | [`gold-result.schema.json`](gold-result.schema.json) | Dataset freeze tool | Evaluator preflight | Dataset-bound reference result identity without persisted result rows |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner and adapters | Trace store and report builder | Ordered, sanitized lifecycle and usage events |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial orchestrator and evaluator | Run aggregator | One question × target × repetition outcome |
-| [`run-record.schema.json`](run-record.schema.json) | Run aggregator | Report builder | Reproducibility envelope and trial summary |\n| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication orchestrator | Representative evaluator | Closed run identity plus dataset, Gold, provider/model, tool-schema, and per-question result bindings |\n| [`pilot-run-manifest.schema.json`](pilot-run-manifest.schema.json) | Pilot orchestrator | Operator | Fixed 18-Trial smoke identity with `publishable: false` |
+| [`run-record.schema.json`](run-record.schema.json) | Run aggregator | Report builder | Reproducibility envelope and trial summary |
+| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication orchestrator | Representative evaluator | Closed run identity plus dataset, Gold, provider/model, tool-schema, and per-question result bindings |
+| [`pilot-run-manifest.schema.json`](pilot-run-manifest.schema.json) | Pilot orchestrator | Operator | Fixed 18-Trial smoke identity with `publishable: false` |
 
-All contracts use JSON Schema Draft 2020-12 and start at schema version `0.1.0`. A schema version changes only with a documented migration; the experiment's `protocol_revision` changes whenever behavior changes without altering the record shape.
+All contracts use JSON Schema Draft 2020-12. Qualification/trial/run contracts remain v0.1.0 and representative Gold remains v0.2.0. Representative questions migrate from unvalidated, underdefined v0.2.0 records to v0.3.0: required source/provenance and output contracts, typed parameter arrays, and new instance IDs. Single-result contracts retain qualification's fields; q14/q39 use `result_contract.statements` in submission order. See the [migration](../../benchmark/tpcds/questions/instances/README.md). Changed instance/SQL hashes require a new Gold freeze. Strict `canonical-json-v1` comparison and native execution policy do not change.
 
-## Publication boundary\n\nThe publication orchestrator consumes only a candidate returned after native runtime and provider closure. It then opens evaluator-only Gold, compares ordered result identities, emits contract-valid artifacts, and binds the complete 216-trial matrix in `publication-run-manifest.schema.json`. A harness-owned conversation ID identifies the fresh local conversation; provider response IDs remain separately preserved.\n\n## Native-first invariant
+## Publication boundary
+
+The publication orchestrator consumes only a candidate returned after native runtime and provider closure. It then opens evaluator-only Gold, compares ordered result identities, emits contract-valid artifacts, and binds the complete 216-trial matrix in `publication-run-manifest.schema.json`. A harness-owned conversation ID identifies the fresh local conversation; provider response IDs remain separately preserved.
+
+## Native-first invariant
 
 The primary lane is `native_end_to_end`. The runner may wrap a native call to add IDs, timeouts, sanitization, and telemetry, but it may not flatten target artifacts into a common evidence representation.
 

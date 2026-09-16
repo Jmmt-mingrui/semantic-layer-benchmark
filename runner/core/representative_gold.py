@@ -16,11 +16,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+import duckdb
 from jsonschema import Draft202012Validator, FormatChecker
 
 from runner.core.control_tools import result_sha256
 from runner.core.database import DatabaseSettings, QueryResult, connect
 from runner.core.dataset import validate_sf1_snapshot
+from runner.core.question_contracts import (
+    QuestionContractError, statement_contracts, validate_public_requirements,
+    validate_reference_contract, validate_result_contract,
+)
 
 
 REPRESENTATIVE_QUESTION_IDS = (
@@ -90,8 +95,11 @@ def _repo_relative(path: Path, root: Path, *, publication: bool) -> str:
         return str(resolved)
 
 
-def load_representative_instances(path: str | Path) -> list[dict[str, Any]]:
+def load_representative_instances(path: str | Path, *, root: str | Path | None = None) -> list[dict[str, Any]]:
     source = Path(path)
+    root_path = Path(root).resolve() if root is not None else Path(__file__).resolve().parents[2]
+    schema = json.loads((root_path / "runner/contracts/representative-question-instance.schema.json").read_text())
+    validator = Draft202012Validator(schema)
     rows: list[dict[str, Any]] = []
     for line_number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
@@ -102,6 +110,9 @@ def load_representative_instances(path: str | Path) -> list[dict[str, Any]]:
             raise RepresentativeGoldError(f"{source}:{line_number}: invalid JSON") from error
         if not isinstance(value, dict):
             raise RepresentativeGoldError(f"{source}:{line_number}: expected an object")
+        errors = sorted(validator.iter_errors(value), key=str)
+        if errors:
+            raise RepresentativeGoldError(f"{source}:{line_number}: invalid question contract: {errors[0].message}")
         rows.append(value)
     ids = tuple(row.get("question_id") for row in rows)
     if ids != REPRESENTATIVE_QUESTION_IDS:
@@ -111,20 +122,23 @@ def load_representative_instances(path: str | Path) -> list[dict[str, Any]]:
     instance_ids = [row.get("instance_id") for row in rows]
     if len(set(instance_ids)) != len(instance_ids) or any(not isinstance(value, str) or not value for value in instance_ids):
         raise RepresentativeGoldError("Representative instance IDs must be unique non-empty strings")
-    for row in rows:
-        if row.get("benchmark") != "TPC-DS-derived" or row.get("scale_factor") != 1 or row.get("suite") != SUITE:
-            raise RepresentativeGoldError(f"{row.get('question_id')}: invalid suite identity")
-        target_input = row.get("target_input")
-        if not isinstance(target_input, dict) or set(target_input) != {"question"}:
-            raise RepresentativeGoldError(f"{row.get('question_id')}: target_input must contain only question")
-        references = row.get("evaluator_only", {}).get("reference_sql")
-        if not isinstance(references, list) or not references or any(not isinstance(item, str) or not item for item in references):
-            raise RepresentativeGoldError(f"{row.get('question_id')}: evaluator_only.reference_sql is required")
-        expected_statement_count = 2 if row["question_id"] in {"q14", "q39"} else 1
-        if len(references) != expected_statement_count:
-            raise RepresentativeGoldError(
-                f"{row['question_id']}: expected {expected_statement_count} reference statement(s), found {len(references)}"
-            )
+    # Never touch SF1/Gold here: lint and preflight use an empty physical schema.
+    with duckdb.connect(":memory:") as database:
+        database.execute((root_path / "data/tpcds/schema/duckdb/schema.sql").read_text())
+        for row in rows:
+            references = row["evaluator_only"]["reference_sql"]
+            expected_count = 2 if row["question_id"] in {"q14", "q39"} else 1
+            try:
+                if row["evaluator_only"]["expected_statement_count"] != expected_count:
+                    raise QuestionContractError(f"Expected {expected_count} statement(s)")
+                if row["source_template"] != f"query{int(row['question_id'][1:])}.tpl":
+                    raise QuestionContractError("Source template and question ID differ")
+                validate_public_requirements(row)
+                for reference, contract in zip(references, statement_contracts(row), strict=True):
+                    reference_path = root_path / reference
+                    validate_reference_contract(database, reference_path.read_text(), contract)
+            except (QuestionContractError, duckdb.Error, OSError) as error:
+                raise RepresentativeGoldError(f"{row['question_id']}: {error}") from error
     return rows
 
 
@@ -177,7 +191,7 @@ def freeze_representative_pack(
     if engine.get("name") != "duckdb" or not engine.get("version"):
         raise RepresentativeGoldError("Dataset manifest must record DuckDB version")
 
-    rows = load_representative_instances(instances)
+    rows = load_representative_instances(instances, root=root_path)
     schema = json.loads((root_path / "runner/contracts/representative-gold.schema.json").read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     destination.mkdir(parents=True, exist_ok=True)
@@ -187,7 +201,9 @@ def freeze_representative_pack(
     with connect(settings) as database:
         for instance in rows:
             statement_artifacts: list[dict[str, Any]] = []
-            for statement_index, reference in enumerate(instance["evaluator_only"]["reference_sql"], start=1):
+            for statement_index, (reference, contract) in enumerate(zip(
+                instance["evaluator_only"]["reference_sql"], statement_contracts(instance), strict=True
+            ), start=1):
                 reference_path = Path(reference)
                 if not reference_path.is_absolute():
                     reference_path = root_path / reference_path
@@ -195,6 +211,11 @@ def freeze_representative_pack(
                     raise RepresentativeGoldError(f"Missing DuckDB reference SQL for {instance['question_id']}: {reference}")
                 sql = reference_path.read_text(encoding="utf-8")
                 result = database.execute(sql)
+                identity = _result_identity(result)
+                try:
+                    validate_result_contract(identity, contract)
+                except QuestionContractError as error:
+                    raise RepresentativeGoldError(f"{instance['question_id']}: {error}") from error
                 statement_artifacts.append(
                     {
                         "statement_index": statement_index,
@@ -202,7 +223,7 @@ def freeze_representative_pack(
                             "path": _repo_relative(reference_path, root_path, publication=publication),
                             "sha256": _sha256_file(reference_path),
                         },
-                        "result": _result_identity(result),
+                        "result": identity,
                     }
                 )
 
@@ -292,7 +313,7 @@ def verify_representative_pack(
         instances = root_path / instances
     if _sha256_file(instances) != pack["instances_sha256"]:
         raise RepresentativeGoldError("Representative question-instance file changed after Gold freeze")
-    rows = {row["question_id"]: row for row in load_representative_instances(instances)}
+    rows = {row["question_id"]: row for row in load_representative_instances(instances, root=root_path)}
 
     schema = json.loads((root_path / "runner/contracts/representative-gold.schema.json").read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
@@ -318,13 +339,17 @@ def verify_representative_pack(
         references = instance["evaluator_only"]["reference_sql"]
         if len(references) != len(gold["statements"]):
             raise RepresentativeGoldError(f"Reference statement count changed for {question_id}")
-        for reference, statement in zip(references, gold["statements"], strict=True):
+        for reference, statement, contract in zip(references, gold["statements"], statement_contracts(instance), strict=True):
             reference_path = Path(reference)
             if not reference_path.is_absolute():
                 reference_path = root_path / reference_path
             expected_ref = _repo_relative(reference_path, root_path, publication=publication)
             if statement["reference_sql"]["path"] != expected_ref or statement["reference_sql"]["sha256"] != _sha256_file(reference_path):
                 raise RepresentativeGoldError(f"Reference SQL changed for {question_id}")
+            try:
+                validate_result_contract(statement["result"], contract)
+            except QuestionContractError as error:
+                raise RepresentativeGoldError(f"{question_id}: {error}") from error
         statement_count += len(gold["statements"])
     if statement_count != pack["statement_count"]:
         raise RepresentativeGoldError("Representative statement count changed")

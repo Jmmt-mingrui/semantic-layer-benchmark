@@ -69,6 +69,25 @@ python -m scripts.freeze_representative_sf1
 python -m scripts.freeze_representative_sf1 --verify
 ```
 
+## 这次修订与原约定的关系
+
+上一补丁没有修复 representative 题面欠定义，新版已补齐 12 题的列名/列序、排序方向/NULL 位置、Limit 和双结果顺序；q01 与 qualification 的完整措辞统一。题目还写清同店平均、日期两端包含、比值方向及原 SQL 的重复行语义。
+
+| 原约定 | 当前行为 |
+|---|---|
+| 正确性必需的列、分组、排序、Limit 写进问题 | 全部代表题公开声明；lint 对照绑定列与最外层 SQL 校验 |
+| Agent 只收到 target_input.question | 保持；参考 SQL、Gold 行/Hash、参数元数据不发送给 Agent |
+| 原生路径、同一快照、全新对话 | 保持；不换数据库、不降级 MetricFlow 为 Agent SQL |
+| 严格结果比较 | 保持 exact_normalized/canonical-json-v1；不按名重排列、不重排行、不加容差 |
+| 正式报告要求 216 条完整记录 | 保持；本地子集不冒充正式结果 |
+
+代表题实例升级为 schema v0.3.0 / `public-output-contract-v1` 并更换实例 ID；q14/q39 的两个契约按提交顺序列在 `result_contract.statements`。q02/q14/q39 输出新增明确别名，q36/q75 新增确定性排序 tie-break，已记录在 `benchmark/tpcds/sql/reference/duckdb/SOURCE.md`。这会改变实例/SQL/结果 Hash，**旧 Gold 和旧成绩不能直接沿用**。不需要重新生成数据，但必须在原 SF1 快照上重新执行上面的冻结和验证命令。只检查旧包会因 Hash 不一致失败，这是预期行为。
+
+```bash
+python -m scripts.materialize_representative_questions
+python -m scripts.benchmark_lint --check question-output-contracts
+```
+
 ## 先跑 3 题 × 2 对照组
 
 ```bash
@@ -129,6 +148,8 @@ Cube 尚无实现，不包含在本地入口的可选目标中。
 完整结果不持久化；标准化 Gold 哈希足以比较，无需保留数据库连接或恢复结果行。
 隐藏推理内容不采集。
 
+摘要分别统计尝试次数、提交后参与 Gold 比对次数、正确/不一致次数、未评分次数和供应商/API 错误次数。比如 6 次中 3 次 HTTP 403、1 次未提交、2 次提交但不匹配，应该读作“2 个已提交答案不匹配，4 次未评分”，不能说“6 个分析答案全错”。`submitted_result_match_rate` 只描述提交子集；`publishable_execution_accuracy` 对探索运行始终为 null。403 需要检查网关权限/配额，本补丁不能修复供应商授权。
+
 其他文件：`summary.json` 是机器可读摘要；`*.candidate.json` 是脱敏原生记录；
 `trials/*/trial.json` 和 `trace.jsonl` 是标准评测产物。
 准备阶段失败也会保留诊断，并继续其他目标。可读报告包含数据预览，只保存在本地，
@@ -151,6 +172,7 @@ python -m pytest -q --basetemp ../slb-pytest-temp
 已修复：提交答案筛选、OKF 目录校验/跟随、MetricFlow CLI 版本探针与 DuckDB 模型表达式、
 preflight 关闭/诊断/物化、控制组 wire-format 与预览脱敏、dotenv 忽略规则、短参数生成、
 可配置 live 入口、SQL/预览/正确性报告，以及工具 schema hash 在关闭前记录。
+本次再次修订补齐 representative 公开输出契约与 SQL/lint/Gold 对照校验，保持严格评分，并拆分供应商失败与已提交答案正确性。
 
 未声称完成：Cube、完整 MetricFlow runtime 安装、macOS 实机验证、全 99 题结果验证、
 真实模型重复运行与正式发布、schema 枚举设计及 OpenTelemetry Collector 导出。

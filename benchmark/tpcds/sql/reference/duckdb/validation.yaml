@@ -18,4 +18,19 @@ queries:
 result_equivalence:
   status: pending_sf1_data
   required_manifest: data/tpcds/sf1/manifests/duckdb-sf1.json
-
+public_output_revision:
+  revision: public-output-contract-v1
+  question_schema_version: 0.3.0
+  question_contract_check: scripts.benchmark_lint --check question-output-contracts
+  statements: 14
+  status: empty_schema_contract_checked
+  result_equivalence: requires_new_local_sf1_freeze
+  presentation_changes:
+    q02: explicit_weekday_ratio_aliases
+    q14_1: explicit_aggregate_aliases
+    q14_2: order_by_public_aliases
+    q36: deterministic_category_class_tie_breaks
+    q39_1: unique_month_aliases
+    q39_2: unique_month_aliases
+    q75: deterministic_hierarchy_id_tie_breaks
+    q84: order_by_public_alias

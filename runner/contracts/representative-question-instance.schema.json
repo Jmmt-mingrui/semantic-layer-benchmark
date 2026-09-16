@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://semantic-layer-benchmark.local/schemas/representative-question-instance.schema.json",
+  "title": "Reviewed representative question instance with public output contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "suite", "benchmark", "scale_factor", "question_id", "instance_id", "source_template", "target_input", "orchestrator_only", "evaluator_only"],
+  "properties": {
+    "schema_version": {"const": "0.3.0"},
+    "suite": {"const": "representative-v1"},
+    "benchmark": {"const": "TPC-DS-derived"},
+    "scale_factor": {"const": 1},
+    "question_id": {"enum": ["q01", "q02", "q03", "q05", "q12", "q14", "q21", "q36", "q39", "q49", "q75", "q84"]},
+    "instance_id": {"type": "string", "pattern": "^q[0-9]{2}-[a-z0-9][a-z0-9._-]+$"},
+    "source_template": {"type": "string", "pattern": "^query[1-9][0-9]?\\.tpl$"},
+    "target_input": {
+      "type": "object", "additionalProperties": false, "required": ["question"],
+      "properties": {"question": {"type": "string", "minLength": 1, "not": {"pattern": "<[A-Z][A-Z0-9_]*>"}}}
+    },
+    "orchestrator_only": {
+      "type": "object", "additionalProperties": false, "required": ["parameters"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["name", "type", "value"],
+            "properties": {
+              "name": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+              "type": {"enum": ["integer", "number", "string", "date", "identifier", "list"]},
+              "value": {}
+            }
+          }
+        }
+      }
+    },
+    "evaluator_only": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reference_sql", "expected_statement_count", "result_contract", "provenance"],
+      "properties": {
+        "reference_sql": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "string", "minLength": 1}},
+        "expected_statement_count": {"type": "integer", "minimum": 1, "maximum": 2},
+        "result_contract": {
+          "oneOf": [
+            {"$ref": "#/$defs/statementContract"},
+            {
+              "type": "object", "additionalProperties": false, "required": ["statements"],
+              "properties": {"statements": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/statementContract"}}}
+            }
+          ]
+        },
+        "provenance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["canonical_question", "reference_source", "materialization_revision"],
+          "properties": {
+            "canonical_question": {"type": "string", "minLength": 1},
+            "reference_source": {"type": "string", "minLength": 1},
+            "materialization_revision": {"const": "public-output-contract-v1"}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "statementContract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["columns", "order_sensitive", "max_rows", "comparison", "order_by"],
+      "properties": {
+        "columns": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}},
+        "order_sensitive": {"const": true},
+        "max_rows": {"type": ["integer", "null"], "minimum": 1},
+        "comparison": {"const": "exact_normalized"},
+        "order_by": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["column", "direction", "nulls"],
+            "properties": {
+              "column": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+              "direction": {"enum": ["ASC", "DESC"]},
+              "nulls": {"enum": ["FIRST", "LAST"]},
+              "when": {
+                "type": "object", "additionalProperties": false, "required": ["column", "equals"],
+                "properties": {"column": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "equals": {"type": "integer"}}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

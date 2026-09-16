@@ -1,4 +1,5 @@
--- TPC-DS query 14 (formulation 1) — PostgreSQL
+-- TPC-DS query 14 (formulation 1) — DuckDB; public aggregate aliases only.
+-- Presentation revision: public-output-contract-v1; re-freeze Gold before use.
 --
 -- Upstream / 상류 출처: StarRocks/starrocks @ 9d288306166d
 --   fe/fe-core/src/test/resources/sql/tpcds/query14-1.sql
@@ -70,7 +71,7 @@ with  cross_items as
            ,date_dim
        where ws_sold_date_sk = d_date_sk
          and d_year between 1999 and 1999 + 2) x)
-  select  channel, i_brand_id,i_class_id,i_category_id,sum(sales), sum(number_sales)
+  select  channel, i_brand_id,i_class_id,i_category_id,sum(sales) as sales, sum(number_sales) as number_sales
  from(
        select 'store' channel, i_brand_id,i_class_id
              ,i_category_id,sum(ss_quantity*ss_list_price) sales
