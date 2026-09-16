@@ -8,7 +8,7 @@ semantic_model:
     shipping-mode surrogate key.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: ship_mode
   entities:
   - name: ship_mode

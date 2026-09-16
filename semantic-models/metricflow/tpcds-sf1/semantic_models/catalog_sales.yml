@@ -8,7 +8,7 @@ semantic_model:
     catalog sales line per item and order number.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: catalog_sales
   entities:
   - name: catalog_sale_line
@@ -99,14 +99,14 @@ semantic_model:
     datatype: decimal
     description: Actual selling price per unit at the transaction.
   - name: cs_sold_date
-    expr: to_date(cast(cs_sold_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(cs_sold_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:
       time_granularity: day
     description: Derived calendar date for the sale date role.
   - name: cs_ship_date
-    expr: to_date(cast(cs_ship_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(cs_ship_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:

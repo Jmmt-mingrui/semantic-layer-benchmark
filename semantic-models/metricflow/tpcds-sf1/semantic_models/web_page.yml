@@ -8,7 +8,7 @@ semantic_model:
     changing dimension row per web-page version.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: web_page
   entities:
   - name: web_page
@@ -82,14 +82,14 @@ semantic_model:
     datatype: integer
     description: Max ad count.
   - name: wp_creation_date
-    expr: to_date(cast(wp_creation_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(wp_creation_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:
       time_granularity: day
     description: Derived calendar date for the page creation date role.
   - name: wp_access_date
-    expr: to_date(cast(wp_access_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(wp_access_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:

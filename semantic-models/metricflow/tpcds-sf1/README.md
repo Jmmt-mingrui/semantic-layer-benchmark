@@ -15,10 +15,10 @@ This is the standalone specification used by the open-source MetricFlow parser, 
 
 ## Modeling decisions
 
-- All 24 business tables map directly to `tpcds.public.<table>`.
+- All 24 business tables map directly to DuckDB `tpcds.main.<table>`.
 - Primary, foreign, and unique entities encode simple and composite relationships.
 - Role-playing joins use role-specific entity names backed by the same target key.
-- Physical date keys are retained as entities. Because TPC-DS date surrogate keys are derived from Julian dates, PostgreSQL `to_date(..., 'J')` expressions provide local time dimensions for facts.
+- Physical date keys are retained as entities. TPC-DS Julian date keys use DuckDB `DATE '1970-01-01' + CAST(key - 2440588 AS INTEGER)` expressions for local time dimensions.
 - Additive transaction fields are measures with `agg: sum`.
 - Inventory quantity uses `non_additive_dimension` with the latest snapshot date.
 - Unit prices and unit costs remain categorical dimensions; a later metric contract must define justified averages or weighted calculations.

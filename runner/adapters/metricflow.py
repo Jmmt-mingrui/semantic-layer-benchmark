@@ -24,8 +24,9 @@ from runner.core.native_adapter import (
 )
 
 
-METRICFLOW_CLI_VERSION = "0.213.0.dev0"
-"""The package version at the pinned MetricFlow source revision 8750c1d."""
+METRICFLOW_CLI_VERSION = "0.15.0.dev0"
+"""dbt-metricflow entry-point version at pinned source revision 8750c1d."""
+METRICFLOW_ENGINE_VERSION = "0.213.0.dev0"
 
 
 class MetricFlowConfigurationError(NativeAdapterError):

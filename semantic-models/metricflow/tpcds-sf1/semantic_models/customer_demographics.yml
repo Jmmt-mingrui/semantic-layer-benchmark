@@ -8,7 +8,7 @@ semantic_model:
     Grain: One row per unique customer-demographic combination.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: customer_demographics
   entities:
   - name: customer_demographics

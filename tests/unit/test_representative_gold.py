@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from runner.core.database import QueryResult
+from runner.core.question_contracts import render_output_requirements
 from runner.core.representative_gold import (
     REPRESENTATIVE_QUESTION_IDS,
     RepresentativeGoldError,
@@ -52,19 +53,27 @@ def _write_fixture(tmp_path: Path) -> tuple[Path, Path, dict[str, str]]:
         refs = []
         for statement in range(1, count + 1):
             path = tmp_path / f"{question_id}-{statement}.sql"
-            path.write_text(f"select '{question_id}-{statement}' as value\n", encoding="utf-8")
+            path.write_text(f"select '{question_id}-{statement}' as value order by value\n", encoding="utf-8")
             refs.append(str(path))
             sql_paths[f"{question_id}-{statement}"] = str(path)
+        contract = {"columns": ["value"], "order_sensitive": True, "max_rows": None,
+                    "comparison": "exact_normalized", "order_by": [{"column": "value", "direction": "ASC", "nulls": "LAST"}]}
+        contracts = [contract for _ in range(count)]
         rows.append(
             {
-                "schema_version": "0.2.0",
+                "schema_version": "0.3.0",
                 "suite": "representative-v1",
                 "benchmark": "TPC-DS-derived",
                 "scale_factor": 1,
                 "question_id": question_id,
                 "instance_id": f"{question_id}-fixture",
-                "target_input": {"question": f"fixture {question_id}"},
-                "evaluator_only": {"reference_sql": refs},
+                "source_template": f"query{int(question_id[1:])}.tpl",
+                "target_input": {"question": f"fixture {question_id} " + render_output_requirements(contracts)},
+                "orchestrator_only": {"parameters": []},
+                "evaluator_only": {"reference_sql": refs, "expected_statement_count": count,
+                    "result_contract": contract if count == 1 else {"statements": contracts},
+                    "provenance": {"canonical_question": "fixture", "reference_source": "fixture",
+                                   "materialization_revision": "public-output-contract-v1"}},
             }
         )
     instances = tmp_path / "instances.jsonl"
@@ -140,6 +149,12 @@ def test_freeze_writes_only_result_identities_and_verification_fails_on_sql_chan
     )
     assert verified["question_count"] == 12
     assert verified["pack_identity_sha256"] == first_pack["pack_identity_sha256"]
+
+    unchanged = instances.read_text()
+    instances.write_text(unchanged + "\n")
+    with pytest.raises(RepresentativeGoldError, match="question-instance file changed"):
+        verify_representative_pack(pack_path=output / "pack.json", root=ROOT, publication=False, require_sources=False)
+    instances.write_text(unchanged)
 
     changed = Path(sql_paths["q84-1"])
     changed.write_text(changed.read_text() + "-- changed\n", encoding="utf-8")

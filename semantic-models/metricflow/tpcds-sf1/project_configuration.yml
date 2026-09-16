@@ -4,6 +4,6 @@
 ---
 project_configuration:
   time_spine_table_configurations:
-  - location: tpcds.public.date_dim
+  - location: tpcds.main.date_dim
     column_name: d_date
     grain: day

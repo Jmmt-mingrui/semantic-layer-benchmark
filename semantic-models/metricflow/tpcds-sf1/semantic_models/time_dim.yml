@@ -8,7 +8,7 @@ semantic_model:
     surrogate key.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: time_dim
   entities:
   - name: time_dim

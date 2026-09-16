@@ -1,4 +1,6 @@
--- TPC-DS query 75 — PostgreSQL
+-- TPC-DS query 75 — DuckDB; deterministic public output ordering.
+-- Presentation revision: public-output-contract-v1; hierarchy ID tie-breaks,
+-- no aggregation, filtering, or UNION changes. Re-freeze Gold before use.
 --
 -- Upstream / 상류 출처: StarRocks/starrocks @ 9d288306166d
 --   fe/fe-core/src/test/resources/sql/tpcds/query75.sql
@@ -77,7 +79,5 @@ WITH all_sales AS (
    AND curr_yr.d_year=2002
    AND prev_yr.d_year=2002-1
    AND CAST(curr_yr.sales_cnt AS DECIMAL(17,2))/CAST(prev_yr.sales_cnt AS DECIMAL(17,2))<0.9
- ORDER BY sales_cnt_diff,sales_amt_diff
+ ORDER BY sales_cnt_diff,sales_amt_diff,curr_yr.i_brand_id,curr_yr.i_class_id,curr_yr.i_category_id,curr_yr.i_manufact_id
  limit 100;
-
-

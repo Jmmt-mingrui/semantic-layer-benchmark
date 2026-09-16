@@ -7,7 +7,7 @@ semantic_model:
   description: 'Daily on-hand inventory snapshots by item and warehouse. Grain: One snapshot row per date, item, and warehouse.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: inventory
   entities:
   - name: inventory_snapshot
@@ -27,7 +27,7 @@ semantic_model:
     role: stocking warehouse
   dimensions:
   - name: inv_date
-    expr: to_date(cast(inv_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(inv_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:

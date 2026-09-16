@@ -13,7 +13,7 @@ The primary benchmark starts one fresh agent conversation for every question ins
 3. generic schemas for its allowed tools; and
 4. the results of tools it chooses to call.
 
-It receives no DDL, table names, column names, sample rows, business definitions, metrics, target identity, reference SQL, expected result, canonical question-to-metric map, prior messages, or retrieved documents at conversation start. It may discover the physical database using `db.list_relations` and `db.describe_relations`, then use `db.execute_readonly`. This measures what an agent can do from native database discovery alone.
+Outside the common question it receives no preloaded DDL, physical table/column inventory, sample rows, business context, metrics, target identity, reference SQL, expected result, canonical question-to-metric map, prior messages, or retrieved documents. The question must state its business rules and output labels, even when a label matches a physical column name; this is not an extra schema or semantic artifact. It may discover the database using `db.list_relations` and `db.describe_relations`, then use `db.execute_readonly`.
 
 `ddl_only` is a different control. It receives the physical DuckDB DDL but no enriched business semantics. Results for these two baselines must never be combined.
 
@@ -38,6 +38,8 @@ sequenceDiagram
 The runner creates a new provider conversation rather than continuing a previous response ID. It does not send correction messages, schema hints, metric suggestions, or “try again” prompts. Tool errors are returned verbatim after secret and path sanitization; self-repair inside the fixed budget is part of the measurement.
 
 The user message is rendered from [`native-agent-user.md`](native-agent-user.md) with one substitution: `{{question}}`. Unresolved placeholders such as `<YEAR>` fail preflight. Presentation requirements that affect correctness—columns, grouping, order, and limit—must already be stated in the materialized question.
+
+The twelve representative questions enforce this rule through `question-output-contracts` lint. `canonical-json-v1` preserves column labels/order, duplicate rows, and row order; sorting JSON object keys does not sort these arrays. Public requirements are already in the committed question, never appended from Gold during a trial. See the [instance migration](../../benchmark/tpcds/questions/instances/README.md).
 
 ## Native exposure by target
 
@@ -71,4 +73,4 @@ Canonical questions contain symbolic inputs, but an agent trial always uses a ma
 - declare one or two expected statements—only q14, q23, q24, and q39 may form two-statement groups; and
 - pass source, license, and provenance checks before execution.
 
-The committed q01 instance is the contract pilot. Expanding it to q01–q99 is a separate reviewed data task; missing instances are preflight failures, not skipped successes.
+Qualification q01 remains the contract pilot and shares its full wording with representative q01. Twelve representative questions now have materialized output contracts; expanding to all q01–q99 remains a separately reviewed data task. Missing instances are preflight failures, not skipped successes.

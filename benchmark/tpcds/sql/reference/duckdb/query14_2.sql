@@ -1,4 +1,5 @@
--- TPC-DS query 14 (formulation 2) — PostgreSQL
+-- TPC-DS query 14 (formulation 2) — DuckDB; ORDER BY uses public aliases.
+-- Presentation revision: public-output-contract-v1; values/order unchanged.
 --
 -- Upstream / 상류 출처: StarRocks/starrocks @ 9d288306166d
 --   fe/fe-core/src/test/resources/sql/tpcds/query14-2.sql
@@ -116,7 +117,6 @@ with  cross_items as
  where this_year.i_brand_id= last_year.i_brand_id
    and this_year.i_class_id = last_year.i_class_id
    and this_year.i_category_id = last_year.i_category_id
- order by this_year.channel, this_year.i_brand_id, this_year.i_class_id, this_year.i_category_id
+ order by ty_channel, ty_brand, ty_class, ty_category
  limit 100;
-
 

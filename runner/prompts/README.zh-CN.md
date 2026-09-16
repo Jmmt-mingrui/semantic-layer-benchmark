@@ -13,7 +13,7 @@
 3. 当前允许调用的通用工具 Schema；
 4. 它主动调用工具后返回的结果。
 
-对话开始时，它看不到 DDL、表名、列名、样例行、业务定义、指标、被测目标名称、参考 SQL、预期结果、Canonical 问题指标映射、历史消息或检索文档。它可以通过 `db.list_relations` 和 `db.describe_relations` 自己发现物理数据库，再调用 `db.execute_readonly`。该基线衡量的是 Agent 仅依靠数据库原生发现能力可以做到什么。
+除所有目标共用的问题外，它不会收到预加载 DDL、物理表列清单、样例行、额外业务上下文、指标、被测目标名称、参考 SQL、预期结果、Canonical 问题指标映射、历史消息或检索文档。题目必须写清业务规则和输出标签；标签恰好与物理列同名也属于公开题面要求，不是额外 Schema 或语义产物。它可以通过 `db.list_relations` 和 `db.describe_relations` 自己发现数据库，再调用 `db.execute_readonly`。
 
 `ddl_only` 是另一个对照组：它可以看到 DuckDB 物理 DDL，但没有增强业务语义。两种基线的结果绝不能合并。
 
@@ -38,6 +38,8 @@ sequenceDiagram
 Runner 会新建 Provider Conversation，而不是延续上一个 Response ID。它不会发送纠错消息、Schema 提示、指标建议或“再试一次”的 Prompt。工具错误经过密钥和路径脱敏后原样返回；Agent 在固定预算内自行修复属于被测能力。
 
 用户消息由 [`native-agent-user.md`](native-agent-user.md) 渲染，只允许替换 `{{question}}`。如果还存在 `<YEAR>` 一类占位符，Preflight 直接失败。影响正确性的列、分组、排序和 Limit 必须已经写进实例化后的问题。
+
+12 道代表题现通过 `question-output-contracts` lint 强制执行此规则。`canonical-json-v1` 保留列名、列序、重复行和行序；JSON 对象键排序不会重排列或行列表。公开要求已经写入提交的题目，Trial 期间不能从 Gold 动态追加提示。见[实例迁移说明](../../benchmark/tpcds/questions/instances/README.zh-CN.md)。
 
 ## 各目标的原生暴露方式
 
@@ -71,4 +73,4 @@ Canonical 问题包含符号参数，但 Agent Trial 必须使用完成实例化
 - 声明预期的一条或两条语句，只有 q14、q23、q24 和 q39 可以组成双语句组；
 - 执行前通过出处、许可证和 Provenance 检查。
 
-当前提交的 q01 是契约 Pilot。将其扩展到 q01–q99 是一项需要单独 Review 的数据任务；缺少实例必须记为 Preflight Failure，不能算作跳过后成功。
+Qualification q01 仍是契约 Pilot，与 representative q01 共用完整题干。12 道代表题已实例化并声明输出契约；扩展到全部 q01–q99 仍需单独 Review。缺少实例必须记为 Preflight Failure，不能算作跳过后成功。

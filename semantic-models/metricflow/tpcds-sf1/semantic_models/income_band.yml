@@ -7,7 +7,7 @@ semantic_model:
   description: 'Lower and upper household-income bounds used by household demographics. Grain: One row per income-band range.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: income_band
   entities:
   - name: income_band

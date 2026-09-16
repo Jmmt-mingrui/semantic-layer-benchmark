@@ -145,7 +145,7 @@ class OkfNativeConsumer:
         for source in self._markdown_files():
             text = self._read_regular_file(source)
             for destination in self._local_link_destinations(text):
-                self._resolve_path(destination, source.parent)
+                self._resolve_link_target(destination, source.parent)
                 checked += 1
         return {"status": "ok", "checked_links": checked}
 
@@ -174,7 +174,10 @@ class OkfNativeConsumer:
         normalized_link = self._strip_link_suffix(link)
         if normalized_link not in destinations:
             raise OkfBundleError("follow_link accepts only a local link declared in source_path")
-        destination = self._resolve_path(normalized_link, source.parent)
+        destination = self._resolve_link_target(normalized_link, source.parent)
+        if destination.is_dir():
+            return {"source_path": self._relative(source), "path": self._relative(destination),
+                    **self.list_files(prefix=self._relative(destination) or ".")}
         text = self._read_regular_file(destination)
         return {
             "source_path": self._relative(source),
@@ -280,6 +283,12 @@ class OkfNativeConsumer:
         elif not resolved.is_file() or resolved.suffix.lower() != ".md":
             raise OkfBundleError("OKF operations accept only regular Markdown files")
         return resolved
+
+    def _resolve_link_target(self, raw_path: str, base: Path) -> Path:
+        try:
+            return self._resolve_path(raw_path, base, allow_directory=True)
+        except OkfBundleError:
+            return self._resolve_path(raw_path, base)
 
     def _read_regular_file(self, path: Path) -> str:
         if path.is_symlink() or not path.is_file() or path.suffix.lower() != ".md":

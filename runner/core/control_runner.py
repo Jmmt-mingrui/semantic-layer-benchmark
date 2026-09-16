@@ -55,6 +55,26 @@ def _jsonl_dump(path: Path, values: list[dict[str, Any]]) -> None:
     path.write_text("".join(json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n" for value in values))
 
 
+def _provider_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert wire messages without changing the dict-based redaction input."""
+    converted = []
+    for message in messages:
+        row = dict(message)
+        if row.get("role") == "tool" and not isinstance(row.get("content"), str):
+            row["content"] = json.dumps(row["content"], ensure_ascii=False)
+        if row.get("role") == "assistant" and "tool_calls" in row:
+            calls = row["tool_calls"]
+            row["tool_calls"] = [
+                {"id": call["id"], "type": "function", "function": {
+                    "name": call["name"], "arguments": json.dumps(call["arguments"], ensure_ascii=False)}}
+                if "function" not in call else call for call in calls
+            ]
+            if not calls:
+                row.pop("tool_calls")
+        converted.append(row)
+    return converted
+
+
 def _redact_persisted_transcript(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Keep protocol metadata while never persisting candidate preview rows."""
     sanitized: list[dict[str, Any]] = []
@@ -375,7 +395,7 @@ def _run_trial(
         turn_started = perf_counter()
         try:
             turn = provider.complete(
-                tuple(messages),
+                tuple(_provider_messages(messages)),
                 tuple(tools),
                 generation,
                 min(float(config["execution"]["timeouts"]["tool_seconds"]), remaining_seconds),

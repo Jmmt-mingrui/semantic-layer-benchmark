@@ -8,7 +8,7 @@ semantic_model:
     store line item per item and ticket number.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: store_returns
   entities:
   - name: store_return_line
@@ -61,7 +61,7 @@ semantic_model:
     datatype: decimal
     description: Return value refunded as cash.
   - name: sr_returned_date
-    expr: to_date(cast(sr_returned_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(sr_returned_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:

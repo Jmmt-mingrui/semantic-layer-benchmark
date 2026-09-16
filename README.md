@@ -6,7 +6,7 @@ A reproducible and observable benchmark for studying how semantic engines, inter
 
 The project compares **MetricFlow, Cube, Apache Ossie, Open Knowledge Format (OKF), and an Agent Skill**, with separate **blank-context** and **DDL-only** controls. It evaluates SQL and result quality first, semantic-model structure second, and operational behavior across both phases.
 
-> **Project status:** work in progress. TPC-DS-derived SF1 is the initial workload. The repository already contains 99 canonical questions, 103 attributed PostgreSQL reference SQL formulations, a DuckDB schema and loader, q01-q10 DuckDB reference SQL, a candidate canonical metric contract, initial Skill, OKF, MetricFlow, and Ossie representations, and an executable blank-context/DDL-only control harness. Cube, live Agent providers, semantic-target adapters, and full benchmark runs are still planned. Documentation below distinguishes implemented assets from the experimental design.
+> **Project status:** work in progress. Native live provider and adapters, a 12-question SF1 Gold preparation pipeline, execution/structure evaluators, and a configurable exploratory `run-live` command are implemented. Cube and full published benchmark runs are not complete. MetricFlow still requires an externally provisioned and validated runtime. See [local runbook](LOCAL_RUN.zh-CN.md) for runnable commands and explicit verification boundaries.
 
 ## What this benchmark is trying to answer
 
@@ -324,7 +324,7 @@ The official toolkit is governed by the TPC EULA and is linked rather than vendo
 - [x] MetricFlow and Ossie table semantics and base metric coverage
 - [x] DuckDB schema, deterministic loader, and read-only pluggable adapter
 - [x] q01-q10 DuckDB SQL with explicit validation levels
-- [ ] Generated SF1 manifest with row counts and checksums
+- [x] SF1 manifest generation and validation with row counts and checksums (generated locally)
 - [ ] q11-q99 DuckDB reference SQL and SF1 result equivalence
 - [ ] Reviewed canonical dimensions, grains, joins, and metric semantics
 - [ ] Cube native semantic model
@@ -333,19 +333,20 @@ The official toolkit is governed by the TPC EULA and is linked rather than vendo
 - [x] Executable q01 blank-context and DDL-only control runner with fresh scripted Agent trials
 - [x] Read-only SQL policy, exact-result evaluator, and validated local trace capture for controls
 - [x] SF1 publication preflight and evaluator-only q01 gold-identity tooling
-- [ ] Live Agent provider and semantic-target adapters
-- [ ] Full SQL/result and structure evaluators
+- [x] Live Agent provider and Skill/OKF/Ossie/MetricFlow adapter boundaries (MetricFlow runtime required)
+- [x] Representative execution evaluator and curated structure-inventory evaluator
+- [x] Configurable exploratory live command with optional SQL and result previews
+- [x] Twelve public representative output contracts, SQL/lint/Gold consistency checks, and separated submission/API-failure summaries (re-freeze Gold after migration)
 - [ ] OpenTelemetry collector export
 - [ ] Repeated-run benchmark report
 
 ## Planned implementation order
 
-1. Generate one SF1 manifest and validate the q01 reference result on DuckDB.
-2. Add one live Agent provider adapter with native tool calling and fresh conversations.
-3. Run the q01 blank-context and DDL-only pilot, then review traces and failure classifications.
-4. Materialize and review q02-q10, then q11-q99, without exposing evaluator fields to targets.
-5. Implement Skill, OKF, Ossie, MetricFlow, and Cube native adapters without fallback.
-6. Complete Phase 1 evaluation and the q01-q10 native pilot before Phase 2 structure scoring and all-99 expansion. Run controlled-context ablations only as separate secondary experiments.
+1. Prepare the local SF1 snapshot and verify the 12-question Gold pack.
+2. Run selected live questions/targets with `run-live`; inspect SQL previews and Gold equivalence.
+3. Provision and verify the fixed MetricFlow runtime, without fallback or snapshot changes.
+4. Complete Cube, reviewed canonical semantics, and all-99 reference validation.
+5. Run the full repeated trial matrix before publishing conclusions; keep ablations separate.
 
 ## Official format and runtime references
 

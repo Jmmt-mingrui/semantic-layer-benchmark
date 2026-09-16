@@ -11,14 +11,21 @@
 | [`experiment.schema.json`](experiment.schema.json) | 实验作者 | Runner Preflight | 固定运行计划、目标集合、预算、隔离和产物策略 |
 | [`dataset-manifest.schema.json`](dataset-manifest.schema.json) | SF1 Loader | Runner Preflight | 固定 Generator、Schema、表、行数、文件 Hash 和快照身份 |
 | [`question-instance.schema.json`](question-instance.schema.json) | Workload 维护者 | Prompt Renderer 与 Evaluator | 将实例化用户问题与仅评测可见的 SQL、比较规则分开 |
+| [`representative-question-instance.schema.json`](representative-question-instance.schema.json) | Workload 维护者 | 代表题 Preflight/lint 与 Evaluator | v0.3.0 公开输出要求、强类型参数和有序逐语句契约 |
 | [`gold-result.schema.json`](gold-result.schema.json) | 数据冻结工具 | Evaluator Preflight | 与数据集绑定且不持久化结果行的参考结果身份 |
 | [`trace-event.schema.json`](trace-event.schema.json) | Runner 与 Adapter | Trace Store 与报告生成器 | 有序且脱敏的生命周期与用量事件 |
 | [`trial-record.schema.json`](trial-record.schema.json) | Trial Orchestrator 与 Evaluator | Run Aggregator | 一个问题 × 一个目标 × 一次重复的结果 |
-| [`run-record.schema.json`](run-record.schema.json) | Run Aggregator | 报告生成器 | 可复现性 Envelope 与 Trial 汇总 |\n| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication Orchestrator | 代表性 Evaluator | 绑定已关闭运行、数据集、Gold、Provider/Model、Tool Schema 与逐题结果身份 |\n| [`pilot-run-manifest.schema.json`](pilot-run-manifest.schema.json) | Pilot Orchestrator | 实验操作者 | 固定 18-Trial Smoke 身份并强制 `publishable: false` |
+| [`run-record.schema.json`](run-record.schema.json) | Run Aggregator | 报告生成器 | 可复现性 Envelope 与 Trial 汇总 |
+| [`publication-run-manifest.schema.json`](publication-run-manifest.schema.json) | Publication Orchestrator | 代表性 Evaluator | 绑定已关闭运行、数据集、Gold、Provider/Model、Tool Schema 与逐题结果身份 |
+| [`pilot-run-manifest.schema.json`](pilot-run-manifest.schema.json) | Pilot Orchestrator | 实验操作者 | 固定 18-Trial Smoke 身份并强制 `publishable: false` |
 
-全部契约使用 JSON Schema Draft 2020-12，初始 Schema 版本为 `0.1.0`。只有提供迁移说明时才能变更 Schema 版本；如果行为发生变化但记录结构不变，则更新实验的 `protocol_revision`。
+全部契约使用 JSON Schema Draft 2020-12。Qualification/Trial/Run 保持 v0.1.0，代表题 Gold 保持 v0.2.0。代表题从未经结构校验、题面欠定义的 v0.2.0 迁移到 v0.3.0：新增必需的来源/出处和输出契约、强类型参数数组，并更换实例 ID。单结果保留 qualification 的契约字段，q14/q39 使用按提交顺序排列的 `result_contract.statements`。见[迁移说明](../../benchmark/tpcds/questions/instances/README.zh-CN.md)。实例/SQL Hash 改变后必须重新冻结 Gold。严格 `canonical-json-v1` 比较与原生执行政策不变。
 
-## Publication 边界\n\nPublication Orchestrator 只消费原生 Runtime 与 Provider 已关闭后返回的 Candidate。随后才打开 Evaluator-only Gold、比较有序 Result Identity、生成符合契约的产物，并通过 `publication-run-manifest.schema.json` 绑定完整的 216-Trial 矩阵。Harness 自有 Conversation ID 标识本地全新对话；Provider Response ID 另行原样保留。\n\n## Native-first 不变量
+## Publication 边界
+
+Publication Orchestrator 只消费原生 Runtime 与 Provider 已关闭后返回的 Candidate。随后才打开 Evaluator-only Gold、比较有序 Result Identity、生成符合契约的产物，并通过 `publication-run-manifest.schema.json` 绑定完整的 216-Trial 矩阵。Harness 自有 Conversation ID 标识本地全新对话；Provider Response ID 另行原样保留。
+
+## Native-first 不变量
 
 主赛道是 `native_end_to_end`。Runner 可以在原生调用外增加 ID、超时、脱敏和 Telemetry，但不能将目标产物扁平化为统一 Evidence 表示。
 

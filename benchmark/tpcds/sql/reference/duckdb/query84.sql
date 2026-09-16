@@ -1,4 +1,5 @@
--- TPC-DS query 84 — PostgreSQL
+-- TPC-DS query 84 — DuckDB; ORDER BY uses the public customer_id alias.
+-- Presentation revision: public-output-contract-v1; values/order unchanged.
 --
 -- Upstream / 상류 출처: StarRocks/starrocks @ 9d288306166d
 --   fe/fe-core/src/test/resources/sql/tpcds/query84.sql
@@ -28,7 +29,6 @@ select  c_customer_id as customer_id
    and cd_demo_sk = c_current_cdemo_sk
    and hd_demo_sk = c_current_hdemo_sk
    and sr_cdemo_sk = cd_demo_sk
- order by c_customer_id
+ order by customer_id
  limit 100;
-
 

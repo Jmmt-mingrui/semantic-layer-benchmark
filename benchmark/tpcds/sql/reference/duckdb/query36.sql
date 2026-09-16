@@ -1,4 +1,6 @@
--- TPC-DS query 36 — PostgreSQL
+-- TPC-DS query 36 — DuckDB; deterministic public output ordering.
+-- Presentation revision: public-output-contract-v1; tie-break category/class,
+-- explicit NULLS LAST; no grouping, filtering, or rank changes. Re-freeze Gold.
 --
 -- Upstream / 상류 출처: StarRocks/starrocks @ 9d288306166d
 --   fe/fe-core/src/test/resources/sql/tpcds/query36.sql
@@ -35,9 +37,10 @@ select
                  'TN','TN','TN','TN')
  group by rollup(i_category,i_class)
  order by
-   lochierarchy desc
-  ,case when grouping(i_category)+grouping(i_class) = 0 then i_category end
-  ,rank_within_parent
+   lochierarchy desc nulls last
+  ,case when lochierarchy = 0 then i_category end asc nulls last
+  ,rank_within_parent asc nulls last
+  ,i_category asc nulls last
+  ,i_class asc nulls last
   limit 100;
-
 

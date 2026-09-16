@@ -10,6 +10,8 @@ from typing import Any
 
 import yaml
 
+from runner.core.representative_gold import RepresentativeGoldError, load_representative_instances
+from scripts.materialize_representative_questions import rendered_files
 from scripts.validate_repository import (
     ROOT,
     ValidationError,
@@ -221,9 +223,20 @@ def validate_generated_artifact_hygiene(root: Path) -> None:
             raise ValidationError(f"Gold identity contains forbidden result rows at {path}:{raw_key}")
 
 
+def validate_question_output_contracts(root: Path) -> None:
+    try:
+        load_representative_instances(root / "benchmark/tpcds/questions/instances/sf1-representative-v1.jsonl", root=root)
+        for path, text in rendered_files(root).items():
+            if (root / path).read_text() != text:
+                raise ValidationError(f"Public question definitions drifted: {path}")
+    except RepresentativeGoldError as error:
+        raise ValidationError(f"Invalid representative output contract: {error}") from error
+
+
 CHECKS: Mapping[str, Callable[[Path], None]] = {
     "serialized-assets": validate_serialized_files,
     "canonical-questions": validate_canonical_questions,
+    "question-output-contracts": validate_question_output_contracts,
     "readme-pairs": validate_readme_pairs,
     "native-registry": validate_native_registry_invariants,
     "target-isolation": validate_target_artifact_isolation,

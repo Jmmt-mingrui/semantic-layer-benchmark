@@ -23,6 +23,7 @@ python -m scripts.benchmark_lint
 该命令复用现有的序列化文件、Canonical Question 和原生目标校验，并增加仓库级 Benchmark 不变量：
 
 - Canonical q01–q99 定义和 Reference SQL 保持完整；
+- 代表题公开列名/列序、排序/NULL 位置、Limit 和多结果顺序；绑定列与解析后的最外层 SQL 必须符合公开契约；
 - 每个作为英文默认入口的 `README.md` 都有 `README.zh-CN.md`，反向也必须成对；
 - 原生目标保留原生产物、全新会话和封闭操作集合，可执行引擎不能静默回退到直接 SQL；
 - 目标可见的 Artifact 或工具目录不能与 Evaluator-only Question 或 Gold Identity 重叠；
@@ -38,3 +39,5 @@ python -m scripts.benchmark_lint --check readme-pairs --check artifact-hygiene
 Git 可用时，lint 读取已跟踪文件集合。因此，本地生成且被正确忽略的 SF1 文件不会让仓库卫生检查失败；把它们加入 Git 才会失败。
 
 `validate_repository.py` 仍是原有 Conformance Check 的唯一实现。Lint 直接导入这些检查，再补充 Benchmark 不变量，不重新实现同一套逻辑。
+
+`python -m scripts.materialize_representative_questions` 检查可审阅的公开定义与提交 JSONL 是否一致，包括 q01 qualification 的统一措辞。`--patch` 只打印补丁、不写文件。题目/SQL 身份变化后必须重新冻结本地 Gold，不能静默放宽归一化。

@@ -29,6 +29,7 @@ def test_contracts_are_unique_draft_2020_12_schemas() -> None:
     assert {schema["title"] for schema in schemas} == {
         "Semantic layer benchmark experiment",
         "Materialized benchmark question instance",
+        "Reviewed representative question instance with public output contract",
         "TPC-DS-derived dataset manifest",
         "Evaluator-only gold result identity",
         "TPC-DS-derived SF1 representative question Gold identity",
