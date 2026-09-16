@@ -6,6 +6,8 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import subprocess
+import shutil
+import tempfile
 
 
 TOOLKIT_VERSION = "4.0.0"
@@ -41,14 +43,19 @@ def main() -> int:
         for path in existing:
             path.unlink()
 
-    command = [str(binary), "-scale", "1", "-dir", str(output), "-force"]
-    completed = subprocess.run(
-        command,
-        cwd=binary.parent,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    # TPC-DS 4.0.0 copies -dir into an 80-byte buffer. Use relative short
+    # arguments even when the checkout/output path is deeply nested.
+    distributions = binary.parent / "tpcds.idx"
+    if not distributions.is_file():
+        raise FileNotFoundError(f"Build the toolkit distribution index first: {distributions}")
+    command = [str(binary), "-scale", "1", "-dir", ".", "-distributions", "tpcds.idx", "-force"]
+    with tempfile.TemporaryDirectory(prefix="dsdgen-", dir=output.parent) as staging:
+        staging_path = Path(staging)
+        shutil.copy2(distributions, staging_path / "tpcds.idx")
+        completed = subprocess.run(command, cwd=staging_path, capture_output=True, text=True, check=False)
+        if completed.returncode == 0:
+            for source in staging_path.glob("*.dat"):
+                shutil.move(str(source), str(output / source.name))
     if completed.returncode != 0:
         raise RuntimeError(
             "dsdgen failed with exit code "

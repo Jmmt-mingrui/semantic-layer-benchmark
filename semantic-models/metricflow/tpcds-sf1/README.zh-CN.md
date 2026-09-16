@@ -15,10 +15,10 @@
 
 ## 建模决策
 
-- 24 张业务表都直接映射到 `tpcds.public.<table>`。
+- 24 张业务表都直接映射到 DuckDB 的 `tpcds.main.<table>`。
 - 使用 primary、foreign 和 unique Entity 表达简单关系与复合关系。
 - 角色化 Join 使用不同 Entity 名称，但复用目标键。
-- 保留物理日期键作为 Entity。TPC-DS 日期代理键来自 Julian date，因此使用 PostgreSQL `to_date(..., 'J')` 为事实表提供本地时间维度。
+- 保留物理日期键作为 Entity。TPC-DS 日期代理键来自 Julian date，使用 DuckDB 的 `DATE '1970-01-01' + CAST(key - 2440588 AS INTEGER)` 提供本地时间维度。
 - 可加交易字段使用 `agg: sum`。
 - 库存数量通过 `non_additive_dimension` 选择最新快照日期。
 - 单价和单位成本只作为 categorical dimension；后续统一指标必须定义合理的平均值或加权公式。

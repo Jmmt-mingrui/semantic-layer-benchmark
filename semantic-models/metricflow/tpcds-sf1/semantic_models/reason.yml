@@ -7,7 +7,7 @@ semantic_model:
   description: 'Standard reason codes and descriptions used by return facts. Grain: One row per return-reason surrogate key.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: reason
   entities:
   - name: reason

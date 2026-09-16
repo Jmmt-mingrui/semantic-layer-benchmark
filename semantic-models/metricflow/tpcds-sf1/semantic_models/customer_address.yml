@@ -8,7 +8,7 @@ semantic_model:
     address surrogate key.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: customer_address
   entities:
   - name: customer_address

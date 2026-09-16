@@ -65,11 +65,31 @@ def build_parser() -> argparse.ArgumentParser:
     pilot.add_argument("--metricflow-runtime", type=Path, required=True)
     pilot.add_argument("--metricflow-executable", default="mf")
     pilot.add_argument("--skill-host-revision")
+    live = subparsers.add_parser("run-live", help="Exploratory live run with readable SQL/result/Gold report")
+    live.add_argument("--root", type=Path, default=Path("."))
+    live.add_argument("--env-file", type=Path)
+    live.add_argument("--output", type=Path)
+    live.add_argument("--questions", nargs="+", default=["q01", "q02", "q03"])
+    live.add_argument("--targets", nargs="+", choices=("blank_context", "ddl_only", "ossie", "okf", "skill", "metricflow"), default=["ddl_only"])
+    live.add_argument("--repetitions", type=int, default=1)
+    live.add_argument("--timeout", type=float, default=120)
+    live.add_argument("--max-output-tokens", type=int, default=4096)
+    live.add_argument("--max-turns", type=int, default=12)
+    live.add_argument("--save-details", action="store_true", help="Save SQL and up to 5 result rows locally; never log hidden reasoning")
+    live.add_argument("--database-config", default="runner/config/database.yaml")
+    live.add_argument("--instances", default="benchmark/tpcds/questions/instances/sf1-representative-v1.jsonl")
+    live.add_argument("--gold-pack", default="benchmark/tpcds/results/gold/sf1/representative-v1/pack.json")
+    live.add_argument("--metricflow-runtime", type=Path)
+    live.add_argument("--metricflow-executable", default="mf")
+    live.add_argument("--skill-host-revision")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "run-live":
+        from runner.core.local_live import run_local_live
+        return run_local_live(args)
     if args.command == "run-control":
         run_record = run_control_experiment(
             args.config,

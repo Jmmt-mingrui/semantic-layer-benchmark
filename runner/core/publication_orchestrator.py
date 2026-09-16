@@ -124,12 +124,13 @@ def materialize_publication_trial(
 
     conversation = candidate.get("conversation", {})
     provider = candidate.get("provider", {})
+    unavailable = provider.get("kind") == "unavailable" and candidate.get("status") != "candidate_ready"
     if conversation.get("provider_closed_before_evaluation") is not True:
         raise PublicationOrchestrationError("Gold evaluation requires a closed provider/runtime")
-    if provider.get("kind") != "live" or provider.get("ranking_eligible") is not True:
+    if not unavailable and (provider.get("kind") != "live" or provider.get("ranking_eligible") is not True):
         raise PublicationOrchestrationError("Publication trials require a ranking-eligible live provider")
     response_ids = conversation.get("provider_response_ids")
-    if not isinstance(response_ids, list) or not response_ids:
+    if not isinstance(response_ids, list) or (not response_ids and candidate.get("status") == "candidate_ready"):
         raise PublicationOrchestrationError("Publication trials require provider response identities")
 
     question = candidate.get("question", {})
@@ -164,6 +165,9 @@ def materialize_publication_trial(
     if candidate_status == "candidate_ready":
         status = "passed" if equivalent else "failed"
         error_category = None if equivalent else "wrong_result"
+    elif unavailable:
+        status = "invalid"
+        error_category = _error_category(error.get("category"), fallback="preflight")
     elif candidate_status in {"unsupported", "timeout", "invalid"}:
         status = candidate_status
         error_category = _error_category(error.get("category"), fallback="internal")
@@ -212,6 +216,7 @@ def materialize_publication_trial(
             "reference_result_sha256": reference_combined,
             "candidate_result_sha256": candidate_combined,
             "error_category": error_category,
+            "error_detail": error.get("detail"),
         },
         "usage": {
             "input_tokens": _token(candidate["usage"].get("input_tokens")),

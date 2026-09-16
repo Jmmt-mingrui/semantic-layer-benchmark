@@ -8,7 +8,7 @@ semantic_model:
     changing dimension row per website version.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: web_site
   entities:
   - name: web_site
@@ -143,14 +143,14 @@ semantic_model:
     datatype: decimal
     description: Tax percentage.
   - name: web_open_date
-    expr: to_date(cast(web_open_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(web_open_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:
       time_granularity: day
     description: Derived calendar date for the website opening date role.
   - name: web_close_date
-    expr: to_date(cast(web_close_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(web_close_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:

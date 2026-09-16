@@ -24,6 +24,10 @@ class NativeRunnerError(RuntimeError):
     pass
 
 
+class NativePreflightError(NativeRunnerError):
+    pass
+
+
 ProviderFactory = Callable[[str, int, Mapping[str, str]], AgentProvider]
 TokenValue = int | str
 
@@ -39,6 +43,7 @@ class NativeRunnerSettings:
     tool_timeout_seconds: float = 60
     seed: int | None = None
     parallel_tool_calls: bool = False
+    capture_details: bool = False
 
     def generation(self) -> dict[str, Any]:
         return {
@@ -53,6 +58,7 @@ class NativeRunnerSettings:
 class NativeTrialArtifacts:
     record: dict[str, Any]
     trace: tuple[dict[str, Any], ...]
+    details: dict[str, Any] | None = None
 
 
 def _hash_text(value: str) -> str:
@@ -175,31 +181,10 @@ def run_native_trial(
                 }
             )
         if any(_response_status(response.status) not in {"ok"} for response in preflight):
-            completion_status = "failed"
-            error_category = "preflight"
-            error_detail = "native preflight did not succeed"
             add_event("target.preflight", "error", duration_ms=preflight_ms)
-            return _finalize(
-                trial_id,
-                target,
-                repetition,
-                question,
-                runtime,
-                provider,
-                settings,
-                system_prompt,
-                messages,
-                usages,
-                response_ids,
-                native_requests,
-                tool_call_count,
-                completion_status,
-                error_category,
-                error_detail,
-                started,
-                trace,
-                provider_closed,
-            )
+            raise NativePreflightError(json.dumps([
+                response.output for response in preflight if _response_status(response.status) != "ok"
+            ], ensure_ascii=False)[:1000])
         add_event("target.preflight", "ok", duration_ms=preflight_ms, attributes={"checks": len(preflight)})
 
         # Conversation is constructed here, after preflight, from scratch.  No
@@ -360,6 +345,10 @@ def run_native_trial(
                 error_category = "agent_reported_failure"
                 error_detail = str(submitted.get("reason") or "Agent reported failure")
 
+    except NativePreflightError as error:
+        error_category = "preflight"
+        error_detail = str(error)
+        completion_status = "invalid"
     except (NativeIsolationError, NativeOperationError):
         if error_category is None:
             error_category = "protocol_violation"
@@ -371,11 +360,12 @@ def run_native_trial(
         error_detail = str(error)
         completion_status = "timeout"
     except Exception as error:
-        error_category = error_category or "internal"
+        error_category = error_category or ("preflight" if provider is None else "internal")
         error_detail = error_detail or f"{error.__class__.__name__}: {str(error)[:500]}"
         completion_status = "failed"
     finally:
         # The target and provider are closed before any caller may evaluate Gold.
+        runtime._public_tool_schema_sha256 = _hash_json(runtime.public_tools())
         runtime.close()
         if provider is not None:
             close = getattr(provider, "close", None)
@@ -432,12 +422,15 @@ def _finalize(
     provider_kind = str(getattr(provider, "provider_kind", "unavailable")) if provider is not None else "unavailable"
     ranking_eligible = bool(getattr(provider, "ranking_eligible", False)) if provider is not None else False
     retries = int(getattr(provider, "retry_count", 0)) if provider is not None else 0
+    submitted_handles = (runtime.submission or {}).get("result_handles", [])
     sql_hashes = [
         {"result_handle": handle, "sql_sha256": _hash_text(sql)}
-        for handle, sql in runtime.sql_by_handle.items()
+        for handle in submitted_handles
+        if (sql := runtime.sql_by_handle.get(handle)) is not None
     ]
     result_hashes = []
-    for handle, result in runtime.results.items():
+    for handle in submitted_handles:
+        result = runtime.results[handle]
         from runner.core.control_tools import result_sha256
 
         result_hashes.append({"result_handle": handle, "result_sha256": result_sha256(result)})
@@ -472,7 +465,7 @@ def _finalize(
             "fresh": True,
             "provider_closed_before_evaluation": provider_closed,
             "system_prompt_sha256": _hash_text(system_prompt),
-            "tool_schema_sha256": _hash_json(runtime.public_tools()) if not getattr(runtime, "_closed", False) else _hash_json([]),
+            "tool_schema_sha256": getattr(runtime, "_public_tool_schema_sha256", _hash_json([])),
             "message_manifest": message_manifest,
             "message_count": len(messages),
             "provider_response_ids": list(response_ids),
@@ -521,7 +514,16 @@ def _finalize(
             attributes={"status": completion_status},
         )
     )
-    return NativeTrialArtifacts(record=record, trace=tuple(trace))
+    details = None
+    if settings.capture_details:
+        from runner.core.control_tools import result_payload
+        details = {"question": question.prompt, "submitted_handles": submitted_handles, "queries": []}
+        for handle, result in runtime.results.items():
+            preview = result_payload(type(result)(result.columns, result.rows[:5], result.elapsed_ms))
+            details["queries"].append({"handle": handle, "submitted": handle in submitted_handles,
+                "sql": runtime.sql_by_handle.get(handle), "row_count": len(result.rows),
+                "elapsed_ms": result.elapsed_ms, "preview": preview})
+    return NativeTrialArtifacts(record=record, trace=tuple(trace), details=details)
 
 
 def run_native_matrix(

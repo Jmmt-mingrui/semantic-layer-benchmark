@@ -6,7 +6,7 @@
 
 项目比较 **MetricFlow、Cube、Apache Ossie、Open Knowledge Format（OKF）和 Agent Skill**，并设置相互独立的**空白上下文**和 **DDL-only** 对照组。评测顺序是：先比较 SQL 与结果质量，再比较语义模型结构，同时在两个阶段中记录运行行为。
 
-> **项目状态：** 正在建设中。初始工作负载是 TPC-DS 派生 SF1。目前仓库已经包含 99 个 canonical questions、103 份带出处的 PostgreSQL 参考 SQL formulation、DuckDB 表结构和加载器、q01-q10 DuckDB 参考 SQL、候选统一指标契约、Skill、OKF、MetricFlow 和 Ossie 的初始表示，以及可执行的空白上下文/DDL-only 控制组 Harness。Cube、真实 Agent Provider、语义目标 Adapter 和完整 Benchmark Run 仍处于计划阶段。下文会明确区分“已经实现”和“实验设计”。
+> **项目状态：** 正在建设中。已实现真实 Agent Provider、原生适配器边界、12 题 SF1 Gold 准备流水线、Execution/Structure Evaluator 和可配置的探索性 `run-live` 入口。Cube 和完整发布运行尚未完成；MetricFlow 仍需外部配置并通过校验的 runtime。可复现命令和明确的验证边界见[本地运行说明](LOCAL_RUN.zh-CN.md)。
 
 ## 这个基准要回答什么
 
@@ -324,7 +324,7 @@ flowchart TB
 - [x] MetricFlow 和 Ossie 表语义及 Base Metric Coverage
 - [x] DuckDB Schema、确定性 Loader 和只读可插拔 Adapter
 - [x] 带明确校验级别的 q01-q10 DuckDB SQL
-- [ ] 含行数及校验和的生成 SF1 Manifest
+- [x] 含行数及校验和的 SF1 Manifest 生成及校验（数据在本地生成）
 - [ ] q11-q99 DuckDB 参考 SQL 和 SF1 结果等价
 - [ ] 完成审核的 Canonical Dimension、Grain、Join 和 Metric 语义
 - [ ] Cube 原生语义模型
@@ -333,16 +333,17 @@ flowchart TB
 - [x] 可执行的 q01 空白上下文及 DDL-only 控制组 Runner，以及全新 Scripted Agent Trial
 - [x] 控制组只读 SQL Policy、精确结果 Evaluator 和经校验的本地 Trace 采集
 - [x] SF1 发布 Preflight 和 Evaluator-only q01 Gold Identity 工具
-- [ ] 真实 Agent Provider 和语义目标 Adapter
-- [ ] 完整 SQL/Result 和 Structure Evaluator
+- [x] 真实 Agent Provider 和 Skill/OKF/Ossie/MetricFlow 适配器边界（MetricFlow 需 runtime）
+- [x] 代表题 Execution Evaluator 和人工维护的 Structure Inventory Evaluator
+- [x] 可配置探索性 live 入口，以及可选 SQL/结果预览
 - [ ] OpenTelemetry Collector 导出
 - [ ] 重复运行的基准报告
 
 ## 后续实现顺序
 
-1. 生成一份 SF1 Manifest，并在 DuckDB 上验证 q01 参考结果。
-2. 增加一个使用原生 Tool Calling 和全新对话的真实 Agent Provider Adapter。
-3. 运行 q01 空白上下文和 DDL-only Pilot，并复盘 Trace 与失败分类。
+1. 生成本地 SF1 快照并校验 12 题 Gold pack。
+2. 用 `run-live` 运行所选题目及目标，查看 SQL 预览与 Gold 比对。
+3. 配置并验证固定版本 MetricFlow runtime，不使用 fallback 或更换快照。
 4. 先实例化并 Review q02-q10，再处理 q11-q99，同时确保 Evaluator 字段对目标不可见。
 5. 实现 Skill、OKF、Ossie、MetricFlow 和 Cube 原生 Adapter，禁止静默 Fallback。
 6. 先完成 Phase 1 评测和 q01-q10 原生 Pilot，再进行 Phase 2 结构评分及全部 99 题扩展；受控上下文消融仅作为独立次要实验运行。

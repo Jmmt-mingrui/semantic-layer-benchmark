@@ -8,7 +8,7 @@ semantic_model:
     row per call-center version.'
   node_relation:
     database: tpcds
-    schema_name: public
+    schema_name: main
     alias: call_center
   entities:
   - name: call_center
@@ -168,14 +168,14 @@ semantic_model:
     datatype: decimal
     description: Tax percentage.
   - name: cc_closed_date
-    expr: to_date(cast(cc_closed_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(cc_closed_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:
       time_granularity: day
     description: Derived calendar date for the call-center closing date role.
   - name: cc_open_date
-    expr: to_date(cast(cc_open_date_sk as text), 'J')
+    expr: DATE '1970-01-01' + CAST(cc_open_date_sk - 2440588 AS INTEGER)
     type: time
     datatype: date
     type_params:
