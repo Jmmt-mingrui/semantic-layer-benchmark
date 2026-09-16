@@ -83,7 +83,7 @@ Runner 按照以下状态顺序执行：
 7. 关闭目标 Sandbox 后才能加载 Evaluator-only 产物。
 8. 评测结果一致性并写出不可变 Trial Record。
 
-不同 Trial 之间没有消息状态。只有在当前场景允许且 Provider 能报告的情况下，才能使用 Provider Prompt Cache；Cached Token 必须单独记录。
+不同 Trial 之间没有消息状态。只有在当前场景允许且 Provider 能报告的情况下，才能使用 Provider Prompt Cache；Cached Token 必须单独记录。Provider 明确返回的 Reasoning Token 计数作为用量元数据写入 Trial 及原生/控制组每个 `llm.response` Event，但不采集推理内容；缺失字段保持 `null`/不可用，不能估算。
 
 ## Failure 与 Unsupported Semantics
 

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import yaml
 
-from runner.core.agent import AgentTurn, ScriptedAgentProvider, ToolCall
+from runner.core.agent import AgentProviderError, AgentTurn, AgentUsage, ScriptedAgentProvider, ToolCall
 from runner.core.native_adapter import NativeResponse
 from runner.core.native_factory import NativeAdapterFactory, NativeFactorySettings, SUPPORTED_TARGETS
 from runner.core.native_runner import NativeRunnerSettings, run_native_matrix, run_native_trial
@@ -135,6 +135,65 @@ def test_all_six_targets_share_one_lifecycle_and_scripted_is_not_ranked(tmp_path
         first_messages = provider.calls[0][0]
         assert sum(message.get("role") == "user" for message in first_messages) == 1
         assert not any("previous" in str(message.get("content", "")).lower() for message in first_messages)
+
+
+def test_native_trace_and_trial_keep_provider_reported_reasoning_usage(tmp_path: Path) -> None:
+    def provider_factory(target, repetition, context):
+        del target, repetition, context
+        return ScriptedAgentProvider(
+            [
+                AgentTurn(
+                    tool_calls=(
+                        ToolCall("submit", "benchmark.submit_result", {"status": "unsupported", "reason": "test"}),
+                    ),
+                    usage=AgentUsage(10, 5, 2, 3, True),
+                    response_id="response-usage",
+                )
+            ]
+        )
+
+    outcome = run_native_trial(
+        target="ossie",
+        question_instance=_question(),
+        repetition=1,
+        adapter_factory=_factory(tmp_path),
+        provider_factory=provider_factory,
+        settings=_settings(),
+        system_prompt="isolated",
+    )
+    assert outcome.record["usage"]["reasoning_tokens"] == 3
+    llm_event = next(event for event in outcome.trace if event["event_type"] == "llm.generate")
+    assert llm_event["usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "cached_input_tokens": 2,
+        "reasoning_tokens": 3,
+        "provider_reported": True,
+    }
+
+
+def test_native_runner_classifies_provider_failure_separately(tmp_path: Path) -> None:
+    class FailedProvider:
+        provider_kind = "live"
+        ranking_eligible = True
+        retry_count = 0
+
+        def complete(self, *args, **kwargs):
+            raise AgentProviderError("provider HTTP error 403")
+
+    outcome = run_native_trial(
+        target="ossie",
+        question_instance=_question(),
+        repetition=1,
+        adapter_factory=_factory(tmp_path),
+        provider_factory=lambda *unused: FailedProvider(),
+        settings=_settings(),
+        system_prompt="isolated",
+    )
+    assert outcome.record["error"]["category"] == "provider_error"
+    assert outcome.record["status"] == "failed"
+    llm_event = next(event for event in outcome.trace if event["event_type"] == "llm.generate")
+    assert llm_event["status"] == "error"
 
 
 def test_gold_and_tool_overreach_fail_closed(tmp_path: Path) -> None:

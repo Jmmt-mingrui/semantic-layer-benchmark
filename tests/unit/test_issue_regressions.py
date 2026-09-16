@@ -169,6 +169,12 @@ def test_local_live_end_to_end_report_with_protocol_fixture(tmp_path, monkeypatc
     monkeypatch.setenv("BENCHMARK_AGENT_ENDPOINT", "http://localhost/v1")
     monkeypatch.delenv("BENCHMARK_AGENT_API_KEY_ENV", raising=False)
     output = tmp_path / "output"
+    preflight_args = build_parser().parse_args(["run-live", "--root", str(ROOT), "--questions", "q01",
+        "--targets", "ddl_only", "--database-config", str(config), "--gold-pack", str(pack),
+        "--preflight-only"])
+    assert preflight_args.max_output_tokens == 8192
+    assert preflight_args.max_database_attempts == 6
+    assert local.run_local_live(preflight_args) == 0
     args = build_parser().parse_args(["run-live", "--root", str(ROOT), "--questions", "q01", "q02", "q03",
         "--targets", "ddl_only", "--database-config", str(config), "--gold-pack", str(pack),
         "--output", str(output), "--save-details"])
@@ -177,8 +183,12 @@ def test_local_live_end_to_end_report_with_protocol_fixture(tmp_path, monkeypatc
     assert summary["publishable"] is False
     assert len(summary["trials"]) == 3
     assert all(t["result_equivalent"] is True for t in summary["trials"])
+    assert summary["budgets"]["max_output_tokens"] == 8192
+    assert summary["totals"]["tokens"]["reasoning_tokens"]["total"] is None
+    assert summary["totals"]["tokens"]["reasoning_tokens"]["unavailable_trials"] == 3
     assert "SELECT id FROM sample" in (output / "REPORT.zh-CN.md").read_text()
     assert "探索查询" in (output / "REPORT.zh-CN.md").read_text()
+    assert "推理 Token" in (output / "REPORT.zh-CN.md").read_text()
 
 
 def test_generator_uses_short_parser_arguments_in_deep_paths(tmp_path, monkeypatch):

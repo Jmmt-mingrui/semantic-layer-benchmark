@@ -13,7 +13,7 @@
 3. 当前允许调用的通用工具 Schema；
 4. 它主动调用工具后返回的结果。
 
-除所有目标共用的问题外，它不会收到预加载 DDL、物理表列清单、样例行、额外业务上下文、指标、被测目标名称、参考 SQL、预期结果、Canonical 问题指标映射、历史消息或检索文档。题目必须写清业务规则和输出标签；标签恰好与物理列同名也属于公开题面要求，不是额外 Schema 或语义产物。它可以通过 `db.list_relations` 和 `db.describe_relations` 自己发现数据库，再调用 `db.execute_readonly`。
+除所有目标共用的问题外，它不会收到预加载 DDL、物理表列清单、样例行、额外业务上下文、指标、被测目标名称、参考 SQL、预期结果、Canonical 问题指标映射、历史消息或检索文档。题目必须写清业务规则和输出标签；标签恰好与物理列同名也属于公开题面要求，不是额外 Schema 或语义产物。它可以通过 `db.list_schemas`、`db.list_relations` 和 `db.describe_relations` 自己发现数据库，再调用 `db.execute_readonly`。
 
 `ddl_only` 是另一个对照组：它可以看到 DuckDB 物理 DDL，但没有增强业务语义。两种基线的结果绝不能合并。
 

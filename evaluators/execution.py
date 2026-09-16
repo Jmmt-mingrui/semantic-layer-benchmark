@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from math import ceil, comb
 from random import Random
-from statistics import mean
+from statistics import mean, median
 from typing import Any, Iterable, Mapping, Sequence
 
 
@@ -33,12 +33,18 @@ def _mean(values: Iterable[float]) -> float | None:
 
 def _token_summary(records: Sequence[Mapping[str, Any]], field: str) -> dict[str, Any]:
     values = [record["usage"].get(field) for record in records]
-    known = [int(value) for value in values if value is not None]
+    known = [int(value) for value in values if isinstance(value, int) and not isinstance(value, bool)]
+    unavailable = len(values) - len(known)
     return {
         "available_trials": len(known),
-        "unavailable_trials": len(values) - len(known),
-        "total": sum(known) if known else None,
+        "unavailable_trials": unavailable,
+        "total": sum(known) if known and unavailable == 0 else None,
+        "known_total": sum(known),
         "mean": _mean(known),
+        "p50": round(median(known), 3) if known else None,
+        "p95": _p95(known),
+        "min": min(known) if known else None,
+        "max": max(known) if known else None,
     }
 
 
@@ -196,7 +202,10 @@ def evaluate_execution(
             "sql_execution_rate": round(len(executable) / len(rows), 6) if rows else None,
             "answer_completeness": round(len(complete) / len(rows), 6) if rows else None,
             "three_run_consistency": _mean(consistency),
-            "tokens": {field: _token_summary(rows, field) for field in ("input_tokens", "output_tokens", "cached_input_tokens")},
+            "tokens": {
+                field: _token_summary(rows, field)
+                for field in ("input_tokens", "output_tokens", "cached_input_tokens", "reasoning_tokens")
+            },
             "tool_calls": {"mean": _mean(float(row["usage"]["tool_calls"]) for row in rows), "total": sum(row["usage"]["tool_calls"] for row in rows)},
             "database_calls": {"mean": _mean(float(row["usage"]["database_calls"]) for row in rows), "total": sum(row["usage"]["database_calls"] for row in rows)},
             "latency_ms": {"mean": _mean(float(row["usage"]["total_latency_ms"]) for row in rows), "p95": _p95([float(row["usage"]["total_latency_ms"]) for row in rows])},

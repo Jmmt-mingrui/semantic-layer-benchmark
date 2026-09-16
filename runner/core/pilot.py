@@ -134,7 +134,7 @@ def run_representative_pilot(
         provider_name=provider_settings.provider,
         model=provider_settings.model,
         temperature=0,
-        max_output_tokens=4096,
+        max_output_tokens=8192,
         max_turns=12,
         provider_timeout_seconds=120,
         tool_timeout_seconds=60,

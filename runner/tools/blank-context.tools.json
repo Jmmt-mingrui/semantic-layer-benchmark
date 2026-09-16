@@ -3,6 +3,25 @@
   "catalog": "blank_context",
   "tools": [
     {
+      "name": "db.list_schemas",
+      "description": "List visible non-system database schemas. This is metadata discovery and does not return table rows or business semantics.",
+      "input_schema": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schemas"],
+        "properties": {
+          "schemas": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    {
       "name": "db.list_relations",
       "description": "List relations visible in one database schema. This is metadata discovery and does not return rows.",
       "input_schema": {

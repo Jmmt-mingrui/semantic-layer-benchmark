@@ -27,6 +27,7 @@ targets:
       tool_catalog: runner/tools/blank-context.tools.json
       result_origin: agent_authored_sql
     allowed_operations:
+      - db.list_schemas
       - db.list_relations
       - db.describe_relations
       - db.execute_readonly

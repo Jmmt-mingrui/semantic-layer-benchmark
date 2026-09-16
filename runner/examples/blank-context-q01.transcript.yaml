@@ -34,51 +34,61 @@ messages:
     role: assistant
     tool_call:
       id: call-001
-      name: db.list_relations
-      arguments: {schema: main}
+      name: db.list_schemas
+      arguments: {}
   - sequence: 3
     role: tool
     tool_call_id: call-001
-    result_artifact: artifacts/call-001-result.json
-    result_summary: {relation_count: 25}
+    result_summary: {schemas: [main]}
   - sequence: 4
     role: assistant
     tool_call:
       id: call-002
-      name: db.describe_relations
-      arguments:
-        relations: [store_returns, date_dim, store, customer]
+      name: db.list_relations
+      arguments: {schema: main}
   - sequence: 5
     role: tool
     tool_call_id: call-002
     result_artifact: artifacts/call-002-result.json
-    result_summary: {relation_count: 4}
+    result_summary: {relation_count: 25}
   - sequence: 6
     role: assistant
     tool_call:
       id: call-003
-      name: db.execute_readonly
-      arguments_artifact: artifacts/call-003-request.json
+      name: db.describe_relations
+      arguments:
+        relations: [store_returns, date_dim, store, customer]
   - sequence: 7
     role: tool
     tool_call_id: call-003
     result_artifact: artifacts/call-003-result.json
-    result_summary:
-      result_handle: result-001
-      columns: [c_customer_id]
-      row_count: null
+    result_summary: {relation_count: 4}
   - sequence: 8
     role: assistant
     tool_call:
       id: call-004
+      name: db.execute_readonly
+      arguments_artifact: artifacts/call-004-request.json
+  - sequence: 9
+    role: tool
+    tool_call_id: call-004
+    result_artifact: artifacts/call-004-result.json
+    result_summary:
+      result_handle: result-001
+      columns: [c_customer_id]
+      row_count: null
+  - sequence: 10
+    role: assistant
+    tool_call:
+      id: call-005
       name: benchmark.submit_result
       arguments:
         status: success
         result_handles: [result-001]
-  - sequence: 9
+  - sequence: 11
     role: tool
-    tool_call_id: call-004
+    tool_call_id: call-005
     result_summary: {accepted: true}
-  - sequence: 10
+  - sequence: 12
     role: assistant
     content: Result submitted.

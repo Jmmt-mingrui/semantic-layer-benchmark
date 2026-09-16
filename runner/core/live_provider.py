@@ -18,10 +18,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from runner.core.agent import AgentTurn, AgentUsage, ToolCall
+from runner.core.agent import AgentProviderError, AgentTurn, AgentUsage, ToolCall
 
 
-class LiveProviderError(RuntimeError):
+class LiveProviderError(AgentProviderError):
     """Raised when a configured live provider cannot complete a turn."""
 
 
@@ -88,15 +88,23 @@ def _tool_for_provider(tool: Mapping[str, Any]) -> dict[str, Any]:
 def _usage(document: Mapping[str, Any]) -> AgentUsage:
     raw = document.get("usage")
     if not isinstance(raw, Mapping):
-        return AgentUsage()
+        return AgentUsage(provider_reported=False)
     details = raw.get("prompt_tokens_details")
+    completion_details = raw.get("completion_tokens_details")
+    if not isinstance(completion_details, Mapping):
+        completion_details = raw.get("output_tokens_details")
     cached: Any = raw.get("cached_input_tokens")
     if cached is None and isinstance(details, Mapping):
         cached = details.get("cached_tokens")
+    reasoning: Any = raw.get("reasoning_tokens")
+    if reasoning is None and isinstance(completion_details, Mapping):
+        reasoning = completion_details.get("reasoning_tokens")
     return AgentUsage(
         input_tokens=_optional_int(raw.get("input_tokens", raw.get("prompt_tokens"))),
         output_tokens=_optional_int(raw.get("output_tokens", raw.get("completion_tokens"))),
         cached_input_tokens=_optional_int(cached),
+        reasoning_tokens=_optional_int(reasoning),
+        provider_reported=True,
     )
 
 

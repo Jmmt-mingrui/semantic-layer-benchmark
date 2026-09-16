@@ -44,6 +44,7 @@ def test_control_tools_discover_execute_and_submit(tmp_path: Path) -> None:
     settings = DatabaseSettings("duckdb", f"duckdb://{database_path}", None, "main", True)
     with connect(settings) as database:
         dispatcher = ControlToolDispatcher(database, CATALOG, ALLOWED)
+        assert "main" in dispatcher.dispatch("db.list_schemas", {}).output["schemas"]
         listed = dispatcher.dispatch("db.list_relations", {"schema": "main"}).output
         assert listed == {"relations": [{"schema": "main", "name": "sample", "type": "table"}]}
 

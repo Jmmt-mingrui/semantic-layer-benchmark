@@ -42,6 +42,7 @@ def _error_category(value: Any, *, fallback: str | None = None) -> str | None:
         "preflight", "native_validation", "unsupported_semantics", "agent_protocol",
         "tool_error", "sql_policy", "sql_parse", "sql_bind", "sql_runtime",
         "timeout", "wrong_result", "incomplete_result", "internal",
+        "provider_error",
     }
     if value in allowed:
         return value
@@ -222,6 +223,7 @@ def materialize_publication_trial(
             "input_tokens": _token(candidate["usage"].get("input_tokens")),
             "output_tokens": _token(candidate["usage"].get("output_tokens")),
             "cached_input_tokens": _token(candidate["usage"].get("cached_input_tokens")),
+            "reasoning_tokens": _token(candidate["usage"].get("reasoning_tokens")),
             "tool_calls": candidate["usage"]["tool_calls"],
             "database_calls": candidate["usage"]["database_calls"],
             "total_latency_ms": candidate["usage"]["total_latency_ms"],
@@ -241,14 +243,17 @@ def materialize_publication_trial(
         "conversation.close": "tool.result", "trial.finish": "trial.end",
     }
     for sequence, event in enumerate(native_trace):
-        trace_rows.append({
+        row = {
             "schema_version": "0.1.0", "run_id": run_id, "trial_id": trial_id,
             "sequence": sequence, "timestamp": created_at,
             "event_type": event_map.get(str(event.get("event_type")), "tool.result"),
             "status": event.get("status") if event.get("status") in {"started", "ok", "error", "timeout", "unsupported", "skipped"} else "error",
             "duration_ms": event.get("duration_ms"), "attributes": dict(event.get("attributes", {})),
             "redaction_applied": True,
-        })
+        }
+        if isinstance(event.get("usage"), Mapping):
+            row["usage"] = dict(event["usage"])
+        trace_rows.append(row)
     if not trace_rows or trace_rows[0]["event_type"] != "trial.start" or trace_rows[-1]["event_type"] != "trial.end":
         raise PublicationOrchestrationError("Native trace must span trial.start through trial.end")
     for row in trace_rows:

@@ -15,7 +15,14 @@ from time import perf_counter
 from typing import Any, Callable, Mapping, Sequence
 from uuid import uuid4
 
-from runner.core.agent import AgentProvider, AgentUsage, ToolCall
+from runner.core.agent import (
+    AgentProvider,
+    AgentProviderError,
+    AgentUsage,
+    ToolCall,
+    sum_usage_field,
+    usage_payload,
+)
 from runner.core.native_adapter import NativeIsolationError, NativeOperationError, NativeRequest, TargetQuestion
 from runner.core.native_factory import NativeAdapterFactory, SUPPORTED_TARGETS
 
@@ -91,10 +98,8 @@ def _token_summary(usages: Sequence[AgentUsage], field: str) -> TokenValue:
     # Never undercount provider usage.  If even one turn omits a token field,
     # the trial-level value is explicitly unavailable rather than zero or a
     # partial sum.
-    values = [getattr(usage, field) for usage in usages]
-    if not values or any(value is None for value in values):
-        return "unavailable"
-    return sum(int(value) for value in values if value is not None)
+    total = sum_usage_field(usages, field)
+    return "unavailable" if total is None else total
 
 
 def _response_status(status: str) -> str:
@@ -114,6 +119,7 @@ def _trace_event(
     *,
     duration_ms: float | None = None,
     attributes: Mapping[str, Any] | None = None,
+    usage: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     event: dict[str, Any] = {
         "sequence": sequence,
@@ -123,6 +129,8 @@ def _trace_event(
     }
     if duration_ms is not None:
         event["duration_ms"] = round(float(duration_ms), 3)
+    if usage is not None:
+        event["usage"] = dict(usage)
     return event
 
 
@@ -218,12 +226,21 @@ def run_native_trial(
 
         for turn_index in range(settings.max_turns):
             provider_started = perf_counter()
-            turn = provider.complete(
-                tuple(messages),
-                tools,
-                settings.generation(),
-                settings.provider_timeout_seconds,
-            )
+            try:
+                turn = provider.complete(
+                    tuple(messages),
+                    tools,
+                    settings.generation(),
+                    settings.provider_timeout_seconds,
+                )
+            except Exception as error:
+                add_event(
+                    "llm.generate",
+                    "error",
+                    duration_ms=(perf_counter() - provider_started) * 1000,
+                    attributes={"turn": turn_index + 1, "error_type": error.__class__.__name__},
+                )
+                raise
             provider_ms = (perf_counter() - provider_started) * 1000
             usages.append(turn.usage)
             if turn.response_id:
@@ -235,9 +252,8 @@ def run_native_trial(
                 attributes={
                     "turn": turn_index + 1,
                     "tool_call_count": len(turn.tool_calls),
-                    # No chain-of-thought, reasoning tokens, or inferred reasoning
-                    # content is requested or recorded.
                 },
+                usage=usage_payload(turn.usage),
             )
             messages.append(_assistant_message(turn.content, turn.tool_calls))
 
@@ -355,6 +371,10 @@ def run_native_trial(
         if error_detail is None:
             error_detail = "undeclared or evaluator-only operation attempted"
         completion_status = "invalid"
+    except AgentProviderError as error:
+        error_category = "provider_error"
+        error_detail = f"{error.__class__.__name__}: {str(error)[:500]}"
+        completion_status = "failed"
     except TimeoutError as error:
         error_category = "timeout"
         error_detail = str(error)
@@ -494,6 +514,7 @@ def _finalize(
             "input_tokens": _token_summary(usages, "input_tokens"),
             "output_tokens": _token_summary(usages, "output_tokens"),
             "cached_input_tokens": _token_summary(usages, "cached_input_tokens"),
+            "reasoning_tokens": _token_summary(usages, "reasoning_tokens"),
             "tool_calls": tool_call_count,
             "database_calls": runtime.database_calls,
             "total_latency_ms": round(total_latency_ms, 3),

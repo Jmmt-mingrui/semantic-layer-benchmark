@@ -16,7 +16,13 @@ from uuid import uuid4
 from jsonschema import Draft202012Validator
 import yaml
 
-from runner.core.agent import AgentProvider
+from runner.core.agent import (
+    AgentProvider,
+    AgentProviderError,
+    AgentUsage,
+    sum_usage_field,
+    usage_payload,
+)
 from runner.core.control_tools import ControlToolDispatcher, ToolProtocolError, ToolTimeoutError, result_sha256
 from runner.core.database import DatabaseSettings, connect, duckdb_path_from_url, load_database_settings
 from runner.core.frozen_gold import FrozenGoldEvaluator
@@ -381,8 +387,7 @@ def _run_trial(
     transcript = list(messages)
     native_requests: list[dict[str, Any]] = []
     response_ids: list[str] = []
-    input_tokens = output_tokens = cached_tokens = 0
-    usage_known = True
+    usages: list[AgentUsage] = []
     error_category: str | None = None
     tools = dispatcher.public_tools()
     generation = config["agent"]["generation"]
@@ -401,15 +406,11 @@ def _run_trial(
                 min(float(config["execution"]["timeouts"]["tool_seconds"]), remaining_seconds),
             )
         except Exception as exc:
-            error_category = "agent_protocol"
+            error_category = "provider_error" if isinstance(exc, AgentProviderError) else "agent_protocol"
             trace.add("llm.response", "error", duration_ms=(perf_counter() - turn_started) * 1000, attributes={"error": str(exc)})
             break
         usage = turn.usage
-        if None in (usage.input_tokens, usage.output_tokens, usage.cached_input_tokens):
-            usage_known = False
-        input_tokens += usage.input_tokens or 0
-        output_tokens += usage.output_tokens or 0
-        cached_tokens += usage.cached_input_tokens or 0
+        usages.append(usage)
         if turn.response_id:
             response_ids.append(turn.response_id)
         assistant_message = {
@@ -426,13 +427,7 @@ def _run_trial(
             "ok",
             duration_ms=(perf_counter() - turn_started) * 1000,
             attributes={"tool_call_count": len(turn.tool_calls)},
-            usage={
-                "input_tokens": usage.input_tokens,
-                "output_tokens": usage.output_tokens,
-                "cached_input_tokens": usage.cached_input_tokens,
-                "reasoning_tokens": None,
-                "provider_reported": usage_known,
-            },
+            usage=usage_payload(usage),
         )
         if not turn.tool_calls:
             error_category = "agent_protocol"
@@ -590,9 +585,10 @@ def _run_trial(
             "error_category": error_category,
         },
         "usage": {
-            "input_tokens": input_tokens if usage_known else None,
-            "output_tokens": output_tokens if usage_known else None,
-            "cached_input_tokens": cached_tokens if usage_known else None,
+            "input_tokens": sum_usage_field(usages, "input_tokens"),
+            "output_tokens": sum_usage_field(usages, "output_tokens"),
+            "cached_input_tokens": sum_usage_field(usages, "cached_input_tokens"),
+            "reasoning_tokens": sum_usage_field(usages, "reasoning_tokens"),
             "tool_calls": len(native_requests),
             "database_calls": dispatcher.database_attempts,
             "native_service_calls": 0,

@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol, Sequence
 
 
+class AgentProviderError(RuntimeError):
+    """A provider transport or response failure, distinct from agent protocol errors."""
+
+
 @dataclass(frozen=True)
 class ToolCall:
     id: str
@@ -16,6 +20,40 @@ class AgentUsage:
     input_tokens: int | None = None
     output_tokens: int | None = None
     cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    provider_reported: bool | None = None
+
+
+def usage_payload(usage: AgentUsage) -> dict[str, int | bool | None]:
+    """Return schema-shaped provider usage without estimating missing values."""
+
+    reported = usage.provider_reported
+    if reported is None:
+        reported = any(
+            value is not None
+            for value in (
+                usage.input_tokens,
+                usage.output_tokens,
+                usage.cached_input_tokens,
+                usage.reasoning_tokens,
+            )
+        )
+    return {
+        "input_tokens": usage.input_tokens,
+        "output_tokens": usage.output_tokens,
+        "cached_input_tokens": usage.cached_input_tokens,
+        "reasoning_tokens": usage.reasoning_tokens,
+        "provider_reported": reported,
+    }
+
+
+def sum_usage_field(usages: Sequence[AgentUsage], field: str) -> int | None:
+    """Sum a token field only when every completed provider turn reports it."""
+
+    values = [getattr(usage, field) for usage in usages]
+    if not values or any(value is None for value in values):
+        return None
+    return sum(int(value) for value in values)
 
 
 @dataclass(frozen=True)

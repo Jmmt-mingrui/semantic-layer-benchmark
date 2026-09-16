@@ -204,14 +204,14 @@ Every trial emits a root span with child events or spans for `context.retrieve`,
 | --- | --- |
 | Identity | `run_id`, `trial_id`, `question_id`, target, lane, repetition, timestamps |
 | Reproducibility | repository SHA, workload revision, manifest SHA-256, native-model SHA-256, adapter version, image digest |
-| Model usage | provider, model revision, generation parameters, prompt hash, input/output/cached tokens where reported |
+| Model usage | provider, model revision, generation parameters, prompt hash, input/output/cached/reasoning token counts where reported |
 | Tool usage | ordered tool name, sanitized arguments, result metadata, status, latency, retry linkage |
 | Semantic work | retrieved concept IDs, native request, compile status, fallback or workaround flags |
 | SQL work | generated SQL artifact, statement policy, execution time, row count, result hash |
 | Errors | stage, normalized category, native code, retryability, sanitized message |
 | Cost | model usage, target-service usage, and database cost under a pinned price snapshot when available |
 
-Raw secrets are never logged. Provider-hidden reasoning is not requested or inferred. A missing provider usage field is recorded as unavailable, not estimated silently.
+Raw secrets are never logged. Provider-hidden reasoning content is not requested or inferred. A provider-reported `reasoning_tokens` integer is usage metadata, not reasoning content, and is recorded when present. A missing provider usage field is recorded as unavailable, not estimated silently.
 
 ## Execution environment
 
@@ -226,7 +226,7 @@ The first reproducible environment is local and DuckDB-first:
 | Skill | Same reference-agent runtime; package mounted in a temporary repository skill location | Table and metric knowledge present; harness integration planned |
 | OKF | Same reference-agent runtime with direct allowlisted Markdown and link navigation | Table and metric bundle present; native consumer pending |
 | Ossie | Pinned schema validator and transparent original-document consumer | Model present and schema-validated; consumer pending |
-| Telemetry | OpenTelemetry-compatible collector with local trace artifacts; Phoenix is an optional viewer | Control runner emits validated local trace events; collector export pending |
+| Telemetry | OpenTelemetry-compatible collector with local trace artifacts; Phoenix is an optional viewer | Control and native runners emit validated local trace events with per-response usage; collector export pending |
 
 Cube officially supports a local DuckDB database path. The pinned MetricFlow source contains a DuckDB SQL renderer, so the planned self-hosted condition can execute its native metric query against DuckDB and expose compiled SQL for diagnosis. This benchmark does not claim that every current dbt product deployment officially supports DuckDB. The executable compatibility gate must pass for the pinned benchmark version before results are published.
 
