@@ -51,6 +51,7 @@ def test_factory_preserves_each_targets_native_allowlist(tmp_path: Path) -> None
     skill = factory.create("skill")
 
     assert _names(blank) == {
+        "db.list_schemas",
         "db.list_relations",
         "db.describe_relations",
         "db.execute_readonly",

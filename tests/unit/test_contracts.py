@@ -137,6 +137,7 @@ def test_blank_context_pilot_has_no_preloaded_semantics() -> None:
     assert blank["native_surface"]["artifact_root"] is None
     assert ROOT / blank["native_surface"]["tool_catalog"] == BLANK_TOOLS
     assert blank["allowed_operations"] == [
+        "db.list_schemas",
         "db.list_relations",
         "db.describe_relations",
         "db.execute_readonly",
@@ -149,6 +150,7 @@ def test_blank_context_tool_catalog_is_closed_and_valid() -> None:
     assert catalog["catalog"] == "blank_context"
     names = [tool["name"] for tool in catalog["tools"]]
     assert names == [
+        "db.list_schemas",
         "db.list_relations",
         "db.describe_relations",
         "db.execute_readonly",
@@ -197,6 +199,7 @@ def test_blank_context_transcript_is_fresh_and_gold_free() -> None:
     assert messages[1]["content"] == q01["target_input"]["question"]
     tool_calls = [message["tool_call"]["name"] for message in messages if "tool_call" in message]
     assert tool_calls == [
+        "db.list_schemas",
         "db.list_relations",
         "db.describe_relations",
         "db.execute_readonly",

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 from runner.core.agent import AgentTurn, AgentUsage, ScriptedAgentProvider, ToolCall
@@ -39,6 +40,8 @@ def _scripted_factory(script_path: Path):
                         input_tokens=usage.get("input_tokens"),
                         output_tokens=usage.get("output_tokens"),
                         cached_input_tokens=usage.get("cached_input_tokens"),
+                        reasoning_tokens=usage.get("reasoning_tokens"),
+                        provider_reported=bool(usage),
                     ),
                     response_id=raw.get("response_id"),
                 )
@@ -73,8 +76,19 @@ def build_parser() -> argparse.ArgumentParser:
     live.add_argument("--targets", nargs="+", choices=("blank_context", "ddl_only", "ossie", "okf", "skill", "metricflow"), default=["ddl_only"])
     live.add_argument("--repetitions", type=int, default=1)
     live.add_argument("--timeout", type=float, default=120)
-    live.add_argument("--max-output-tokens", type=int, default=4096)
+    live.add_argument("--max-output-tokens", type=int, default=8192)
     live.add_argument("--max-turns", type=int, default=12)
+    live.add_argument("--max-database-attempts", type=int, default=6)
+    live.add_argument(
+        "--preflight-only",
+        action="store_true",
+        help="Validate credentials, Gold, database, target artifacts and native runtimes without calling the model",
+    )
+    live.add_argument(
+        "--strict-exit",
+        action="store_true",
+        help="Return nonzero when any trial is not correct; by default completed benchmark outcomes still return zero",
+    )
     live.add_argument("--save-details", action="store_true", help="Save SQL and up to 5 result rows locally; never log hidden reasoning")
     live.add_argument("--database-config", default="runner/config/database.yaml")
     live.add_argument("--instances", default="benchmark/tpcds/questions/instances/sf1-representative-v1.jsonl")
@@ -89,7 +103,11 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "run-live":
         from runner.core.local_live import run_local_live
-        return run_local_live(args)
+        try:
+            return run_local_live(args)
+        except (OSError, ValueError, RuntimeError) as error:
+            print(f"run-live setup failed: {type(error).__name__}: {error}", file=sys.stderr)
+            return 2
     if args.command == "run-control":
         run_record = run_control_experiment(
             args.config,

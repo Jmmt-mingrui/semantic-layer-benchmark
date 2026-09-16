@@ -204,14 +204,14 @@ Ossie 只有一个 YAML 文件并不表示只有一张表。其官方结构中�
 | --- | --- |
 | 身份 | `run_id`、`trial_id`、`question_id`、Target、Lane、Repetition、时间戳 |
 | 可复现 | 仓库 SHA、工作负载修订版、Manifest SHA-256、原生模型 SHA-256、Adapter 版本、镜像 Digest |
-| 模型用量 | Provider、模型修订版、生成参数、Prompt Hash、Provider 返回的 Input/Output/Cached Token |
+| 模型用量 | Provider、模型修订版、生成参数、Prompt Hash、Provider 返回的 Input/Output/Cached/Reasoning Token 计数 |
 | 工具用量 | 有序工具名、脱敏参数、结果元数据、状态、耗时和重试关联 |
 | 语义工作 | 检索到的 Concept ID、原生请求、编译状态、Fallback 或 Workaround 标记 |
 | SQL 工作 | 生成 SQL 产物、语句策略、执行耗时、行数和结果 Hash |
 | 错误 | 阶段、统一分类、原生错误码、是否可重试、脱敏消息 |
 | 成本 | 在存在固定价格快照时记录模型、目标服务和数据库成本 |
 
-不记录原始秘密信息，不请求或推断 Provider 隐藏的推理内容。Provider 没有返回的用量字段应记录为 unavailable，而不能静默估算。
+不记录原始秘密信息，不请求或推断 Provider 隐藏的推理内容。Provider 明确返回的 `reasoning_tokens` 整数属于用量元数据，而不是推理内容，应在存在时记录。Provider 没有返回的用量字段应记录为 unavailable，而不能静默估算。
 
 ## 执行环境
 
@@ -226,7 +226,7 @@ Ossie 只有一个 YAML 文件并不表示只有一张表。其官方结构中�
 | Skill | 与其他知识条件相同的参考 Agent；Package 挂载到临时 Repo Skill 位置 | 表和 Metric 知识已有，Harness 集成待实现 |
 | OKF | 相同参考 Agent，直接且受 Allowlist 限制地浏览 Markdown 和链接 | 表和 Metric Bundle 已有，原生 Consumer 待实现 |
 | Ossie | 固定 Schema Validator 和透明原始文档 Consumer | 模型已通过 Schema 校验，Consumer 待实现 |
-| Telemetry | OpenTelemetry 兼容 Collector 和本地 Trace；Phoenix 为可选查看器 | 控制组 Runner 已输出经校验的本地 Trace Event，Collector 导出待实现 |
+| Telemetry | OpenTelemetry 兼容 Collector 和本地 Trace；Phoenix 为可选查看器 | 控制组和原生 Runner 已输出带逐响应用量的经校验本地 Trace Event，Collector 导出待实现 |
 
 Cube 官方支持本地 DuckDB 数据库路径。固定版本的 MetricFlow 源码包含 DuckDB SQL Renderer，因此计划中的 Self-hosted 条件可以通过原生 Metric Query 在 DuckDB 上执行，并暴露编译 SQL 供诊断。但本项目不会宣称所有当前 dbt 产品部署都正式支持 DuckDB；发布结果前，固定版本必须通过可执行兼容性 Gate。
 

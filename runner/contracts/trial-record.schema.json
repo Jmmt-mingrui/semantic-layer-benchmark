@@ -134,6 +134,7 @@
             "timeout",
             "wrong_result",
             "incomplete_result",
+            "provider_error",
             "internal"
           ]
         }
@@ -147,6 +148,7 @@
         "input_tokens": {"type": ["integer", "null"], "minimum": 0},
         "output_tokens": {"type": ["integer", "null"], "minimum": 0},
         "cached_input_tokens": {"type": ["integer", "null"], "minimum": 0},
+        "reasoning_tokens": {"type": ["integer", "null"], "minimum": 0},
         "tool_calls": {"type": "integer", "minimum": 0},
         "database_calls": {"type": "integer", "minimum": 0},
         "native_service_calls": {"type": "integer", "minimum": 0},

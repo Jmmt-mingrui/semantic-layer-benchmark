@@ -16,6 +16,16 @@ cp .env.example .env.local
 不要继续使用曾在聊天里明文发出的密钥。不要把 `.env.local` 提交到 Git。
 `--env-file` 只读取字面量，不执行 shell；已有环境变量优先于文件。
 
+先做一次不调用模型、不会产生 API 费用的完整预检：
+
+```bash
+semantic-benchmark run-live --env-file .env.local --preflight-only \
+  --questions q01 q02 q03 --targets blank_context ddl_only
+```
+
+它会校验环境变量、冻结 Gold、数据库连接、目标产物、原生 preflight 和公开工具面。
+退出码 2 表示准备阶段有阻塞，输出会按目标给出具体错误。
+
 ## 准备官方 SF1 数据
 
 工具包需要用户自己接受 TPC 许可后取得，本补丁不分发它。
@@ -98,8 +108,11 @@ semantic-benchmark run-live --env-file .env.local \
 
 这是 6 个独立试验，每个试验使用全新对话。每题会立即显示状态并保存进度。
 `--timeout` 是每次模型请求的超时，不是整个试验的时限。
-默认最多 12 轮、每轮输出预算 4096；推理模型的 reasoning token 也消耗输出预算，
-不要用 16-token 的 smoke 测试断定模型不可用。
+默认最多 12 轮、每轮输出预算 8192；推理模型的 reasoning token 也消耗输出预算，
+默认最多允许 6 次数据库查询；均可用 `--max-turns`、`--max-output-tokens` 和
+`--max-database-attempts` 覆盖。不要用 16-token 的 smoke 测试断定模型不可用。
+默认只要驱动完成并写出报告就返回 0，即使某个答案不匹配；自动化若要求任一 Trial
+不正确就返回非零，请加 `--strict-exit`。
 
 兼容之前的命令：
 
@@ -143,10 +156,13 @@ Cube 尚无实现，不包含在本地入口的可选目标中。
 - “不一致”：模型执行并提交了答案，但结果未与 Gold 匹配。
 - “未评分”：准备失败、协议错误、超时或未提交答案；看错误详情。
 
-每题展示原始问题、状态、耗时和工具调用。加 `--save-details` 后还会展示
+每题展示原始问题、状态、输入/输出/缓存输入/推理 Token、耗时和工具调用，并给出总量、
+P50、P95 及按目标汇总。Provider 未返回的字段显示为不可用，绝不当成 0。加
+`--save-details` 后还会展示
 提交 SQL、探索 SQL、总行数和最多 5 行结果预览。未暴露 SQL 的原生引擎会明确显示不可用。
 完整结果不持久化；标准化 Gold 哈希足以比较，无需保留数据库连接或恢复结果行。
-隐藏推理内容不采集。
+隐藏推理内容不采集；只记录 Provider 明确返回的 `reasoning_tokens` 整数计数。
+该值通常是 Output Token 的明细而非额外用量，报告不会把二者相加。
 
 摘要分别统计尝试次数、提交后参与 Gold 比对次数、正确/不一致次数、未评分次数和供应商/API 错误次数。比如 6 次中 3 次 HTTP 403、1 次未提交、2 次提交但不匹配，应该读作“2 个已提交答案不匹配，4 次未评分”，不能说“6 个分析答案全错”。`submitted_result_match_rate` 只描述提交子集；`publishable_execution_accuracy` 对探索运行始终为 null。403 需要检查网关权限/配额，本补丁不能修复供应商授权。
 
@@ -163,8 +179,9 @@ python -m pytest -q --basetemp ../slb-pytest-temp
 ```
 
 必须把 pytest 临时目录放在仓库外，否则路径身份测试可能受环境影响。
-`blank_context` 仍需通过 `db.list_relations(schema=...)` 发现表，目前没有 schema 枚举工具；
-这项设计缺口保留并披露，未偷偷给对照组额外上下文。发现请求不计入执行 SQL 的次数。
+`blank_context` 可先调用只返回非系统 Schema 名的 `db.list_schemas`，再通过
+`db.list_relations(schema=...)` 和 `db.describe_relations` 发现物理结构；不再要求模型猜
+`main`，也没有给对照组预加载业务语义。发现请求不计入执行 SQL 的次数。
 正式发布报告仍要求 12 题 × 6 目标 × 3 重复 = 216 条完整记录；部分运行不绕过门禁。
 
 ## 本次补丁覆盖
@@ -172,7 +189,9 @@ python -m pytest -q --basetemp ../slb-pytest-temp
 已修复：提交答案筛选、OKF 目录校验/跟随、MetricFlow CLI 版本探针与 DuckDB 模型表达式、
 preflight 关闭/诊断/物化、控制组 wire-format 与预览脱敏、dotenv 忽略规则、短参数生成、
 可配置 live 入口、SQL/预览/正确性报告，以及工具 schema hash 在关闭前记录。
-本次再次修订补齐 representative 公开输出契约与 SQL/lint/Gold 对照校验，保持严格评分，并拆分供应商失败与已提交答案正确性。
+本次再次修订补齐 representative 公开输出契约与 SQL/lint/Gold 对照校验，保持严格评分，
+并拆分供应商失败与已提交答案正确性。随后又补齐 Schema 发现、8192 默认输出预算、
+可配置数据库尝试预算、无费用预检、逐响应/逐 Trial Reasoning Token、总量及分布报告。
 
 未声称完成：Cube、完整 MetricFlow runtime 安装、macOS 实机验证、全 99 题结果验证、
-真实模型重复运行与正式发布、schema 枚举设计及 OpenTelemetry Collector 导出。
+真实模型重复运行与正式发布及 OpenTelemetry Collector 导出。

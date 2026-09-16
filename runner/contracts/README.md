@@ -83,7 +83,7 @@ The runner applies this state order:
 7. Close the target sandbox before loading evaluator-only assets.
 8. Evaluate result equivalence and emit the immutable trial record.
 
-There is no cross-trial message state. Provider-side prompt caching may occur only if the selected scenario permits it and the provider reports it; cached tokens are recorded separately.
+There is no cross-trial message state. Provider-side prompt caching may occur only if the selected scenario permits it and the provider reports it; cached tokens are recorded separately. Provider-reported reasoning token counts are recorded as usage metadata in both the trial and each native/control `llm.response` event, without collecting reasoning content. Missing fields remain `null`/unavailable rather than being estimated.
 
 ## Failure and unsupported semantics
 

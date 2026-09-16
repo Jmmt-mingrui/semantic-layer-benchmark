@@ -51,6 +51,8 @@ def test_live_provider_is_stateless_and_preserves_missing_usage() -> None:
     assert turn.usage.input_tokens is None
     assert turn.usage.output_tokens is None
     assert turn.usage.cached_input_tokens is None
+    assert turn.usage.reasoning_tokens is None
+    assert turn.usage.provider_reported is False
     assert captured[0]["model"] == "m"
     assert captured[0]["temperature"] == 0
     assert captured[0]["max_tokens"] == 123
@@ -58,7 +60,7 @@ def test_live_provider_is_stateless_and_preserves_missing_usage() -> None:
     assert not hasattr(provider, "messages")
 
 
-def test_live_provider_counts_retry_without_logging_reasoning() -> None:
+def test_live_provider_counts_retry_and_reports_reasoning_tokens_without_content() -> None:
     calls = 0
 
     def transport(url: str, body: bytes, headers, timeout: float):
@@ -71,7 +73,12 @@ def test_live_provider_counts_retry_without_logging_reasoning() -> None:
             {
                 "id": "resp-2",
                 "choices": [{"message": {"role": "assistant", "content": "done"}}],
-                "usage": {"prompt_tokens": 11, "completion_tokens": 4, "prompt_tokens_details": {"cached_tokens": 2}},
+                "usage": {
+                    "prompt_tokens": 11,
+                    "completion_tokens": 4,
+                    "prompt_tokens_details": {"cached_tokens": 2},
+                    "completion_tokens_details": {"reasoning_tokens": 3},
+                },
             }
         ).encode()
 
@@ -93,7 +100,9 @@ def test_live_provider_counts_retry_without_logging_reasoning() -> None:
     assert turn.usage.input_tokens == 11
     assert turn.usage.output_tokens == 4
     assert turn.usage.cached_input_tokens == 2
-    assert "reasoning" not in repr(turn).lower()
+    assert turn.usage.reasoning_tokens == 3
+    assert turn.usage.provider_reported is True
+    assert not hasattr(turn, "reasoning_content")
 
 
 def test_remote_credentials_require_https_including_extra_headers() -> None:

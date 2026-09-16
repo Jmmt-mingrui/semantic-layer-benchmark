@@ -17,7 +17,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACTS = ROOT / "runner" / "contracts"
 STATUSES = ("passed", "failed", "unsupported", "invalid", "timeout", "skipped")
-TOKEN_FIELDS = ("input_tokens", "output_tokens", "cached_input_tokens")
+TOKEN_FIELDS = ("input_tokens", "output_tokens", "cached_input_tokens", "reasoning_tokens")
 CALL_FIELDS = ("tool_calls", "database_calls", "native_service_calls")
 
 
@@ -107,13 +107,14 @@ def _stats(values: Iterable[float]) -> dict[str, int | float | None]:
     }
 
 
-def _coverage(values: Iterable[int | None]) -> dict[str, int]:
+def _coverage(values: Iterable[int | None]) -> dict[str, Any]:
     materialized = list(values)
     known = [value for value in materialized if value is not None]
     return {
         "known_trials": len(known),
         "unknown_trials": len(materialized) - len(known),
         "known_total": sum(known),
+        "distribution": _stats(known),
     }
 
 
@@ -366,16 +367,18 @@ def render_markdown(report: dict[str, Any], *, language: str = "en") -> str:
             "",
             f"## {labels['usage']}",
             "",
-            "| Metric | Known total | Known trials | Unknown trials |"
+            "| Metric | Known total | Known trials | Unknown trials | P50 | P95 |"
             if not zh
-            else "| 指标 | 已知总量 | 已知 Trial | 未知 Trial |",
-            "| --- | ---: | ---: | ---: |",
+            else "| 指标 | 已知总量 | 已知 Trial | 未知 Trial | P50 | P95 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for group in ("tokens", "calls"):
         for field, coverage in report["usage"][group].items():
             lines.append(
-                f"| `{field}` | {coverage['known_total']} | {coverage['known_trials']} | {coverage['unknown_trials']} |"
+                f"| `{field}` | {coverage['known_total']} | {coverage['known_trials']} | "
+                f"{coverage['unknown_trials']} | {_cell(coverage['distribution']['p50'])} | "
+                f"{_cell(coverage['distribution']['p95'])} |"
             )
 
     trial_latency = report["latency_ms"]["trial_total"]

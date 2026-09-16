@@ -37,7 +37,13 @@ SUPPORTED_TARGETS = (
 )
 
 _HARNESS_OPERATIONS = frozenset(
-    {"db.list_relations", "db.describe_relations", "db.execute_readonly", "benchmark.submit_result"}
+    {
+        "db.list_schemas",
+        "db.list_relations",
+        "db.describe_relations",
+        "db.execute_readonly",
+        "benchmark.submit_result",
+    }
 )
 
 # Some existing native adapters predate JSON-schema tool publication.  These

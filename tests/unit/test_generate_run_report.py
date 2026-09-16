@@ -212,11 +212,14 @@ def test_report_aggregates_outcomes_usage_operations_and_latency(tmp_path: Path)
         "known_trials": 3,
         "unknown_trials": 1,
         "known_total": 150,
+        "distribution": {"count": 3, "min": 0.0, "mean": 50.0, "p50": 50.0, "p95": 100.0, "max": 100.0},
     }
+    assert report["usage"]["tokens"]["reasoning_tokens"]["unknown_trials"] == 4
     assert report["usage"]["calls"]["native_service_calls"] == {
         "known_trials": 3,
         "unknown_trials": 1,
         "known_total": 3,
+        "distribution": {"count": 3, "min": 0.0, "mean": 1.0, "p50": 1.0, "p95": 2.0, "max": 2.0},
     }
     assert report["latency_ms"]["trial_total"] == {
         "count": 4,

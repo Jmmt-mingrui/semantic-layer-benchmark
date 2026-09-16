@@ -87,7 +87,10 @@ def test_publication_matrix_and_unavailable_tokens() -> None:
     blank = report["targets"]["blank_context"]
     assert blank["execution_accuracy"] == 1.0
     assert blank["tokens"]["input_tokens"]["unavailable_trials"] == 12
+    assert blank["tokens"]["input_tokens"]["total"] is None
+    assert blank["tokens"]["input_tokens"]["known_total"] == 2400
     assert blank["tokens"]["cached_input_tokens"]["total"] is None
+    assert blank["tokens"]["reasoning_tokens"]["unavailable_trials"] == 36
     assert blank["three_run_consistency"] == 1.0
 
 

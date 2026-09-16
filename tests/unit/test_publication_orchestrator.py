@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -36,7 +37,7 @@ def _candidate(result_hash: str = "a" * 64):
             "sql_artifacts": [{"result_handle": "r1", "sql_sha256": "7" * 64}],
             "result_artifacts": [{"result_handle": "r1", "result_sha256": result_hash}],
         },
-        "usage": {"input_tokens": "unavailable", "output_tokens": 9, "cached_input_tokens": None, "tool_calls": 2, "database_calls": 1, "total_latency_ms": 10.0},
+        "usage": {"input_tokens": "unavailable", "output_tokens": 9, "cached_input_tokens": None, "reasoning_tokens": 4, "tool_calls": 2, "database_calls": 1, "total_latency_ms": 10.0},
         "error": {"category": None, "detail": None},
         "status": "candidate_ready",
     }
@@ -52,8 +53,11 @@ def _gold(result_hash: str = "a" * 64):
 def _trace():
     return (
         {"sequence": 0, "event_type": "trial.start", "status": "started", "attributes": {}},
-        {"sequence": 1, "event_type": "conversation.close", "status": "ok", "attributes": {"provider_closed": True}},
-        {"sequence": 2, "event_type": "trial.finish", "status": "ok", "attributes": {}},
+        {"sequence": 1, "event_type": "llm.generate", "status": "ok", "attributes": {},
+         "usage": {"input_tokens": 10, "output_tokens": 9, "cached_input_tokens": 0,
+                   "reasoning_tokens": 4, "provider_reported": True}},
+        {"sequence": 2, "event_type": "conversation.close", "status": "ok", "attributes": {"provider_closed": True}},
+        {"sequence": 3, "event_type": "trial.finish", "status": "ok", "attributes": {}},
     )
 
 
@@ -67,9 +71,12 @@ def test_materializes_schema_valid_trial_only_after_close(tmp_path: Path) -> Non
     assert record["evaluation"]["result_equivalent"] is True
     assert record["conversation"]["provider_conversation_id"].startswith("conv-")
     assert record["usage"]["input_tokens"] is None
+    assert record["usage"]["reasoning_tokens"] == 4
     trial_dir = tmp_path / "trials/q01-ossie-r01"
     assert (trial_dir / "trial.json").is_file()
     assert (trial_dir / "trace.jsonl").is_file()
+    trace = [json.loads(line) for line in (trial_dir / "trace.jsonl").read_text().splitlines()]
+    assert trace[1]["usage"]["reasoning_tokens"] == 4
     assert (trial_dir / "conversation.sanitized.jsonl").is_file()
 
 

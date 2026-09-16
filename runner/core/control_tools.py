@@ -124,7 +124,9 @@ class ControlToolDispatcher:
         errors = sorted(Draft202012Validator(self._definitions[name]["input_schema"]).iter_errors(arguments), key=str)
         if errors:
             raise ToolProtocolError(f"Invalid {name} arguments: {errors[0].message}")
-        if name == "db.list_relations":
+        if name == "db.list_schemas":
+            output = self._list_schemas()
+        elif name == "db.list_relations":
             output = self._list_relations(arguments)
         elif name == "db.describe_relations":
             output = self._describe_relations(arguments)
@@ -136,6 +138,17 @@ class ControlToolDispatcher:
             raise ToolProtocolError(f"No dispatcher is registered for operation: {name}")
         Draft202012Validator(self._definitions[name]["output_schema"]).validate(output)
         return ToolOutcome(output=output, duration_ms=(perf_counter() - started) * 1000)
+
+    def _list_schemas(self) -> dict[str, Any]:
+        result = self.database.execute(
+            """
+            SELECT schema_name
+            FROM information_schema.schemata
+            WHERE schema_name NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY schema_name
+            """
+        )
+        return {"schemas": [str(row[0]) for row in result.rows]}
 
     def _list_relations(self, arguments: dict[str, Any]) -> dict[str, Any]:
         schema = arguments.get("schema") or self.database.settings.schema

@@ -43,7 +43,7 @@ def main() -> int:
         [],
         {
             "temperature": float(os.getenv("BENCHMARK_AGENT_TEMPERATURE", "0")),
-            "max_output_tokens": int(os.getenv("BENCHMARK_AGENT_MAX_OUTPUT_TOKENS", "32")),
+            "max_output_tokens": int(os.getenv("BENCHMARK_AGENT_MAX_OUTPUT_TOKENS", "128")),
         },
         float(os.getenv("BENCHMARK_AGENT_TIMEOUT_SECONDS", "30")),
     )
@@ -58,6 +58,8 @@ def main() -> int:
         "input_tokens": turn.usage.input_tokens if turn.usage.input_tokens is not None else "unavailable",
         "output_tokens": turn.usage.output_tokens if turn.usage.output_tokens is not None else "unavailable",
         "cached_input_tokens": turn.usage.cached_input_tokens if turn.usage.cached_input_tokens is not None else "unavailable",
+        "reasoning_tokens": turn.usage.reasoning_tokens if turn.usage.reasoning_tokens is not None else "unavailable",
+        "usage_provider_reported": turn.usage.provider_reported,
         "retries": provider.retry_count,
     }
     print(json.dumps(output, sort_keys=True))

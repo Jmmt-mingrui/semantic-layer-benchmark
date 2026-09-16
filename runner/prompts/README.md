@@ -13,7 +13,7 @@ The primary benchmark starts one fresh agent conversation for every question ins
 3. generic schemas for its allowed tools; and
 4. the results of tools it chooses to call.
 
-Outside the common question it receives no preloaded DDL, physical table/column inventory, sample rows, business context, metrics, target identity, reference SQL, expected result, canonical question-to-metric map, prior messages, or retrieved documents. The question must state its business rules and output labels, even when a label matches a physical column name; this is not an extra schema or semantic artifact. It may discover the database using `db.list_relations` and `db.describe_relations`, then use `db.execute_readonly`.
+Outside the common question it receives no preloaded DDL, physical table/column inventory, sample rows, business context, metrics, target identity, reference SQL, expected result, canonical question-to-metric map, prior messages, or retrieved documents. The question must state its business rules and output labels, even when a label matches a physical column name; this is not an extra schema or semantic artifact. It may discover the database using `db.list_schemas`, `db.list_relations`, and `db.describe_relations`, then use `db.execute_readonly`.
 
 `ddl_only` is a different control. It receives the physical DuckDB DDL but no enriched business semantics. Results for these two baselines must never be combined.
 
