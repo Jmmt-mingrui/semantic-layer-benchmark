@@ -11,6 +11,15 @@ pip install -e '.[test]'
 cp .env.example .env.local
 ```
 
+先确认 Python、DuckDB 和仓库结构本身能正常工作；这一步不需要数据、密钥，也不会调用模型：
+
+```bash
+semantic-benchmark doctor
+```
+
+输出 `installation_ok` 表示安装健康，并会逐项列出正式运行仍缺的 SF1 数据、Gold 或 Provider 配置。
+准备完成后可用 `semantic-benchmark doctor --env-file .env.local --strict` 做完整就绪检查。
+
 编辑 `.env.local`：填入实际模型名、HTTPS 服务地址和新 API Key。
 地址可以写到 `/compatible-mode/v1`，入口会补齐 `/chat/completions`。
 不要继续使用曾在聊天里明文发出的密钥。不要把 `.env.local` 提交到 Git。

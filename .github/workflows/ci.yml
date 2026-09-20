@@ -40,6 +40,9 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q runner scripts tests
 
+      - name: Smoke-test installed CLI and DuckDB
+        run: semantic-benchmark doctor
+
       - name: Validate serialized assets
         run: python -c "from pathlib import Path; from scripts.validate_repository import validate_serialized_files; validate_serialized_files(Path('.').resolve())"
 
