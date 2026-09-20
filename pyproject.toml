@@ -7,7 +7,10 @@ name = "semantic-layer-benchmark"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-  "duckdb==1.4.0",
+  # 1.4.0's CPython 3.12 manylinux wheel can crash with SIGBUS on otherwise
+  # supported x86_64 hosts. 1.4.3 keeps the 1.4 storage/SQL contract while
+  # fixing that binary compatibility failure.
+  "duckdb==1.4.3",
   "jsonschema>=4.23,<5",
   "PyYAML>=6.0,<7",
 ]

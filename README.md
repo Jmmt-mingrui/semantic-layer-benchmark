@@ -43,7 +43,7 @@ The initial workload is **TPC-DS-derived SF1 only**. SF10 remains out of scope.
 | Workload | 99 stable task IDs, `q01` through `q99` |
 | Reference logic | 103 SQL formulations; q14, q23, q24, and q39 each have two accepted formulations |
 | Data | One SF1 snapshot plus row counts, checksums, generator version, and manifest hash |
-| Database | DuckDB 1.4.0 by default, opened read-only through a pluggable connection contract |
+| Database | DuckDB 1.4.3 by default, opened read-only through a pluggable connection contract |
 | Semantics | One system-neutral catalog of datasets, metrics, dimensions, joins, grains, time roles, and calculation rules |
 | Agent | The same model, prompt shell, budgets, retry policy, and generation parameters within a lane; only the declared native operation allowlist changes by target |
 | Observability | The same run, trace, token, tool-call, timing, artifact, and error schema |
@@ -220,7 +220,7 @@ The first reproducible environment is local and DuckDB-first:
 | Component | Baseline environment | State |
 | --- | --- | --- |
 | Orchestrator and evaluators | Linux, Python 3.11+, repository revision pinned | q01 control runner, exact-result evaluator, and versioned artifacts present |
-| Database | DuckDB 1.4.0, SF1 database file mounted read-only | Schema, loader, and read-only adapter present |
+| Database | DuckDB 1.4.3, SF1 database file mounted read-only | Schema, loader, and read-only adapter present |
 | MetricFlow | Pinned standalone source at commit `8750c1d`; DuckDB SQL renderer selected by adapter | Table semantics present; executable adapter planned |
 | Cube | Pinned Cube image, isolated service, official DuckDB data source, cache disabled for correctness runs | Native model and adapter planned |
 | Skill | Same reference-agent runtime; package mounted in a temporary repository skill location | Table and metric knowledge present; harness integration planned |
@@ -240,6 +240,12 @@ TPC-DS data is generated locally with the official toolkit and is not committed.
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[test]'
+```
+
+Verify the installation before downloading data or configuring model credentials:
+
+```bash
+semantic-benchmark doctor
 ```
 
 1. Download the TPC-DS v4.0.0 tools from the [official TPC download page](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY).

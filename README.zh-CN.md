@@ -43,7 +43,7 @@
 | 工作负载 | `q01` 至 `q99` 共 99 个稳定任务 ID |
 | 参考逻辑 | 103 份 SQL formulation；q14、q23、q24 和 q39 各有两份可接受实现 |
 | 数据 | 一份 SF1 快照，以及行数、校验和、生成器版本和 manifest hash |
-| 数据库 | 默认 DuckDB 1.4.0，通过可插拔连接契约以只读方式打开 |
+| 数据库 | 默认 DuckDB 1.4.3，通过可插拔连接契约以只读方式打开 |
 | 语义 | 一份系统无关的 Dataset、Metric、Dimension、Join、Grain、时间角色和计算规则目录 |
 | Agent | 同一赛道内固定模型、Prompt 外壳、预算、重试策略和生成参数；只有声明的原生操作 Allowlist 随目标变化 |
 | 可观测 | 统一的 Run、Trace、Token、工具调用、耗时、产物和错误字段 |
@@ -220,7 +220,7 @@ Ossie 只有一个 YAML 文件并不表示只有一张表。其官方结构中�
 | 组件 | 基准环境 | 状态 |
 | --- | --- | --- |
 | 编排器与评估器 | Linux、Python 3.11+、固定仓库 Revision | 已有 q01 控制组 Runner、精确结果 Evaluator 和版本化产物 |
-| 数据库 | DuckDB 1.4.0，SF1 文件只读挂载 | Schema、Loader 和只读 Adapter 已有 |
+| 数据库 | DuckDB 1.4.3，SF1 文件只读挂载 | Schema、Loader 和只读 Adapter 已有 |
 | MetricFlow | 固定 standalone commit `8750c1d`；Adapter 选择 DuckDB SQL Renderer | 表语义已有，可执行 Adapter 待实现 |
 | Cube | 固定 Cube 镜像、隔离服务、官方 DuckDB Data Source；正确性 Run 关闭 Cache | 原生模型和 Adapter 待实现 |
 | Skill | 与其他知识条件相同的参考 Agent；Package 挂载到临时 Repo Skill 位置 | 表和 Metric 知识已有，Harness 集成待实现 |
@@ -240,6 +240,12 @@ TPC-DS 数据通过官方工具包在本地生成，不提交到仓库。
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[test]'
+```
+
+无需数据或模型密钥即可先验证安装是否健康：
+
+```bash
+semantic-benchmark doctor
 ```
 
 1. 从 [TPC 官方下载页面](https://www.tpc.org/TPC_Documents_Current_Versions/download_programs/tools-download-request5.asp?bm_type=TPC-DS&bm_vers=4.0.0&mode=CURRENT-ONLY)下载 TPC-DS v4.0.0 工具包。

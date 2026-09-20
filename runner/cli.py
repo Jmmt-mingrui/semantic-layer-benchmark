@@ -54,6 +54,17 @@ def _scripted_factory(script_path: Path):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="semantic-benchmark")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    doctor = subparsers.add_parser(
+        "doctor",
+        help="Check the installation and explain missing runtime prerequisites",
+    )
+    doctor.add_argument("--root", type=Path, default=Path("."))
+    doctor.add_argument(
+        "--strict",
+        action="store_true",
+        help="Return nonzero unless the repository, SF1 database, Gold pack, and live-provider settings are ready",
+    )
+    doctor.add_argument("--env-file", type=Path, help="Optionally load the same literal dotenv file as run-live")
     control = subparsers.add_parser("run-control", help="Run blank-context and DDL-only trials")
     control.add_argument("--config", default="runner/config/control-sf1-q01.yaml")
     control.add_argument("--provider", choices=("scripted",), default="scripted")
@@ -101,6 +112,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "doctor":
+        from runner.core.doctor import run_doctor
+
+        return run_doctor(args)
     if args.command == "run-live":
         from runner.core.local_live import run_local_live
         try:
